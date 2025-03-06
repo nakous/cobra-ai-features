@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h2>Stripe Integration Feature</h2>
+    
+    <h3>Overview</h3>
+    <p>The Stripe feature provides core integration with Stripe's API, including:</p>
+    <ul>
+        <li>API Key Management</li>
+        <li>Webhook Processing</li>
+        <li>Event Handling</li>
+        <li>Logging System</li>
+    </ul>
+
+    <h3>Configuration</h3>
+    <ol>
+        <li>Enter your Stripe API keys (test and live)</li>
+        <li>Configure your webhook endpoint: <code>/wp-json/cobra-ai/v1/stripe/webhook</code></li>
+        <li>Add the webhook secret to your settings</li>
+    </ol>
+
+    <h3>Using in Other Features</h3>
+    <p>Listen for Stripe events in your features:</p>
+    <pre><code>
+    add_action('cobra_ai_stripe_payment_intent_succeeded', function($event) {
+        // Handle successful payment
+    });
+    </code></pre>
+
+    <h3>API Access</h3>
+    <p>Get API instance in your features:</p>
+    <pre><code>
+    $stripe = cobra_ai()->get_feature('stripe');
+    $api = $stripe->get_api();
+    $secret_key = $api->get_secret_key();
+    </code></pre>
+</body>
+</html>

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>reCAPTCHA Help Documentation</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1, h2, h3 {
+            color: #1d2327;
+            margin-top: 1.5em;
+        }
+
+        .notice {
+            background: #fff;
+            border-left: 4px solid #72aee6;
+            padding: 12px;
+            margin: 15px 0;
+            box-shadow: 0 1px 1px rgba(0,0,0,.04);
+        }
+
+        .notice.notice-warning {
+            border-left-color: #dba617;
+        }
+
+        .notice.notice-info {
+            border-left-color: #72aee6;
+        }
+
+        code {
+            background: #f0f0f1;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        pre {
+            background: #f0f0f1;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1em 0;
+        }
+
+        th, td {
+            border: 1px solid #ccd0d4;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background: #f0f0f1;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 1em 0;
+        }
+
+        .steps {
+            counter-reset: step-counter;
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .steps li {
+            counter-increment: step-counter;
+            margin-bottom: 10px;
+            padding-left: 35px;
+            position: relative;
+        }
+
+        .steps li::before {
+            content: counter(step-counter);
+            background: #2271b1;
+            color: white;
+            font-size: 14px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>reCAPTCHA Integration Help</h1>
+
+    <div class="notice notice-info">
+        <p><strong>Quick Start:</strong> To get started, you need to obtain your reCAPTCHA API keys from Google and configure the settings for your desired form protection.</p>
+    </div>
+
+    <h2>Table of Contents</h2>
+    <ul>
+        <li><a href="#getting-started">Getting Started</a></li>
+        <li><a href="#versions">reCAPTCHA Versions</a></li>
+        <li><a href="#configuration">Configuration</a></li>
+        <li><a href="#forms">Protected Forms</a></li>
+        <li><a href="#customization">Customization</a></li>
+        <li><a href="#troubleshooting">Troubleshooting</a></li>
+    </ul>
+
+    <h2 id="getting-started">Getting Started</h2>
+    <h3>Obtaining API Keys</h3>
+    <ol class="steps">
+        <li>Go to the <a href="https://www.google.com/recaptcha/admin" target="_blank">Google reCAPTCHA Admin Console</a></li>
+        <li>Sign in with your Google account</li>
+        <li>Click the "+" or "Create" button</li>
+        <li>Enter a label for your site (e.g., "My WordPress Site")</li>
+        <li>Select the reCAPTCHA type you want to use</li>
+        <li>Add your domain(s) to the allowed domains list</li>
+        <li>Accept the Terms of Service</li>
+        <li>Click "Submit"</li>
+        <li>Copy your Site Key and Secret Key</li>
+    </ol>
+
+    <div class="notice notice-warning">
+        <p><strong>Important:</strong> Never share your Secret Key publicly. The Site Key is meant to be public, but the Secret Key must be kept confidential.</p>
+    </div>
+
+    <h2 id="versions">reCAPTCHA Versions</h2>
+    <table>
+        <tr>
+            <th>Version</th>
+            <th>Description</th>
+            <th>Best For</th>
+        </tr>
+        <tr>
+            <td>reCAPTCHA v2 Checkbox</td>
+            <td>Traditional checkbox-based verification with optional challenge</td>
+            <td>Most common forms where user interaction is expected</td>
+        </tr>
+        <tr>
+            <td>reCAPTCHA v3</td>
+            <td>Invisible score-based verification without user interaction</td>
+            <td>High-traffic sites needing frictionless verification</td>
+        </tr>
+        <tr>
+            <td>Invisible reCAPTCHA</td>
+            <td>No checkbox, shows challenge only when necessary</td>
+            <td>Forms where minimal user interaction is preferred</td>
+        </tr>
+    </table>
+
+    <h2 id="configuration">Configuration</h2>
+    <h3>Basic Settings</h3>
+    <table>
+        <tr>
+            <th>Setting</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td>Version</td>
+            <td>Select which reCAPTCHA version to use</td>
+        </tr>
+        <tr>
+            <td>Theme</td>
+            <td>Choose between Light and Dark themes (v2 only)</td>
+        </tr>
+        <tr>
+            <td>Badge Position</td>
+            <td>Where to display the reCAPTCHA badge (v3 and Invisible)</td>
+        </tr>
+        <tr>
+            <td>Score Threshold</td>
+            <td>Minimum score to pass verification (v3 only, 0.0 to 1.0)</td>
+        </tr>
+    </table>
+
+    <h2 id="forms">Protected Forms</h2>
+    <h3>Available Form Protection</h3>
+    <ul>
+        <li>WordPress Login Form</li>
+        <li>Registration Form</li>
+        <li>Lost Password Form</li>
+        <li>Comments Form</li>
+        <li>Protected Post Password Form</li>
+        <li>Contact Form 7</li>
+        <li>Testimonials</li>
+        <li>Custom Forms</li>
+    </ul>
+
+    <h3>Custom Form Integration</h3>
+    <p>To protect a custom form, you can either:</p>
+    <ol>
+        <li>Enable "Custom Forms" in the settings and add the form's CSS selector</li>
+        <li>Use the following shortcode in your form:</li>
+    </ol>
+    <pre><code>[recaptcha]</code></pre>
+
+    <h2 id="customization">Customization</h2>
+    <h3>Theme Customization</h3>
+    <p>For v2 Checkbox:</p>
+    <table>
+        <tr>
+            <th>Theme</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td>Light</td>
+            <td>Default theme with white background</td>
+        </tr>
+        <tr>
+            <td>Dark</td>
+            <td>Dark theme for better visibility on dark backgrounds</td>
+        </tr>
+    </table>
+
+    <h3>Advanced Customization</h3>
+    <pre><code>// Add custom CSS
+add_action('wp_head', function() {
+    ?>
+    &lt;style&gt;
+        .g-recaptcha {
+            margin: 10px 0;
+        }
+    &lt;/style&gt;
+    <?php
+});</code></pre>
+
+    <h2 id="troubleshooting">Troubleshooting</h2>
+    <h3>Common Issues</h3>
+    <div class="notice">
+        <h4>reCAPTCHA Not Showing</h4>
+        <ol>
+            <li>Verify your Site Key is correct</li>
+            <li>Check if your domain is allowed in reCAPTCHA settings</li>
+            <li>Ensure JavaScript is enabled and loading properly</li>
+            <li>Check browser console for errors</li>
+        </ol>
+    </div>
+
+    <div class="notice">
+        <h4>Verification Failing</h4>
+        <ol>
+            <li>Verify your Secret Key is correct</li>
+            <li>Check if your server can reach Google's servers</li>
+            <li>Ensure your server time is synchronized</li>
+            <li>Check server logs for specific error messages</li>
+        </ol>
+    </div>
+
+    <h3>Debug Mode</h3>
+    <p>Enable debug mode in the settings to log verification attempts and errors. Logs can be found in:</p>
+    <pre><code>wp-content/uploads/cobra-ai/logs/recaptcha/</code></pre>
+
+    <h3>Support</h3>
+    <p>If you need additional help:</p>
+    <ul>
+        <li>Check the <a href="https://developers.google.com/recaptcha/docs/verify" target="_blank">Google reCAPTCHA Documentation</a></li>
+        <li>Visit our support forum</li>
+        <li>Contact our support team</li>
+    </ul>
+
+    <div class="notice notice-info">
+        <p><strong>Note:</strong> Keep your WordPress installation, plugins, and themes updated to ensure compatibility and security.</p>
+    </div>
+</body>
+</html>

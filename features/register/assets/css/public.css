@@ -1,0 +1,43 @@
+/* Field validation feedback */
+.cobra-form-error {
+    color: #dc3232;
+    font-size: 12px;
+    margin-top: 5px;
+    display: block;
+}
+
+.availability-feedback {
+    font-size: 12px;
+    margin-top: 5px;
+    display: block;
+}
+
+.availability-feedback.success {
+    color: #46b450;
+}
+
+.availability-feedback.error {
+    color: #dc3232;
+}
+
+.password-match-feedback {
+    font-size: 12px;
+    margin-top: 5px;
+    display: block;
+}
+
+.password-match-feedback.success {
+    color: #46b450;
+}
+
+.password-match-feedback.error {
+    color: #dc3232;
+}
+
+/* Loading indicator for availability check */
+.checking {
+    background-image: url('../images/loading.gif');
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px;
+}

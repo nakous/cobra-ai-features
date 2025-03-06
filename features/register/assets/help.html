@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Registration - Help Documentation</title>
+    <style>
+   
+
+        h1,
+        h2,
+        h3,
+        h4 {
+            color: #1d2327;
+            margin-top: 1.5em;
+        }
+
+        .notice {
+            background: #fff;
+            border-left: 4px solid #72aee6;
+            padding: 12px;
+            margin: 15px 0;
+            box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
+        }
+
+        .notice.notice-warning {
+            border-left-color: #dba617;
+        }
+
+        .notice.notice-success {
+            border-left-color: #46b450;
+        }
+
+        code {
+            background: #f0f0f1;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: Monaco, Consolas, monospace;
+        }
+
+        pre {
+            background: #f0f0f1;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-family: Monaco, Consolas, monospace;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1em 0;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccd0d4;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background: #f0f0f1;
+        }
+
+        .steps {
+            counter-reset: step-counter;
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .steps li {
+            counter-increment: step-counter;
+            margin-bottom: 10px;
+            padding-left: 35px;
+            position: relative;
+        }
+
+        .steps li::before {
+            content: counter(step-counter);
+            background: #2271b1;
+            color: white;
+            font-size: 14px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+
+        .workflow {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+
+        .workflow-step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .workflow-step:not(:last-child)::after {
+            content: "↓";
+            display: block;
+            margin: 10px 0;
+            text-align: center;
+            width: 100%;
+        }
+
+        .shortcode-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .shortcode-list li {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .shortcode-list code {
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>User Registration Documentation</h1>
+
+    <div class="notice">
+        <p><strong>Quick Start:</strong> Enable the feature, configure your settings, and use shortcodes to display
+            registration forms on your pages.</p>
+    </div>
+
+    <h2>Table of Contents</h2>
+    <ul>
+        <li><a href="#registration-flow">Registration Flow</a></li>
+        <li><a href="#configuration">Configuration</a></li>
+        <li><a href="#shortcodes">Shortcodes</a></li>
+        <li><a href="#forms">Forms and Fields</a></li>
+        <li><a href="#emails">Email Templates</a></li>
+        <li><a href="#admin">Admin Features</a></li>
+        <li><a href="#integration">Integration</a></li>
+        <li><a href="#troubleshooting">Troubleshooting</a></li>
+    </ul>
+
+    <h2 id="registration-flow">Registration Flow</h2>
+
+    <div class="workflow">
+        <div class="workflow-step">
+            <strong>1. User Registration</strong>
+            <p>User fills out registration form with required information</p>
+        </div>
+        <div class="workflow-step">
+            <strong>2. Email Verification</strong>
+            <p>Verification email sent with confirmation link</p>
+        </div>
+        <div class="workflow-step">
+            <strong>3. Verification</strong>
+            <p>User clicks verification link to confirm email</p>
+        </div>
+        <div class="workflow-step">
+            <strong>4. Admin Approval</strong>
+            <p>Admin reviews and approves/rejects registration (if enabled)</p>
+        </div>
+        <div class="workflow-step">
+            <strong>5. Account Access</strong>
+            <p>User can login and access their account</p>
+        </div>
+    </div>
+
+    <h2 id="configuration">Configuration</h2>
+
+    <h3>General Settings</h3>
+    <table>
+        <tr>
+            <th>Setting</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td>Disable Admin Menu</td>
+            <td>Hide WordPress admin menu for non-admin users</td>
+        </tr>
+        <tr>
+            <td>Use reCAPTCHA</td>
+            <td>Enable reCAPTCHA protection on forms (requires reCAPTCHA feature)</td>
+        </tr>
+        <tr>
+            <td>Default Role</td>
+            <td>Default role assigned to new registrations (usually 'Pending')</td>
+        </tr>
+    </table>
+
+    <h3>Pages Setup</h3>
+    <p>Required pages for user management:</p>
+    <ul>
+        <li>Login Page - Display login form</li>
+        <li>Registration Page - Display registration form</li>
+        <li>Account Page - User profile and settings</li>
+        <li>Password Reset Page - Password recovery</li>
+        <li>Email Verification Page - Verify email addresses</li>
+    </ul>
+
+    <div class="notice notice-warning">
+        <p><strong>Important:</strong> Make sure to add the appropriate shortcode to each page after creation.</p>
+    </div>
+
+    <h2 id="shortcodes">Shortcodes</h2>
+
+    <ul class="shortcode-list">
+        <li>
+            <code>[user_login]</code>
+            <p>Displays the login form. Options:</p>
+            <ul>
+                <li><code>redirect</code> - URL to redirect after login</li>
+                <li><code>show_register</code> - Show registration link (true/false)</li>
+                <li><code>show_forgot</code> - Show forgot password link (true/false)</li>
+            </ul>
+        </li>
+        <li>
+            <code>[user_register]</code>
+            <p>Displays the registration form. Options:</p>
+            <ul>
+                <li><code>redirect</code> - URL to redirect after registration</li>
+                <li><code>show_login</code> - Show login link (true/false)</li>
+            </ul>
+        </li>
+        <li>
+            <code>[user_forgot_password]</code>
+            <p>Displays the forgot password form</p>
+        </li>
+        <li>
+            <code>[user_reset_password]</code>
+            <p>Displays the password reset form</p>
+        </li>
+        <li>
+            <code>[user_account]</code>
+            <p>Displays the user account page</p>
+        </li>
+        <li>
+            <code>[user_logout]</code>
+            <p>Displays a logout link</p>
+        </li>
+        <li>
+            <code>[confirm_registration]</code>
+            <p>Handles email verification process</p>
+        </li>
+    </ul>
+
+    <h2 id="forms">Forms and Fields</h2>
+
+    <h3>Available Fields</h3>
+    <table>
+        <tr>
+            <th>Field</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+        <tr>
+            <td>Username</td>
+            <td>Text</td>
+            <td>User's login name</td>
+            <td>Yes</td>
+        </tr>
+        <tr>
+            <td>Email</td>
+            <td>Email</td>
+            <td>User's email address</td>
+            <td>Yes</td>
+        </tr>
+        <tr>
+            <td>Password</td>
+            <td>Password</td>
+            <td>User's password</td>
+            <td>Yes</td>
+        </tr>
+        <tr>
+            <td>First Name</td>
+            <td>Text</td>
+            <td>User's first name</td>
+            <td>Optional</td>
+        </tr>
+        <tr>
+            <td>Last Name</td>
+            <td>Text</td>
+            <td>User's last name</td>
+            <td>Optional</td>
+        </tr>
+        <tr>
+            <td>Phone</td>
+            <td>Tel</td>
+            <td>User's phone number</td>
+            <td>Optional</td>
+        </tr>
+        <tr>
+            <td>Address</td>
+            <td>Text</td>
+            <td>User's address</td>
+            <td>Optional</td>
+        </tr>
+        <tr>
+            <td>City</td>
+            <td>Text</td>
+            <td>User's city</td>
+            <td>Optional</td>
+        </tr>
+        <tr>
+            <td>State</td>
+            <td>Text</td>
+            <td>User's state</td>
+            <td>Optional</td>
+        </tr>
+        <tr>
+            <td>ZIP</td>
+            <td>Text</td>
+            <td>User's ZIP code</td>
+            <td>Optional</td>
+        </tr>
+        <tr>
+            <td>Country</td>
+            <td>Select</td>
+            <td>User's country</td>
+            <td>Optional</td>
+        </tr>
+        <tr>
+            <td>Company</td>
+            <td>Text</td>
+            <td>User's company name</td>
+            <td>Optional</td>
+        </tr>
+        <tr>
+            <td>Website</td>
+            <td>URL</td>
+            <td>User's website</td>
+            <td>Optional</td>
+        </tr>
+        <tr>
+            <td>About</td>
+            <td>Textarea</td>
+            <td>User's bio or description</td>
+            <td>Optional</td>
+        </tr>
+        <tr>
+            <td>Avatar</td>
+            <td>File</td>
+            <td>User's profile picture</td>
+            <td>Optional</td>
+        </tr>
+    </table>
+
+    <h2 id="emails">Email Templates</h2>
+
+    <h3>Available Variables</h3>
+    <table>
+        <tr>
+            <th>Variable</th>
+            <th>Description</th>
+            <th>Available In</th>
+        </tr>
+        <tr>
+            <td>{site_name}</td>
+            <td>Your website name</td>
+            <td>All emails</td>
+        </tr>
+        <tr>
+            <td>{site_url}</td>
+            <td>Your website URL</td>
+            <td>All emails</td>
+        </tr>
+        <tr>
+            <td>{user_name}</td>
+            <td>User's display name</td>
+            <td>All emails</td>
+        </tr>
+        <tr>
+            <td>{verification_link}</td>
+            <td>Email verification link</td>
+            <td>Verification email</td>
+        </tr>
+        <tr>
+            <td>{login_link}</td>
+            <td>Link to login page</td>
+            <td>Confirmation email</td>
+        </tr>
+        <tr>
+            <td>{reset_link}</td>
+            <td>Password reset link</td>
+            <td>Password reset email</td>
+        </tr>
+    </table>
+
+    <h2 id="admin">Admin Features</h2>
+
+    <h3>User Management</h3>
+    <ol class="steps">
+        <li>Go to Users in the WordPress admin</li>
+        <li>View verification status in the new column</li>
+        <li>Click "Approve" or "Reject" for pending users</li>
+        <li>Manage user roles and access</li>
+    </ol>
+
+    <h3>Admin Columns</h3>
+    <ul>
+        <li>Email Verified - Shows verification status</li>
+        <li>Registration Date - When user registered</li>
+        <li>Status - Current user role/status</li>
+    </ul>
+
+    <h2 id="integration">Integration</h2>
+
+    <h3>reCAPTCHA Integration</h3>
+    <ol class="steps">
+        <li>Enable reCAPTCHA feature in CobraAI</li>
+        <li>Configure reCAPTCHA settings</li>
+        <li>Enable reCAPTCHA in User Registration settings</li>
+    </ol>
+
+    <h3>Custom Integration</h3>
+    <pre><code>// Check if user is verified
+if (get_user_meta($user_id, '_email_verified', true)) {
+    // User is verified
+}
+
+// Get registration date
+$registration_date = get_user_meta($user_id, '_registration_date', true);
+
+// Force email verification
+update_user_meta($user_id, '_email_verified', true);
+</code></pre>
+
+    <h2 id="troubleshooting">Troubleshooting</h2>
+
+    <h3>Common Issues</h3>
+    <div class="notice">
+        <h4>Emails Not Being Sent</h4>
+        <ol>
+            <li>Check your WordPress email settings</li>
+            <li>Verify SMTP configuration</li>
+            <li>Check spam folder</li>
+            <li>Enable debug logging</li>
+        </ol>
+    </div>
+
+    <div class="notice">
+        <h4>Verification Link Not Working</h4>
+        <ol>
+            <li>Check token expiration</li>
+            <li>Verify proper page setup</li>
+            <li>Check permalink settings</li>
+        </ol>
+    </div>
+
+    <div class="notice">
+        <h4>Form Errors</h4>
+        <ol>
+            <li>Verify reCAPTCHA setup if enabled</li>
+            <li>Check required fields configuration</li>
+            <li>Ensure proper page templates</li>
+            <li>Verify shortcode placement</li>
+            <li>Check JavaScript console for errors</li>
+            <li>Ensure proper permissions on upload directories</li>
+        </ol>
+    </div>
+
+    <div class="notice">
+        <h4>Admin Approval Issues</h4>
+        <ol>
+            <li>Verify user roles and capabilities</li>
+            <li>Check email notifications setup</li>
+            <li>Ensure proper workflow configuration</li>
+            <li>Verify database permissions</li>
+        </ol>
+    </div>
+
+    <h3>Debug Mode</h3>
+    <p>Enable debug mode to log registration activities:</p>
+    <pre><code>// Add to wp-config.php
+define('WP_DEBUG', true);
+define('WP_DEBUG_LOG', true);
+define('WP_DEBUG_DISPLAY', false);</code></pre>
+
+    <h3>Error Messages and Solutions</h3>
+    <table>
+        <tr>
+            <th>Error Message</th>
+            <th>Possible Cause</th>
+            <th>Solution</th>
+        </tr>
+        <tr>
+            <td>"Email verification failed"</td>
+            <td>Expired or invalid token</td>
+            <td>Resend verification email or check token expiration settings</td>
+        </tr>
+        <tr>
+            <td>"Username already exists"</td>
+            <td>Duplicate username registration</td>
+            <td>Choose a different username or check existing users</td>
+        </tr>
+        <tr>
+            <td>"Invalid email format"</td>
+            <td>Malformed email address</td>
+            <td>Enter a valid email address format</td>
+        </tr>
+        <tr>
+            <td>"reCAPTCHA verification failed"</td>
+            <td>Invalid reCAPTCHA response</td>
+            <td>Check reCAPTCHA configuration and keys</td>
+        </tr>
+        <tr>
+            <td>"Upload failed"</td>
+            <td>File permissions or size limits</td>
+            <td>Check upload directory permissions and PHP limits</td>
+        </tr>
+    </table>
+
+    <h3>Security Recommendations</h3>
+    <ul>
+        <li>Enable reCAPTCHA protection on forms</li>
+        <li>Set strong password requirements</li>
+        <li>Configure proper file upload restrictions</li>
+        <li>Enable email verification</li>
+        <li>Use SSL for forms</li>
+        <li>Regularly update WordPress and plugins</li>
+    </ul>
+
+    <h3>Performance Optimization</h3>
+    <ul>
+        <li>Enable caching for non-form pages</li>
+        <li>Optimize uploaded images</li>
+        <li>Use proper database indexes</li>
+        <li>Clean up expired tokens regularly</li>
+        <li>Set appropriate log retention periods</li>
+    </ul>
+
+    <h3>Custom Development</h3>
+
+    <h4>Available Hooks</h4>
+    <table>
+        <tr>
+            <th>Hook</th>
+            <th>Description</th>
+            <th>Parameters</th>
+        </tr>
+        <tr>
+            <td>cobra_user_registered</td>
+            <td>Fired when user registers</td>
+            <td>$user_id</td>
+        </tr>
+        <tr>
+            <td>cobra_email_verified</td>
+            <td>Fired when email is verified</td>
+            <td>$user_id</td>
+        </tr>
+        <tr>
+            <td>cobra_user_approved</td>
+            <td>Fired when user is approved</td>
+            <td>$user_id</td>
+        </tr>
+        <tr>
+            <td>cobra_user_rejected</td>
+            <td>Fired when user is rejected</td>
+            <td>$user_id</td>
+        </tr>
+    </table>
+
+    <h4>Example Custom Integration</h4>
+    <pre><code>// Custom action after user registration
+add_action('cobra_user_registered', function($user_id) {
+    // Your custom code here
+    do_something_after_registration($user_id);
+});
+
+// Custom verification handling
+add_filter('cobra_verify_email', function($verified, $user_id) {
+    // Add custom verification logic
+    return $verified && check_custom_requirements($user_id);
+}, 10, 2);</code></pre>
+
+    <h3>Customization Tips</h3>
+
+    <h4>Custom Form Fields</h4>
+    <pre><code>// Add custom field to registration form
+add_filter('cobra_registration_fields', function($fields) {
+    $fields['custom_field'] = [
+        'label' => 'Custom Field',
+        'type' => 'text',
+        'required' => false
+    ];
+    return $fields;
+});</code></pre>
+
+    <h4>Custom Email Templates</h4>
+    <pre><code>// Customize email content
+add_filter('cobra_email_template', function($content, $type) {
+    if ($type === 'verification') {
+        return 'Your custom email content here';
+    }
+    return $content;
+}, 10, 2);</code></pre>
+
+    <h3>Support</h3>
+    <p>If you need additional help:</p>
+    <ul>
+        <li>Check the <a href="https://example.com/docs" target="_blank">online documentation</a></li>
+        <li>Submit a ticket on our <a href="https://example.com/support" target="_blank">support portal</a></li>
+        <li>Contact us at support@example.com</li>
+    </ul>
+
+    <div class="notice notice-warning">
+        <p><strong>Note:</strong> Before contacting support, please:</p>
+        <ol>
+            <li>Check this documentation thoroughly</li>
+            <li>Enable debug mode and check logs</li>
+            <li>Try with a default theme and no other plugins</li>
+            <li>Prepare detailed steps to reproduce any issues</li>
+        </ol>
+    </div>
+
+    <h3>Changelog</h3>
+    <pre>
+1.0.0 - Initial release
+- User registration with email verification
+- Admin approval workflow
+- Custom fields support
+- reCAPTCHA integration
+- Email templates
+- User management features
+    </pre>
+</body>
+
+</html>

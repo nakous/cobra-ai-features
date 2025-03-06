@@ -1,0 +1,58 @@
+.cobra-stripe-settings .card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.cobra-stripe-settings .card h2 {
+    margin-top: 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.cobra-stripe-settings .form-table th {
+    width: 200px;
+}
+
+.cobra-stripe-settings .description {
+    margin-top: 5px;
+}
+
+.cobra-stripe-settings code {
+    display: inline-block;
+    padding: 8px 12px;
+    background: #f0f0f1;
+    border-radius: 3px;
+}
+.cobra-stripe-settings {
+    max-width: 1200px;
+    margin: 20px 0;
+}
+
+.cobra-stripe-settings .notice {
+    margin: 20px 0;
+}
+
+.cobra-stripe-settings .form-table td fieldset label {
+    display: inline-block;
+    margin-right: 20px;
+}
+
+.cobra-stripe-settings .card {
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.cobra-stripe-settings input[type="text"],
+.cobra-stripe-settings input[type="password"] {
+    width: 100%;
+    max-width: 400px;
+}
+
+.cobra-stripe-settings .webhook-url {
+    background: #f6f7f7;
+    padding: 15px;
+    border-radius: 4px;
+    word-break: break-all;
+}

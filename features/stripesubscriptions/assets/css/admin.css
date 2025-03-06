@@ -1,0 +1,303 @@
+/* assets/css/admin.css */
+.cobra-stripe-plans {
+    margin: 20px;
+}
+
+.cobra-filters {
+    margin: 20px 0;
+    padding: 15px;
+    background: #fff;
+    border: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.cobra-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    z-index: 99999;
+}
+
+.cobra-modal-content {
+    position: relative;
+    background: #fff;
+    margin: 50px auto;
+    max-width: 600px;
+    padding: 20px;
+    border-radius: 4px;
+}
+
+.cobra-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.feature-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.feature-item {
+    display: flex;
+    gap: 10px;
+}
+
+.remove-feature {
+    cursor: pointer;
+    color: red;
+}
+
+.form-field {
+    margin-bottom: 15px;
+}
+
+.form-field label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-field-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;  
+}
+
+.toggle-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.trial-days {
+    margin-top: 10px;
+    padding-left: 20px;
+}
+
+/* Plan status indicators */
+.plan-status {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.status-active { background: #c6e1c6; color: #5b841b; }
+.status-archived { background: #f1f1f1; color: #777; }
+
+/* Analytics Grid Styles */
+.cobra-analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+    padding: 0.5rem;
+}
+
+.analytics-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+                0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.analytics-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 
+                0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.analytics-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, #4f46e5, #6366f1);
+    opacity: 0.8;
+}
+
+.analytics-card h3 {
+    margin: 0 0 1rem 0;
+    color: #4b5563;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.analytics-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+/* Status-specific colors */
+.analytics-card:nth-child(1)::before {
+    background: linear-gradient(90deg, #059669, #10b981); /* Green for active */
+}
+
+.analytics-card:nth-child(2)::before {
+    background: linear-gradient(90deg, #6366f1, #8b5cf6); /* Purple for revenue */
+}
+
+.analytics-card:nth-child(3)::before {
+    background: linear-gradient(90deg, #0284c7, #38bdf8); /* Blue for trial */
+}
+
+.analytics-card:nth-child(4)::before {
+    background: linear-gradient(90deg, #dc2626, #ef4444); /* Red for past due */
+}
+
+/* Value status modifiers */
+.analytics-value.warning {
+    color: #dc2626;
+}
+
+.analytics-value.success {
+    color: #059669;
+}
+
+/* Currency prefix styling */
+.analytics-value[data-currency]::before {
+    content: attr(data-currency);
+    font-size: 1.25rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+/* Add subtle animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.analytics-card {
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+.analytics-card:nth-child(1) { animation-delay: 0s; }
+.analytics-card:nth-child(2) { animation-delay: 0.1s; }
+.analytics-card:nth-child(3) { animation-delay: 0.2s; }
+.analytics-card:nth-child(4) { animation-delay: 0.3s; }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .cobra-analytics-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        padding: 0.5rem;
+    }
+
+    .analytics-card {
+        padding: 1.25rem;
+    }
+
+    .analytics-value {
+        font-size: 1.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .cobra-analytics-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .analytics-card {
+        padding: 1rem;
+    }
+}
+
+/* Loading State */
+.analytics-card.loading {
+    position: relative;
+}
+
+.analytics-card.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent 25%, 
+        rgba(255, 255, 255, 0.3) 50%, 
+        transparent 75%
+    );
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite linear;
+}
+
+@keyframes loading {
+    from {
+        background-position: 200% 0;
+    }
+    to {
+        background-position: -200% 0;
+    }
+}
+
+/* Payment Status Styles */
+.payment-status {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.status-succeeded {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.status-failed {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.status-refunded {
+    background: #f3e5f5;
+    color: #6a1b9a;
+}
+
+/* Filter Styles */
+.cobra-filters {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.custom-date-range {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}

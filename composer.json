@@ -1,0 +1,32 @@
+{
+    "name": "nakous/cobra-ai-features",
+    "description": "Modular AI-powered features for WordPress",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Nakous Mustapha",
+            "email": "mustapha.nak@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.4",
+        "composer/installers": "^2.0",
+        "stripe/stripe-php": "^16.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "CobraAI\\": "includes/",
+            "CobraAI\\Features\\": "features/"
+        },
+        "files": [
+            "includes/utilities/functions.php"
+        ]
+    },
+    "config": {
+        "allow-plugins": {
+            "composer/installers": true
+        },
+        "optimize-autoloader": true
+    }
+}

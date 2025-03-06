@@ -1,0 +1,485 @@
+.plans-grid {
+   display: grid;
+   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+   gap: 2rem;
+   margin: 2rem 0;
+}
+
+.plan-card {
+   border: 1px solid #ddd;
+   border-radius: 8px;
+   padding: 2rem;
+   position: relative;
+   transition: all 0.3s ease;
+}
+
+.plan-card:hover {
+   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+   transform: translateY(-2px);
+}
+
+.current-plan-badge {
+   position: absolute;
+   top: 1rem;
+   right: 1rem;
+   background: #4CAF50;
+   color: white;
+   padding: 0.5rem 1rem;
+   border-radius: 4px;
+}
+
+.plan-price {
+   font-size: 1.5rem;
+   font-weight: bold;
+   margin: 1rem 0;
+}
+
+.plan-actions {
+   margin-top: 2rem;
+}
+
+.plan-actions button,
+.plan-actions a {
+   width: 100%;
+   padding: 0.8rem;
+   border-radius: 4px;
+   border: none;
+   background: #2196F3;
+   color: white;
+   cursor: pointer;
+}
+
+.plan-actions button:disabled {
+   background: #ccc;
+}
+
+/* Single Page Subscription Plan */
+/* Plan Styles */
+.cobra-plan-single {
+   max-width: 800px;
+   margin: 2rem auto;
+   padding: 2rem;
+   background: #fff;
+   border-radius: 12px;
+   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+/* Header */
+.plan-header {
+   text-align: center;
+   margin-bottom: 2rem;
+   padding-bottom: 2rem;
+   border-bottom: 1px solid #eee;
+}
+
+.plan-price-box {
+   display: inline-flex;
+   align-items: baseline;
+   margin-bottom: 1rem;
+}
+
+.plan-price-box .currency {
+   font-size: 2rem;
+   font-weight: 600;
+   margin-right: 0.25rem;
+   color: #333;
+}
+
+.plan-price-box .amount {
+   font-size: 4rem;
+   font-weight: 700;
+   line-height: 1;
+   color: #333;
+}
+
+.plan-price-box .interval {
+   margin-left: 0.5rem;
+   font-size: 1.25rem;
+   color: #666;
+}
+
+.plan-trial-badge {
+   display: inline-block;
+   padding: 0.5rem 1rem;
+   background: #e8f5e9;
+   color: #2e7d32;
+   border-radius: 20px;
+   font-size: 0.875rem;
+   font-weight: 500;
+}
+
+/* Description */
+.plan-description {
+   color: #555;
+   line-height: 1.6;
+   margin-bottom: 2rem;
+}
+
+/* Features */
+.plan-features {
+   margin: 2rem 0;
+   padding: 2rem;
+   background: #f8fafc;
+   border-radius: 8px;
+}
+
+.plan-features h3 {
+   margin-bottom: 1.5rem;
+   color: #333;
+   font-size: 1.5rem;
+}
+
+.plan-features ul {
+   list-style: none;
+   padding: 0;
+   margin: 0;
+}
+
+.plan-features li {
+   display: flex;
+   align-items: center;
+   margin-bottom: 1rem;
+   font-size: 1.1rem;
+   color: #444;
+}
+
+.feature-icon {
+   margin-right: 1rem;
+   color: #4caf50;
+   font-weight: bold;
+}
+
+/* Action Buttons */
+.plan-action {
+   text-align: center;
+   margin-top: 2rem;
+   padding-top: 2rem;
+   border-top: 1px solid #eee;
+}
+
+.button {
+   display: inline-block;
+   padding: 1rem 2rem;
+   font-size: 1.125rem;
+   font-weight: 600;
+   text-align: center;
+   text-decoration: none;
+   border-radius: 6px;
+   transition: all 0.2s ease;
+   cursor: pointer;
+   width: 100%;
+   max-width: 300px;
+}
+
+.subscribe-button {
+   background: #4caf50;
+   color: white;
+   border: none;
+}
+
+.subscribe-button:hover {
+   background: #43a047;
+   transform: translateY(-1px);
+   box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+}
+
+.login-to-subscribe {
+   background: #2196f3;
+   color: white;
+   border: none;
+}
+
+.login-to-subscribe:hover {
+   background: #1e88e5;
+   transform: translateY(-1px);
+   box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
+}
+
+.button.secondary {
+   background: #f5f5f5;
+   color: #333;
+   border: 1px solid #ddd;
+}
+
+.button.secondary:hover {
+   background: #eeeeee;
+}
+
+.button:disabled {
+   opacity: 0.7;
+   cursor: not-allowed;
+   transform: none;
+}
+
+/* Notices */
+.current-plan-notice {
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   margin-bottom: 1rem;
+   color: #4caf50;
+   font-weight: 500;
+}
+
+.current-plan-notice .dashicons {
+   margin-right: 0.5rem;
+}
+
+.login-note,
+.trial-note {
+   margin-top: 1rem;
+   font-size: 0.875rem;
+   color: #666;
+}
+
+.login-note a {
+   color: #2196f3;
+   text-decoration: none;
+   font-weight: 500;
+}
+
+.login-note a:hover {
+   text-decoration: underline;
+}
+
+/* Loading State */
+.button .spinner {
+   display: inline-block;
+   width: 20px;
+   height: 20px;
+   margin-right: 0.5rem;
+   border: 2px solid rgba(255, 255, 255, 0.3);
+   border-radius: 50%;
+   border-top-color: #fff;
+   animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+   to {
+      transform: rotate(360deg);
+   }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+   .cobra-plan-single {
+      padding: 1.5rem;
+      margin: 1rem;
+   }
+
+   .plan-price-box .amount {
+      font-size: 3rem;
+   }
+
+   .plan-features {
+      padding: 1.5rem;
+   }
+}
+
+/* Success Stripe  */
+.cobra-success-wrapper {
+   max-width: 800px;
+   margin: 2rem auto;
+   padding: 2rem;
+   background: #fff;
+   border-radius: 12px;
+   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+.success-header {
+   text-align: center;
+   margin-bottom: 2rem;
+   padding-bottom: 2rem;
+   border-bottom: 1px solid #eee;
+}
+
+.success-icon {
+   margin-bottom: 1rem;
+}
+
+.success-header h1 {
+   margin: 0 0 1rem;
+   color: #2e7d32;
+   font-size: 2rem;
+}
+
+.success-message {
+   color: #666;
+   font-size: 1.1rem;
+}
+
+.subscription-details {
+   padding: 2rem;
+   background: #f8fafc;
+   border-radius: 8px;
+   margin: 2rem 0;
+}
+
+.plan-header {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   margin-bottom: 1.5rem;
+}
+
+.plan-price {
+   text-align: right;
+}
+
+.plan-price .amount {
+   font-size: 1.5rem;
+   font-weight: 600;
+   color: #333;
+}
+
+.plan-price .interval {
+   color: #666;
+}
+
+.details-grid {
+   display: grid;
+   gap: 1rem;
+   margin: 1.5rem 0;
+}
+
+.detail-row {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   padding: 0.75rem 0;
+   border-bottom: 1px solid #eee;
+}
+
+.detail-label {
+   color: #666;
+}
+
+.status-badge {
+   padding: 0.5rem 1rem;
+   border-radius: 20px;
+   font-size: 0.875rem;
+   font-weight: 500;
+}
+
+.status-trialing {
+   background: #e3f2fd;
+   color: #1976d2;
+}
+
+.status-active {
+   background: #e8f5e9;
+   color: #2e7d32;
+}
+
+.trial-notice {
+   background: #fff3e0;
+   padding: 1rem;
+   border-radius: 6px;
+   margin: 1rem 0;
+   display: flex;
+   align-items: center;
+}
+
+.trial-icon {
+   margin-right: 0.75rem;
+   font-size: 1.25rem;
+}
+
+.plan-features {
+   margin-top: 2rem;
+}
+
+.plan-features h3 {
+   margin-bottom: 1rem;
+   color: #333;
+}
+
+.plan-features ul {
+   list-style: none;
+   padding: 0;
+   margin: 0;
+}
+
+.plan-features li {
+   display: flex;
+   align-items: center;
+   margin-bottom: 0.75rem;
+   color: #444;
+}
+
+.feature-check {
+   color: #4caf50;
+   margin-right: 0.75rem;
+   font-weight: bold;
+}
+
+.success-actions {
+   display: flex;
+   gap: 1rem;
+   margin: 2rem 0;
+}
+
+.button {
+   display: inline-block;
+   padding: 0.75rem 1.5rem;
+   border-radius: 6px;
+   text-decoration: none;
+   font-weight: 500;
+   text-align: center;
+   transition: all 0.2s ease;
+}
+
+.primary-button {
+   background: #4caf50;
+   color: white;
+   flex: 2;
+}
+
+.primary-button:hover {
+   background: #43a047;
+   transform: translateY(-1px);
+}
+
+.secondary-button {
+   background: #f5f5f5;
+   color: #333;
+   flex: 1;
+}
+
+.secondary-button:hover {
+   background: #eeeeee;
+}
+
+.confirmation-notice {
+   background: #f5f5f5;
+   padding: 1rem;
+   border-radius: 6px;
+   display: flex;
+   align-items: center;
+   gap: 0.75rem;
+}
+
+.notice-icon {
+   font-size: 1.25rem;
+}
+
+@media (max-width: 768px) {
+   .cobra-success-wrapper {
+      margin: 1rem;
+      padding: 1.5rem;
+   }
+
+   .plan-header {
+      flex-direction: column;
+      text-align: center;
+      gap: 1rem;
+   }
+
+   .success-actions {
+      flex-direction: column;
+   }
+
+   .button {
+      width: 100%;
+   }
+}

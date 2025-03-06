@@ -1,0 +1,206 @@
+Here's a complete structure for the Cobra AI Features plugin with both required and optional files:
+
+```plaintext
+cobra-ai-features/
+├── cobra-ai-features.php              # [Required] Main plugin file
+│
+├── includes/                          # [Required] Core functionality
+│   ├── FeatureBase.php        # [Required] Base class for features
+│   ├── Admin.php              # [Required] Admin functionality
+│   ├── Database.php           # [Required] Database management
+│   ├── APIManager.php         # [Required] API functionality
+│   ├── Loader.php             # [Required] CLI commands
+│   └── Utilities              # [Required] Helper functions
+│       ├── Functions.php
+│       └── Validator.php
+│
+├── admin/                            # [Required] Admin interface
+│   ├── assets/                       # [Required] Admin assets
+│   │   ├── css/
+│   │   │   └── admin.css
+│   │   └── js/
+│   │       └── admin.js
+│   └── views/                        # [Required] Admin templates
+│       ├── dashboard.php
+│       ├── features.php
+│       └── settings.php
+│
+├── assets/                           # [Optional] Global assets
+│   ├── css/
+│   │   └── public.css               # [Optional] Public styles
+│   ├── js/ 
+│   │   └── public.js                # [Optional] Public scripts
+│   ├── images/                     # Images 
+│   │   ├── logo.svg
+│   │   └── icons/
+│   └── help.html                     # [Required] Plugin documentation
+│
+├── features/                         # [Required] Features directory
+│   │
+│   ├── feature-name/                  # Example feature structure
+│   │   ├── Feature.php                 # [Required] Main feature class
+│       ── views/
+│   │   │   ├── admin/                  
+│   │   │       └── settings.php      # Parameter settings
+│   │   ├── includes/                  
+│   │   │   ├── class-api.php           # [Optional] API class
+│   │   │   └── class-admin.php       # [Optional] Admin class
+│   │   ├── assets/                   # [Optional] Feature assets
+│   │   │   ├── css/
+│   │   │   │   ├── faq.css
+│   │   │   │   └── admin.css
+│   │   │   ├── js/
+│   │   │   │   ├── faq.js
+│   │   │   │   └── admin.js
+│   │   │   └── help.html               # [Required] Feature documentation
+│   │   └── templates/                # [Optional] Feature templates
+│   │
+│   └── feature-two/                  # Another feature structure ...
+│
+├── languages/                       # Traductions
+│   ├── cobra-ai.pot
+│   ├── cobra-ai-fr_FR.po
+│   └── cobra-ai-fr_FR.mo
+│
+└── vendor/                          # Dépendances Composer
+├── composer.json                   # Configuration Composer
+└── uninstall.php                  #  Désinstallation du plugin
+
+File Requirements:
+
+1. Required Core Files:
+   - cobra-ai-features.php
+   - includes/class-feature-base.php
+   - includes/class-admin.php
+   - includes/class-database.php
+   - admin/views/features.php
+   - admin/views/dashboard.php
+   - admin/assets/css/admin.css
+   - admin/assets/js/admin.js
+
+2. Required for Each Feature:
+   - features/{feature-name}/class-{feature-name}.php
+   - features/{feature-name}/assets/help.html
+
+3. Required if Feature Has Settings:
+   - features/{feature-name}/admin/class-admin.php
+   - features/{feature-name}/admin/views/settings.php
+
+4. Required if Feature Has Database:
+   - features/{feature-name}/database/class-database.php
+   - features/{feature-name}/database/tables.php
+
+5. Optional Files:
+   - Any additional assets (CSS, JS, images)
+   - Additional templates
+   - CLI commands
+   - API integrations
+   - Language files
+   - Vendor dependencies
+```
+
+Common Features Base Requirements:
+
+1. **Credits Feature**:
+   ```plaintext
+   features/credits/
+   ├── class-credits.php              # [Required]
+   ├── database/                      # [Required]
+   │   ├── class-database.php
+   │   └── tables.php
+   ├── admin/                         # [Required]
+   │   ├── class-admin.php
+   │   └── views/
+   │       └── settings.php
+   ├── assets/
+   │   └── help.html                  # [Required]
+   └── templates/                     # [Required]
+       ├── credits-grid.php
+       └── credits-table.php
+   ```
+
+2. **Feature with API**:
+   ```plaintext
+   features/api-feature/
+   ├── class-api-feature.php          # [Required]
+   ├── includes/                      # [Required]
+   │   └── class-api.php
+   ├── admin/                         # [Required]
+   │   ├── class-admin.php
+   │   └── views/
+   │       └── settings.php
+   └── assets/
+       └── help.html                  # [Required]
+   ```
+
+3. **Simple Feature**:
+   ```plaintext
+   features/simple-feature/
+   ├── class-simple-feature.php       # [Required]
+   ├── assets/
+   │   └── help.html                  # [Required]
+   └── templates/                     # [Optional]
+       └── display.php
+   ```
+
+Would you like me to provide:
+1. Template content for any specific file?
+2. Detailed feature implementation guide?
+3. Database schema examples?
+4. API integration examples?
+
+
+--------------
+<h2>create table in db</h2>
+<pre>
+This structure provides:
+1. Modular database management for each feature
+2. Clean installation/uninstallation
+3. Version control for database schemas
+4. Safe table creation and removal
+5. Easy access to table names
+</pre>
+
+The database management system is based on the following principles:
+<pre>
+features/
+└── credits/
+    ├── database/
+    │   ├── class-database.php    # Database management class
+    │   ├── tables.php            # Table definitions
+    │   └── migrations.php        # Database migrations
+    └── class-credits.php          # Credits management class
+</pre>
+
+For each feature that needs database tables, create a similar structure. For example, if you have a "rewards" feature:
+
+```php
+// features/rewards/database/class-database.php
+class CobraAI_Rewards_Database extends CobraAI_Feature_Database_Base {
+    protected function init_tables() {
+        global $wpdb;
+        $this->tables = [
+            'rewards' => $wpdb->prefix . 'cobra_rewards',
+            'rewards_log' => $wpdb->prefix . 'cobra_rewards_log'
+        ];
+    }
+
+    protected function get_table_schemas($charset_collate) {
+        $schemas = [];
+        
+        // Rewards table
+        $schemas[] = "CREATE TABLE {$this->tables['rewards']} (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            // ... table schema ...
+        ) $charset_collate;";
+
+        // Rewards log table
+        $schemas[] = "CREATE TABLE {$this->tables['rewards_log']} (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            // ... table schema ...
+        ) $charset_collate;";
+
+        return $schemas;
+    }
+}
+```

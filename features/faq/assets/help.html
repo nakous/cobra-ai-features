@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        .help-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .help-content h1 {
+            color: #1d2327;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+        }
+
+        .help-content h2 {
+            color: #2271b1;
+            margin-top: 30px;
+        }
+
+        .help-content h3 {
+            color: #1d2327;
+            margin-top: 25px;
+        }
+
+        .help-content code {
+            background: #f0f0f1;
+            padding: 3px 5px;
+            border-radius: 3px;
+            font-family: Monaco, Consolas, "Andale Mono", "DejaVu Sans Mono", monospace;
+        }
+
+        .help-content pre {
+            background: #f6f7f7;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        .help-content .tip {
+            background: #f0f6fc;
+            border-left: 4px solid #2271b1;
+            padding: 12px 24px;
+            margin: 1.5em 0;
+        }
+
+        .help-content .warning {
+            background: #fcf9e8;
+            border-left: 4px solid #dba617;
+            padding: 12px 24px;
+            margin: 1.5em 0;
+        }
+
+        .help-section {
+            margin-bottom: 40px;
+        }
+
+        .step {
+            margin-bottom: 20px;
+            padding-left: 24px;
+            position: relative;
+        }
+
+        .step::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #2271b1;
+        }
+    </style>
+</head>
+<body>
+    <div class="help-content">
+        <h1>FAQ Feature Documentation</h1>
+
+        <div class="help-section">
+            <h2>Getting Started</h2>
+            <p>The FAQ feature allows you to create and manage a comprehensive FAQ section on your website. You can organize FAQs into categories, enable search functionality, and customize the display options.</p>
+
+            <div class="tip">
+                <strong>Quick Start:</strong> Use the shortcode <code>[cobra_faq]</code> to display your FAQs on any page or post.
+            </div>
+        </div>
+
+        <div class="help-section">
+            <h2>Creating FAQs</h2>
+            <h3>Adding a New FAQ</h3>
+            <div class="step">Navigate to <strong>FAQ > Add New</strong> in your WordPress dashboard.</div>
+            <div class="step">Enter the question in the title field.</div>
+            <div class="step">Add the answer in the main content editor.</div>
+            <div class="step">Assign categories if needed.</div>
+            <div class="step">Click "Publish" to make the FAQ live.</div>
+        </div>
+
+        <div class="help-section">
+            <h2>Organizing FAQs</h2>
+            <h3>Categories</h3>
+            <p>You can organize your FAQs into categories for better organization and filtering:</p>
+            <div class="step">Go to <strong>FAQ > Categories</strong></div>
+            <div class="step">Add new categories or edit existing ones</div>
+            <div class="step">Assign FAQs to categories when creating or editing them</div>
+        </div>
+
+        <div class="help-section">
+            <h2>Displaying FAQs</h2>
+            <h3>Basic Shortcode</h3>
+            <pre>[cobra_faq]</pre>
+
+            <h3>Advanced Shortcode Options</h3>
+            <pre>[cobra_faq category="general" limit="5" orderby="views" order="DESC"]</pre>
+
+            <p>Available parameters:</p>
+            <ul>
+                <li><code>category</code> - Display FAQs from a specific category</li>
+                <li><code>limit</code> - Number of FAQs to display</li>
+                <li><code>orderby</code> - Sort by: date, title, or views</li>
+                <li><code>order</code> - Sort order: DESC or ASC</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h2>Customizing Display</h2>
+            <h3>Settings Options</h3>
+            <p>Navigate to <strong>Cobra AI > FAQ Settings</strong> to customize:</p>
+            <ul>
+                <li>FAQ title text</li>
+                <li>Number of FAQs per page</li>
+                <li>Category display options</li>
+                <li>Sorting preferences</li>
+                <li>Footer text and link</li>
+                <li>Pagination style (pagination or load more)</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h2>Search Functionality</h2>
+            <h3>Configuration</h3>
+            <p>In the settings, you can:</p>
+            <ul>
+                <li>Enable/disable search functionality</li>
+                <li>Enable/disable autocomplete</li>
+                <li>Set minimum characters for search</li>
+                <li>Show/hide category filter in search</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h2>Styling Options</h2>
+            <h3>Available Themes</h3>
+            <ul>
+                <li><strong>Default</strong> - Standard clean layout</li>
+                <li><strong>Minimal</strong> - Simplified design with less visual elements</li>
+                <li><strong>Boxed</strong> - Each FAQ in a distinct box with shadow</li>
+            </ul>
+
+            <h3>Additional Style Options</h3>
+            <ul>
+                <li>Enable/disable animations</li>
+                <li>Enable/disable search result highlighting</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h2>Tracking and Analytics</h2>
+            <p>The FAQ feature automatically tracks:</p>
+            <ul>
+                <li>View counts for each FAQ</li>
+                <li>Most viewed FAQs</li>
+                <li>User feedback (helpful/not helpful)</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h2>Best Practices</h2>
+            <div class="tip">
+                <h3>Writing Effective FAQs</h3>
+                <ul>
+                    <li>Keep questions clear and concise</li>
+                    <li>Group related questions into categories</li>
+                    <li>Use plain language that your users understand</li>
+                    <li>Regular update your FAQs based on user feedback</li>
+                </ul>
+            </div>
+
+            <div class="warning">
+                <h3>Common Issues</h3>
+                <ul>
+                    <li>Ensure your theme's styling doesn't conflict with FAQ styles</li>
+                    <li>Test pagination with large numbers of FAQs</li>
+                    <li>Verify search functionality works with your content</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="help-section">
+            <h2>Need More Help?</h2>
+            <p>If you need additional assistance:</p>
+            <ul>
+                <li>Check our online documentation</li>
+                <li>Contact support through your account dashboard</li>
+                <li>Submit a feature request or bug report</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
