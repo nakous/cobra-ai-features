@@ -1,0 +1,58 @@
+Create new feature for register user with email verification and admin approval:
+create shortcode:
+    login 
+    register
+    forgot password
+    reset password
+    account
+    logout
+    comfirm_registration
+
+setting 
+    tab 1
+        disable menu admin for user (checkbox)
+        use recaptcha (checkbox) , field disabled if feature recaptcha not active and show msg.
+        defautl role for register (select roles)
+    tab 2:
+
+        redirect after login (link)
+        redirect after logout (link)
+        page for login (select with all page)
+        page for register (select with all page)
+        page for forgot password (select with all page)
+        page for reset password (select with all page)
+        page for account (select with all page)
+        page for logout (link)
+        page for policy (link)
+    tab 3: email text (textarea with html editor)
+        email global template
+        email text for register comfimation with link to verify email 
+        email text to comfirm the virefication account
+    tab 4: register form field settings (enbale or disable / required or not)
+        username (required)
+        email (required)
+        password (required)
+        confirm password (required)
+        first name
+        last name
+        phone
+        address
+        city
+        state
+        zip
+        country
+        company
+        website
+        about
+        avatar
+
+Admin:
+    user list : add col for user verified or not
+    user : add all field in user profile
+
+use case:
+    user registered with role Pending ,
+    user recieve email with link to verify email
+    user click on link and email verified and role change to subscriber
+    admin can active user from admin panel
+    admin can see all user with role pending and active user

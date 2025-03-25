@@ -1,0 +1,42 @@
+1. Global Stripe Plugin
+Purpose: This plugin serves as the foundation for handling Stripe API integration, authentication, and global settings.
+Core Features:
+API Key Storage: Store and manage both test and live API keys.
+Global Webhook Management: Set up a centralized webhook handler that other plugins can connect to.
+Event Dispatcher: Trigger custom hooks for Stripe events like payment_intent.succeeded, invoice.payment_failed, etc.
+Logging and Debugging: Provide a logging mechanism accessible by other Stripe plugins to track events and errors.
+Extension Hooks: Add hooks to allow other plugins to listen for Stripe events and use API key access.
+
+
+2. Standalone Product Stripe Plugin
+Purpose: Manages standalone products that use Stripe for payment without needing WooCommerce.
+Dependencies: Requires the Global Stripe Plugin for API and webhook functionality.
+Core Features:
+Product Management: Create and manage standalone products with fields for title, description, price, billing interval, and optional trial period.
+One-Time and Subscription Payments: Implement checkout forms for both types, with the option for trial periods.
+Payment Processing: Use the global Stripe plugin’s API keys and connect payments to a checkout form.
+Order and Invoice Display: Show order history and invoices related to standalone products in an admin panel and user dashboard.
+Hooks: Utilize hooks from the Global Stripe Plugin to handle payments, such as stripe_payment_success and stripe_payment_failed.
+
+
+3. WooCommerce Stripe Integration Plugin
+Purpose: Integrates Stripe payments with WooCommerce, providing payment processing for WooCommerce products.
+Dependencies: Requires the Global Stripe Plugin for access to API settings and payment processing.
+Core Features:
+WooCommerce Payment Gateway: Extend WooCommerce’s payment gateway to use Stripe for one-time and subscription payments.
+Custom Checkout Experience: Customize the WooCommerce checkout page to process payments via Stripe.
+Order Management: Sync WooCommerce orders with Stripe transactions, handling refunds and cancellations via Stripe.
+Webhook Integration: Use the Global Stripe Plugin’s webhook listener to update WooCommerce order statuses based on Stripe events.
+Hooks and Filters: Add WooCommerce-specific hooks for payment success, failure, and status updates in the order management system.
+
+
+4. Subscription Plugin with Custom Content Type for Plans
+Purpose: Focus on managing subscription plans and linking them to content or services.
+Dependencies: Requires the Global Stripe Plugin for API and webhook handling, and optionally the Standalone Product plugin if subscription products are not in WooCommerce.
+Core Features:
+Plan Content Type: Define a custom post type (e.g., subscription_plan) with fields for interval, price, trial period, and Stripe Plan ID.
+Subscription Management: Use Stripe to manage subscription creation, upgrades, and downgrades.
+Content Access Control: Restrict content based on active subscriptions by linking plans to specific content.
+Automatic Billing and Renewal: Set up subscription renewal processes, with Stripe handling billing intervals and trial periods.
+Notification System: Send email notifications for subscription events, such as renewal reminders and cancellations.
+Hooks: Use the Global Stripe Plugin’s hooks to update subscription status in response to events like customer.subscription.created or customer.subscription.deleted.

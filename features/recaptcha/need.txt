@@ -1,0 +1,28 @@
+Features
+Add reCaptcha to:
+    Registration form
+    Login form
+    Reset password form
+    Protected post password form
+    Comments form
+    Contact Form
+    Testimonials
+    Custom form
+Hide reCaptcha for the allowlisted IP addresses
+Disable the submit button
+Validity check of keys in admin panel
+Available reCaptcha themes for Version 2:
+    Light (default)
+    Dark
+ 
+ 
+Supports reCaptcha:
+    Version 2
+    Version 3
+    Invisible reCAPTCHA
+ 
+ Settings:
+ manager fields for reCaptcha (site key, secret key, theme, size, type, badge, allowlisted IP addresses)
+ can active for all selected form (default: all)
+ can use reCaptcha for Custom form
+

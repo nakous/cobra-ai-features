@@ -19,7 +19,9 @@
             this.$email = $('#email');
             this.$submitButton = this.$form.find('button[type="submit"]');
 
-            this.initializeHandlers();
+            if (this.$form.length) {
+                this.initializeHandlers();
+            }
         }
 
         initializeHandlers() {
@@ -59,35 +61,35 @@
             if (password.length >= PASSWORD_CRITERIA.minLength) {
                 score++;
             } else {
-                feedback.push(cobraRegister.i18n.passwordTooShort);
+                feedback.push(cobraAIRegister.i18n.passwordTooShort);
             }
 
             // Check uppercase
             if (PASSWORD_CRITERIA.hasUpperCase.test(password)) score++;
-            else feedback.push(cobraRegister.i18n.passwordNeedsUpper);
+            else feedback.push(cobraAIRegister.i18n.passwordNeedsUpper);
 
             // Check lowercase
             if (PASSWORD_CRITERIA.hasLowerCase.test(password)) score++;
-            else feedback.push(cobraRegister.i18n.passwordNeedsLower);
+            else feedback.push(cobraAIRegister.i18n.passwordNeedsLower);
 
             // Check numbers
             if (PASSWORD_CRITERIA.hasNumbers.test(password)) score++;
-            else feedback.push(cobraRegister.i18n.passwordNeedsNumber);
+            else feedback.push(cobraAIRegister.i18n.passwordNeedsNumber);
 
             // Check special characters
             if (PASSWORD_CRITERIA.hasSpecialChar.test(password)) score++;
-            else feedback.push(cobraRegister.i18n.passwordNeedsSpecial);
+            else feedback.push(cobraAIRegister.i18n.passwordNeedsSpecial);
 
             // Calculate percentage
             const strengthPercentage = (score / 5) * 100;
             
             // Get strength text
             let strengthText = '';
-            if (score < 2) strengthText = cobraRegister.i18n.veryWeak;
-            else if (score < 3) strengthText = cobraRegister.i18n.weak;
-            else if (score < 4) strengthText = cobraRegister.i18n.medium;
-            else if (score < 5) strengthText = cobraRegister.i18n.strong;
-            else strengthText = cobraRegister.i18n.veryStrong;
+            if (score < 2) strengthText = cobraAIRegister.i18n.veryWeak;
+            else if (score < 3) strengthText = cobraAIRegister.i18n.weak;
+            else if (score < 4) strengthText = cobraAIRegister.i18n.medium;
+            else if (score < 5) strengthText = cobraAIRegister.i18n.strong;
+            else strengthText = cobraAIRegister.i18n.veryStrong;
 
             // Add feedback if password is weak
             if (score < 3 && feedback.length) {
@@ -139,11 +141,11 @@
         }
 
         showPasswordMatchSuccess($feedback) {
-            this.updatePasswordMatchFeedback($feedback, cobraRegister.i18n.passwordsMatch, 'success');
+            this.updatePasswordMatchFeedback($feedback, cobraAIRegister.i18n.passwordsMatch, 'success');
         }
 
         showPasswordMatchError($feedback) {
-            this.updatePasswordMatchFeedback($feedback, cobraRegister.i18n.passwordsMismatch, 'error');
+            this.updatePasswordMatchFeedback($feedback, cobraAIRegister.i18n.passwordsMismatch, 'error');
         }
 
         updatePasswordMatchFeedback($feedback, message, type) {
@@ -172,11 +174,11 @@
 
         checkAvailability(type, value, $field) {
             $.ajax({
-                url: cobraRegister.ajaxUrl,
+                url: cobraAIRegister.ajaxUrl,
                 type: 'POST',
                 data: {
                     action: 'cobra_check_availability',
-                    nonce: cobraRegister.nonce,
+                    nonce: cobraAIRegister.nonce,
                     type: type,
                     value: value
                 },
@@ -192,7 +194,7 @@
                     }
                 },
                 error: () => {
-                    this.showAvailabilityError($field, cobraRegister.i18n.checkFailed);
+                    this.showAvailabilityError($field, cobraAIRegister.i18n.checkFailed);
                 },
                 complete: () => {
                     $field.removeClass('checking');
@@ -207,7 +209,7 @@
         showAvailabilitySuccess($field) {
             this.updateAvailabilityFeedback(
                 $field,
-                cobraRegister.i18n.available,
+                cobraAIRegister.i18n.available,
                 'success'
             );
         }
@@ -234,11 +236,11 @@
             if ($input.attr('type') === 'password') {
                 $input.attr('type', 'text');
                 $icon.removeClass('dashicons-visibility').addClass('dashicons-hidden');
-                $button.attr('aria-label', cobraRegister.i18n.hidePassword);
+                $button.attr('aria-label', cobraAIRegister.i18n.hidePassword);
             } else {
                 $input.attr('type', 'password');
                 $icon.removeClass('dashicons-hidden').addClass('dashicons-visibility');
-                $button.attr('aria-label', cobraRegister.i18n.showPassword);
+                $button.attr('aria-label', cobraAIRegister.i18n.showPassword);
             }
         }
 
@@ -261,20 +263,20 @@
             this.$form.find('[required]').each((index, element) => {
                 const $field = $(element);
                 if (!$field.val()) {
-                    this.showFieldError($field, cobraRegister.i18n.fieldRequired);
+                    this.showFieldError($field, cobraAIRegister.i18n.fieldRequired);
                     isValid = false;
                 }
             });
 
             // Check password strength
             if (this.$password.val() && !this.isPasswordStrengthAcceptable()) {
-                this.showFieldError(this.$password, cobraRegister.i18n.passwordTooWeak);
+                this.showFieldError(this.$password, cobraAIRegister.i18n.passwordTooWeak);
                 isValid = false;
             }
 
             // Check password match
             if (this.$password.val() !== this.$confirmPassword.val()) {
-                this.showFieldError(this.$confirmPassword, cobraRegister.i18n.passwordsMismatch);
+                this.showFieldError(this.$confirmPassword, cobraAIRegister.i18n.passwordsMismatch);
                 isValid = false;
             }
 
@@ -304,6 +306,47 @@
     // Initialize when document is ready
     $(document).ready(() => {
         new RegistrationForm();
-    });
 
+     
+    });
+    // $('.toggle-password').on('click', function() {
+    //     const $button = $(this);
+    //     const $input = $button.siblings('input');
+    //     const $icon = $button.find('.dashicons');
+
+    //     if ($input.attr('type') === 'password') {
+    //         $input.attr('type', 'text');
+    //         $icon.removeClass('dashicons-visibility').addClass('dashicons-hidden');
+    //         $button.attr('aria-label', '<?php echo esc_js(__('Hide password', 'cobra-ai')); ?>');
+    //     } else {
+    //         $input.attr('type', 'password');
+    //         $icon.removeClass('dashicons-hidden').addClass('dashicons-visibility');
+    //         $button.attr('aria-label', '<?php echo esc_js(__('Show password', 'cobra-ai')); ?>');
+    //     }
+    // });
+    
 })(jQuery);
+jQuery(document).ready(function($) {
+ 
+    
+    $('.toggle-password').on('click', function() {
+        const $button = $(this);
+        const $input = $button.parent().find('input');
+        const $icon = $button.find('.eye-icon');
+        
+       
+        
+        if ($input.attr('type') === 'password') {
+            $input.attr('type', 'text');
+            $icon.removeClass('fa-eye').addClass('fa-eye-slash');
+            $button.attr('aria-label', 'Hide password');
+           
+        } else {
+            $input.attr('type', 'password');
+            $icon.removeClass('fa-eye-slash').addClass('fa-eye');
+            $button.attr('aria-label', 'Show password');
+            
+        }
+         
+    });
+});

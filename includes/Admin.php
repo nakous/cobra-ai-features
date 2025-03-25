@@ -116,7 +116,7 @@ class Admin
 
         // Sanitize and save settings
         $settings = isset($_POST['settings']) ? (array)$_POST['settings'] : [];
-        $sanitized = $this->sanitize_settings($settings);
+        $sanitized = $feature->sanitize_settings($settings);
 
 
 

@@ -183,7 +183,7 @@ class Feature extends FeatureBase
 
         // Custom roles
         add_role('pending', 'Pending', []);
-        
+
         $this->shortcode->short_add_action();
     }
 
@@ -208,7 +208,7 @@ class Feature extends FeatureBase
     public function add_user_columns($columns): array
     {
         $columns['verified'] = __('Email Verified', 'cobra-ai');
-        $columns['status'] = __('Status', 'cobra-ai');
+        // $columns['status'] = __('Status', 'cobra-ai');
         return $columns;
     }
 
@@ -221,9 +221,9 @@ class Feature extends FeatureBase
             case 'verified':
                 return get_user_meta($user_id, '_email_verified', true) ? '✅' : '❌';
 
-            case 'status':
-                $user = get_user_by('id', $user_id);
-                return !empty($user->roles) ? ucfirst($user->roles[0]) : 'None';
+            // case 'status':
+            //     $user = get_user_by('id', $user_id);
+            //     return !empty($user->roles) ? ucfirst($user->roles[0]) : 'None';
 
             default:
                 return $value;
@@ -284,10 +284,10 @@ class Feature extends FeatureBase
     {
         if (!current_user_can('manage_options')) {
             add_filter('show_admin_bar', '__return_false');
-            add_action('admin_init', function () {
-                wp_redirect(home_url());
-                exit;
-            });
+            // add_action('admin_init', function () {
+            //     wp_redirect(home_url());
+            //     exit;
+            // });
         }
     }
 
@@ -377,34 +377,6 @@ class Feature extends FeatureBase
             // Additional email template validation if needed
         }
 
-        // Validate fields settings
-        /* if (isset($settings['fields'])) {
-             echo "default fields<br>";
-            print_r($defaults['fields']);
-            echo "settings fields<br>";
-            print_r($settings['fields']);
-            exit;
-            $default_fields = $defaults['fields'];
-
-            // Ensure all default fields exist
-            foreach ($default_fields as $field_key => $field_config) {
-                if (!isset($settings['fields'][$field_key])) {
-                    $settings['fields'][$field_key] = $field_config;
-                } else {
-                    // Preserve required fields settings
-                    if (in_array($field_key, ['username', 'email', 'password', 'confirm_password'])) {
-                        $settings['fields'][$field_key]['enabled'] = true;
-                        $settings['fields'][$field_key]['required'] = true;
-                    } else {
-                        $settings['fields'][$field_key] = wp_parse_args(
-                            $settings['fields'][$field_key],
-                            $field_config
-                        );
-                    }
-                }
-            }
-        }
-*/
         if (isset($settings['fields'])) {
             // Start with a fresh fields array
             $validated_fields = [];
@@ -603,5 +575,15 @@ class Feature extends FeatureBase
             'passwordRequirements' => __('Password does not meet the requirements', 'cobra-ai'),
             'passwordMismatch' => __('Passwords do not match', 'cobra-ai')
         ];
+    }
+
+    protected function is_html_allowed_field(string $key): bool
+    {
+        $allowed_html_fields = ['global_template', 'verification', 'confirmation'];
+        // log this
+
+        error_log('is_html_allowed_field: ' . $key);
+
+        return in_array($key, $allowed_html_fields, true);
     }
 }

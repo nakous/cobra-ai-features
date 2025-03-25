@@ -1,0 +1,66 @@
+creat new feature credits:
+
+settings:
+    type of credits: (checkbox multi choose) subscription, coupon, gift, reward, discount, bonus , free, paid, etc... 
+    unity of credits: ( )  points , currency
+    credits name: credit , money
+    credits symbol: points,$, €, £, etc...
+
+order
+ 1-subscription
+ 2-paid
+ 3-free
+ 4-coupon
+ 
+feature database:
+
+-table credits(
+    id, user, type of credit, id type, comment, credit, created, status, start date, expiration date, consumed 
+    )
+    status: pending / active / deleted / expired
+    expiration date can be null
+    start date, expiration date is date time
+-solde credit = active credit - active consumed saved in user meta
+
+hook 
+    -increase credit by user id by decrease consumed
+    -decrease credit by user id by 
+    -hook to add new type of credit
+
+functions
+    -add credit for user 
+    -remove credit by id
+    -update credit by id
+    -get total credit by user id
+    -get total credit by user consumed
+
+    -get history of credit by user id
+
+Cron job
+    -check expiration date if less than now and if credit< consumed  than change status to expired
+    -send notification to user when credit is expired and he not have other active credit
+admin: 
+    -new page : 
+        --display table of credits with filter by mail or name of user, type of credit, status, and action to edit credit
+    -users :
+        --users list : 
+            ---add column  total active consumed, total active credit 
+            --- add action 'new credit' for user
+        --user profile : 
+            ---add card total credit, total consumed, total active credit, , expiration date of active credit
+            ---add tab credit history
+   
+
+features/
+  Credits/
+    ├── Feature.php             # Main feature class
+    └── views/
+    │       ├── settings.php    # Settings page template
+    │       ├── credits.php     # Credits management page
+    │       └── user-profile.php # User profile credits section
+    ├── includes/
+    │   ├── CreditManager.php   # Core credit management logic
+    │   ├── CreditType.php      # Credit type handler
+    │   ├── CreditAdmin.php       
+    │   └── CreditCron.php      # Cron job handler
+ 

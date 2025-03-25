@@ -4,14 +4,18 @@ defined('ABSPATH') || exit;
 ?>
 
 <div class="cobra-login-wrapper">
-
-
-
     <?php
     // Show message if account just verified
     if (isset($_GET['verified']) && $_GET['verified'] === '1'): ?>
         <div class="cobra-message success">
             <p><?php _e('Your email has been verified successfully. You can now login.', 'cobra-ai'); ?></p>
+        </div>
+    <?php endif; ?>
+    <?php
+    // Show message if account is not verified because of verification link expired
+    if (isset($_GET['verified']) && $_GET['verified'] === '0'): ?>
+        <div class="cobra-message error">
+            <p><?php _e('The verification link has expired. Please login to resend the verification email.', 'cobra-ai'); ?></p>
         </div>
     <?php endif; ?>
     <?php echo $this->render_error_messages(); ?>
@@ -27,7 +31,7 @@ defined('ABSPATH') || exit;
             <input type="text"
                 name="username"
                 id="username"
-                 value="<?php echo $this->get_field_value('username', 'login'); ?>"
+                value="<?php echo $this->get_field_value('username', 'login'); ?>"
                 required
                 autocomplete="username">
         </div>
@@ -44,14 +48,14 @@ defined('ABSPATH') || exit;
                     required
                     autocomplete="current-password">
                 <button type="button" class="toggle-password" aria-label="<?php esc_attr_e('Toggle password visibility', 'cobra-ai'); ?>">
-                    <span class="dashicons dashicons-visibility"></span>
+                    <i class="eye-icon fas fa-eye"></i>
                 </button>
             </div>
         </div>
 
         <div class="cobra-form-row remember-me">
             <label>
-                <input type="checkbox" name="remember" value="1"  <?php checked($this->get_field_value('remember', 'login'), '1'); ?>>
+                <input type="checkbox" name="remember" value="1" <?php checked($this->get_field_value('remember', 'login'), '1'); ?>>
                 <?php _e('Remember me', 'cobra-ai'); ?>
             </label>
         </div>
@@ -295,73 +299,59 @@ defined('ABSPATH') || exit;
 <script>
     jQuery(document).ready(function($) {
         // Password visibility toggle
-        $('.toggle-password').on('click', function() {
-            const $button = $(this);
-            const $input = $button.siblings('input');
-            const $icon = $button.find('.dashicons');
-
-            if ($input.attr('type') === 'password') {
-                $input.attr('type', 'text');
-                $icon.removeClass('dashicons-visibility').addClass('dashicons-hidden');
-                $button.attr('aria-label', '<?php echo esc_js(__('Hide password', 'cobra-ai')); ?>');
-            } else {
-                $input.attr('type', 'password');
-                $icon.removeClass('dashicons-hidden').addClass('dashicons-visibility');
-                $button.attr('aria-label', '<?php echo esc_js(__('Show password', 'cobra-ai')); ?>');
-            }
-        });
+     
 
         // Form submission
-        $('#cobra-login-form-sss').on('submit', function(e) {
+        // $('#cobra-login-form-sss').on('submit', function(e) {
 
-            e.preventDefault();
-            const $form = $(this);
-            const $button = $form.find('button[type="submit"]');
-            // Add loading state
-            $button.addClass('loading');
+        //     e.preventDefault();
+        //     const $form = $(this);
+        //     const $button = $form.find('button[type="submit"]');
+        //     // Add loading state
+        //     $button.addClass('loading');
 
-            // // Store button text
-            $button.data('original-text', $button.text());
-            const formData = new FormData();
-            formData.append('action', 'cobra_process_login');
-            formData.append('username', $('#username').val());
-            formData.append('password', $('#password').val());
-            formData.append('remember', $('input[name="remember"]').is(':checked'));
-            formData.append('_wpnonce', $('input[name="_wpnonce"]').val());
+        //     // // Store button text
+        //     $button.data('original-text', $button.text());
+        //     const formData = new FormData();
+        //     formData.append('action', 'cobra_process_login');
+        //     formData.append('username', $('#username').val());
+        //     formData.append('password', $('#password').val());
+        //     formData.append('remember', $('input[name="remember"]').is(':checked'));
+        //     formData.append('_wpnonce', $('input[name="_wpnonce"]').val());
 
-            // Add reCAPTCHA
-            if (typeof grecaptcha !== 'undefined') {
-                formData.append('g-recaptcha-response', grecaptcha.getResponse());
-            }
-            const ajaxurl = "<?php echo admin_url('admin-ajax.php'); ?>";
-            $.ajax({
-                url: ajaxurl,
-                type: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function(response) {
-                    if (response.success) {
-                        window.location.href = response.data.redirect_url;
-                    } else {
-                        $('.cobra-message.error').remove();
-                        $form.prepend(`<div class="cobra-message error"><p>${response.data.message}</p></div>`);
-                        if (typeof grecaptcha !== 'undefined') {
-                            grecaptcha.reset();
-                        }
-                    }
-                },
-                error: function() {
-                    $('.cobra-message.error').remove();
-                    $form.prepend(`<div class="cobra-message error"><p><?php _e('An error occurred. Please try again.', 'cobra-ai'); ?></p></div>`);
-                    if (typeof grecaptcha !== 'undefined') {
-                        grecaptcha.reset();
-                    }
-                },
-                complete: function() {
-                    $button.removeClass('loading');
-                }
-            });
-        });
+        //     // Add reCAPTCHA
+        //     if (typeof grecaptcha !== 'undefined') {
+        //         formData.append('g-recaptcha-response', grecaptcha.getResponse());
+        //     }
+        //     const ajaxurl = "<?php echo admin_url('admin-ajax.php'); ?>";
+        //     $.ajax({
+        //         url: ajaxurl,
+        //         type: 'POST',
+        //         data: formData,
+        //         processData: false,
+        //         contentType: false,
+        //         success: function(response) {
+        //             if (response.success) {
+        //                 window.location.href = response.data.redirect_url;
+        //             } else {
+        //                 $('.cobra-message.error').remove();
+        //                 $form.prepend(`<div class="cobra-message error"><p>${response.data.message}</p></div>`);
+        //                 if (typeof grecaptcha !== 'undefined') {
+        //                     grecaptcha.reset();
+        //                 }
+        //             }
+        //         },
+        //         error: function() {
+        //             $('.cobra-message.error').remove();
+        //             $form.prepend(`<div class="cobra-message error"><p><?php _e('An error occurred. Please try again.', 'cobra-ai'); ?></p></div>`);
+        //             if (typeof grecaptcha !== 'undefined') {
+        //                 grecaptcha.reset();
+        //             }
+        //         },
+        //         complete: function() {
+        //             $button.removeClass('loading');
+        //         }
+        //     });
+        // });
     });
 </script>

@@ -1,0 +1,79 @@
+settings
+    AI : list of the feature AI (openai , claude , Gemini  , perplexity )
+    fields : list of the fields of each AI (keys , config , endpoint , model, max token , temperature , top p , frequency penalty , presence penalty , stop sequence...)
+    limit : limit of the request by day by user
+    log the response of the api and the request and details of consumed credit
+    message : message to display when the user reach the limit of the request
+    status : active / inactive
+    mantance : active / inactive
+    mantance message : message to display when the feature is in mantance
+    mantance start date : date time
+    mantance end date : date time
+    mantance user  role exclude : list of the user role that can access to the feature when in mantance
+    display trackings in user profile : active / inactive
+    active api rest
+database
+    -table trackings(
+     id , user, prompt, ai, response, created, consumed , status , ip , data ,response_type(text, image, json)
+     )
+admin 
+    -new page : 
+        --display table of trackings with filter by   ai,  status,   response_type
+    -users :
+        --users list : 
+            ---add column  total request
+            --- add action 'list trackings' for user
+        --user profile : 
+            ---add action to go to'list trackings' for user
+    
+hook 
+    after response  recived from the api
+    before response send to the user
+    after save the tracking in the database
+
+api
+    get trackings by user id
+    send request to the api and git response
+
+profile
+    -add tab trackings
+    -display the list of trackings with filter by prompt, ai, response, created, consumed, status, ip, data, response_type
+    -display the details of the tracking
+    -display the consumed credit of the user
+
+js :
+for all field  display icon only if cursur hover or focus in textarea or input type text
+ 
+
+
+features/
+  AI/
+    ├── Feature.php               # Main feature class
+    ├── includes/
+    │   ├── AIAdmin.php          # Admin functionality
+    │   ├── AIManager.php        # Core AI management
+    │   ├── AIProvider.php       # Base provider class
+    │   ├── AITracking.php       # Usage tracking
+    │   ├── class-tracking-list-table.php
+    │   └── providers/           # AI Provider implementations
+    │       ├── OpenAI.php
+    │       ├── Claude.php
+    │       ├── Gemini.php
+    │       └── Perplexity.php
+    ├── views/
+    │   ├── admin/
+    │   │   ├── settings.php
+    │   │   ├── trackings.php
+    │   │   └── user-trackings.php
+    │   └── profile/
+    │       ├── trackings-tab.php
+    │       └── tracking-details.php
+    └── assets/
+        ├── css/
+        │   ├── admin.css
+        │   └── public.css
+        └── js/
+            ├── admin.js
+            └── public.js
+
+

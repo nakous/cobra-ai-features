@@ -101,7 +101,13 @@ class UserRegistrationHandler
 
             // Verify token
             if (!$this->verify_token($user_id, $token, 'email_verify')) {
-                throw new \Exception(__('Invalid or expired verification token.', 'cobra-ai'));
+                $redirect_url = add_query_arg(
+                    ['verified' => '0'],                    
+                    $this->get_page_url('login')
+                );
+                wp_redirect($redirect_url);
+                exit;
+                // throw new \Exception(__('Invalid or expired verification token.', 'cobra-ai'));
             }
 
             // Update user status
@@ -321,18 +327,18 @@ class UserRegistrationHandler
      */
     private function log_action(int $user_id, string $action, string $status, array $data = []): void
     {
-        global $wpdb;
+        // global $wpdb;
 
-        $wpdb->insert(
-            $this->feature->get_table_name('registration_logs'),
-            [
-                'user_id' => $user_id,
-                'action' => $action,
-                'status' => $status,
-                'data' => json_encode($data),
-            ],
-            ['%d', '%s', '%s', '%s']
-        );
+        // $wpdb->insert(
+        //     $this->feature->get_table_name('registration_logs'),
+        //     [
+        //         'user_id' => $user_id,
+        //         'action' => $action,
+        //         'status' => $status,
+        //         'data' => json_encode($data),
+        //     ],
+        //     ['%d', '%s', '%s', '%s']
+        // );
     }
 
     /**

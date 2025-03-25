@@ -18,10 +18,16 @@ $current_user = wp_get_current_user();
     <?php endif; ?>
     <?php
     // show message if the account is not verified
- 
+
     if (!get_user_meta($user->ID, '_email_verified', true)): ?>
         <div class="cobra-message error">
             <p><?php _e('Your account is not verified. Please check your email for verification link.', 'cobra-ai'); ?></p>
+            <!-- resend new verification link  -->
+             <p><?php _e('If you did not receive the email, click the button below to resend the verification email.', 'cobra-ai'); ?></p>
+            <button type="button" class="button send-verification-email"
+                data-user-id="<?php echo esc_attr($user->ID); ?>">
+                <?php _e('Resend Verification Email', 'cobra-ai'); ?>
+            </button>
         </div>
     <?php endif; ?>
     <?php if ($success): ?>
@@ -517,11 +523,11 @@ $current_user = wp_get_current_user();
         $('.export-data').on('click', function() {
             if (confirm('<?php echo esc_js(__('Download a copy of your personal data?', 'cobra-ai')); ?>')) {
                 $.ajax({
-                    url: cobra_ajax.url,
+                    url:    cobraAIRegister.ajax_url,
                     type: 'POST',
                     data: {
                         action: 'cobra_export_data',
-                        nonce: cobra_ajax.nonce
+                        nonce: cobraAIRegister.nonce
                     },
                     success: function(response) {
                         if (response.success) {
@@ -544,12 +550,12 @@ $current_user = wp_get_current_user();
 
                 if (password) {
                     $.ajax({
-                        url: cobra_ajax.url,
+                        url: cobraAIRegister.ajax_url,
                         type: 'POST',
                         data: {
                             action: 'cobra_delete_account',
                             password: password,
-                            nonce: cobra_ajax.nonce
+                            nonce: cobraAIRegister.nonce
                         },
                         success: function(response) {
                             if (response.success) {
@@ -620,6 +626,33 @@ $current_user = wp_get_current_user();
                 .find('.spinner').remove();
 
             alert('<?php echo esc_js(__('An error occurred. Please try again.', 'cobra-ai')); ?>');
+        });
+
+        // Resend verification email
+        $('.send-verification-email').on('click', function() {
+            var userId = $(this).data('user-id');
+
+            if (confirm('<?php echo esc_js(__('Resend verification email?', 'cobra-ai')); ?>')) {
+                $.ajax({
+                    url: cobraAIRegister.ajax_url,
+                    type: 'POST',
+                    data: {
+                        action: 'cobra_resend_verification',
+                        user_id: userId,
+                        nonce: cobraAIRegister.nonce
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            alert('<?php echo esc_js(__('Verification email has been sent.', 'cobra-ai')); ?>');
+                        } else {
+                            alert(response.data.message);
+                        }
+                    },
+                    error: function() {
+                        alert('<?php echo esc_js(__('Failed to resend verification email. Please try again.', 'cobra-ai')); ?>');
+                    }
+                });
+            }
         });
     });
 </script>

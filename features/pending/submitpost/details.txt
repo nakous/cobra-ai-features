@@ -1,0 +1,24 @@
+allow user to submit to content type using public or privat form
+
+user can submit post without login or register
+user can submit post after login
+user can submit post after register
+user can submit post after login or register
+user can submit post after login or register and verify email
+user can update his post after 
+user can delete his post after
+
+settings:
+    content to submit
+    use recaptcha (checkbox) , field disabled if feature recaptcha not active and show msg.
+    Max Post By User 
+    status of post after submit
+    redirect after submit
+    notification by email:
+        send notif after submit (to user | to admin )
+        send notif after publish (to user | to admin )
+        send notif after update (to user | to admin )
+    email:
+        Notif User Message
+        Notif Admin Message
+    form field settings (enbale or disable / required or not) the metadata post and defind the type of field.

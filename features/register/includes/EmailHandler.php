@@ -2,7 +2,8 @@
 
 namespace CobraAI\Features\Register;
 
-class EmailHandler {
+class EmailHandler
+{
     /**
      * Parent feature instance
      */
@@ -11,14 +12,16 @@ class EmailHandler {
     /**
      * Constructor
      */
-    public function __construct($feature) {
+    public function __construct($feature)
+    {
         $this->feature = $feature;
     }
 
     /**
      * Send verification email
      */
-    public function send_verification_email(int $user_id, string $token): bool {
+    public function send_verification_email(int $user_id, string $token): bool
+    {
         $user = get_user_by('id', $user_id);
         if (!$user) {
             return false;
@@ -37,9 +40,10 @@ class EmailHandler {
         // Prepare variables
         $variables = [
             'user_name' => $user->display_name,
-            'verification_link' => '<a href="' . esc_url($verify_url) . '">' . __('Verify Email', 'cobra-ai') . '</a>',
+            'verification_link' =>   esc_url($verify_url) ,
             'verification_url' => $verify_url,
-            'expiry_time' => '24 ' . __('hours', 'cobra-ai')
+            'expiry_time' => '24 ' . __('hours', 'cobra-ai'),
+            'site_name' => get_bloginfo('name')
         ];
 
         // Send email
@@ -54,7 +58,8 @@ class EmailHandler {
     /**
      * Send confirmation email
      */
-    public function send_confirmation_email(int $user_id): bool {
+    public function send_confirmation_email(int $user_id): bool
+    {
         $user = get_user_by('id', $user_id);
         if (!$user) {
             return false;
@@ -69,8 +74,9 @@ class EmailHandler {
         // Prepare variables
         $variables = [
             'user_name' => $user->display_name,
-            'login_link' => '<a href="' . esc_url($login_url) . '">' . __('Login', 'cobra-ai') . '</a>',
-            'login_url' => $login_url
+            'login_link' => esc_url($login_url) ,
+            'login_url' => $login_url,
+            'site_name' => get_bloginfo('name')
         ];
 
         // Send email
@@ -85,7 +91,8 @@ class EmailHandler {
     /**
      * Send approval email
      */
-    public function send_approval_email(int $user_id): bool {
+    public function send_approval_email(int $user_id): bool
+    {
         $user = get_user_by('id', $user_id);
         if (!$user) {
             return false;
@@ -112,7 +119,8 @@ class EmailHandler {
     /**
      * Send rejection email
      */
-    public function send_rejection_email(int $user_id): bool {
+    public function send_rejection_email(int $user_id): bool
+    {
         $user = get_user_by('id', $user_id);
         if (!$user) {
             return false;
@@ -135,14 +143,15 @@ class EmailHandler {
     /**
      * Send password reset email
      */
-    public function send_password_reset_email(int $user_id, string $reset_key): bool {
+    public function send_password_reset_email(int $user_id, string $reset_key): bool
+    {
         $user = get_user_by('id', $user_id);
         if (!$user) {
             return false;
         }
 
         $settings = $this->feature->get_settings();
-        
+
         // Build reset URL
         $reset_url = add_query_arg([
             'action' => 'reset_password',
@@ -169,7 +178,8 @@ class EmailHandler {
     /**
      * Send admin notification
      */
-    public function send_admin_notification(int $user_id, string $type): bool {
+    public function send_admin_notification(int $user_id, string $type): bool
+    {
         $user = get_user_by('id', $user_id);
         if (!$user) {
             return false;
@@ -200,7 +210,8 @@ class EmailHandler {
     /**
      * Send email
      */
-    private function send_email(string $to, string $subject, string $template, array $variables = []): bool {
+    private function send_email(string $to, string $subject, string $template, array $variables = []): bool
+    {
         try {
             // Get settings
             $settings = $this->feature->get_settings();
@@ -228,7 +239,6 @@ class EmailHandler {
 
             // Send email
             return wp_mail($to, $subject, $body, $headers);
-
         } catch (\Exception $e) {
             error_log('Email sending failed: ' . $e->getMessage());
             return false;
@@ -238,9 +248,10 @@ class EmailHandler {
     /**
      * Get email template
      */
-    private function get_template(string $template): string {
+    private function get_template(string $template): string
+    {
         $template_path = __DIR__ . '/../templates/email/' . $template . '.html';
-        
+
         if (file_exists($template_path)) {
             return file_get_contents($template_path);
         }
@@ -251,7 +262,8 @@ class EmailHandler {
     /**
      * Replace variables in template
      */
-    private function replace_variables(string $template, array $variables): string {
+    private function replace_variables(string $template, array $variables): string
+    {
         foreach ($variables as $key => $value) {
             $template = str_replace(
                 ['{' . $key . '}', '{{' . $key . '}}'],
@@ -263,20 +275,42 @@ class EmailHandler {
         return $template;
     }
 
+    
     /**
-     * Get email footer
+     * Get email footer with styling for HTML emails
+     * 
+     * @return string HTML formatted footer
      */
-    private function get_email_footer(): string {
-        return sprintf(
-            __('This email was sent from %s', 'cobra-ai'),
-            get_bloginfo('name')
-        );
-    }
+    public function get_email_footer(): string
+    {
+        $site_name = get_bloginfo('name');
+        $site_url = home_url();
+        $year = date('Y');
+        $settings = $this->feature->get_settings();
+        $support_email =    get_option('admin_email');
+        $privacy_url =    $settings['pages']['policy'] ?? home_url();
 
+        return '
+    <p style="margin-bottom:10px; color:#666666; font-family:Arial, sans-serif; font-size:14px; text-align:center;">
+        ' . sprintf(__('This email was sent from %s', 'cobra-ai'), $site_name) . '
+    </p>
+    <p style="margin-bottom:10px; color:#666666; font-family:Arial, sans-serif; font-size:14px; text-align:center;">
+        ' . __('If you have any questions, please contact us at:', 'cobra-ai') . ' 
+        <a href="mailto:' . esc_attr($support_email) . '" style="color:#0056b3; text-decoration:underline;">' . esc_html($support_email) . '</a>
+    </p>
+    <p style="margin:0; color:#666666; font-family:Arial, sans-serif; font-size:12px; text-align:center;">
+        <a href="' . esc_url($site_url) . '" style="color:#666666; text-decoration:underline;">' . esc_html($site_name) . '</a> | 
+        <a href="' . esc_url($privacy_url) . '" style="color:#666666; text-decoration:underline;">' . __('Privacy Policy', 'cobra-ai') . '</a>
+    </p>
+    <p style="margin:5px 0 0 0; color:#666666; font-family:Arial, sans-serif; font-size:12px; text-align:center;">
+        &copy; ' . $year . ' ' . esc_html($site_name) . '. ' . __('All rights reserved.', 'cobra-ai') . '
+    </p>';
+    }
     /**
      * Get default templates
      */
-    public function get_default_templates(): array {
+    public function get_default_templates(): array
+    {
         return [
             'verification' => $this->get_template('verification'),
             'confirmation' => $this->get_template('confirmation'),
@@ -287,23 +321,5 @@ class EmailHandler {
         ];
     }
 
-    /**
-     * Test email configuration
-     */
-    public function test_email_configuration(): array {
-        $test_email = get_option('admin_email');
-        $success = $this->send_email(
-            $test_email,
-            __('Test Email', 'cobra-ai'),
-            '<p>' . __('This is a test email from your user registration system.', 'cobra-ai') . '</p>',
-            ['site_name' => get_bloginfo('name')]
-        );
-
-        return [
-            'success' => $success,
-            'message' => $success 
-                ? __('Test email sent successfully.', 'cobra-ai')
-                : __('Failed to send test email.', 'cobra-ai')
-        ];
-    }
+     
 }

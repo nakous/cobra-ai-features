@@ -114,7 +114,7 @@ abstract class FeatureBase
      */
     public function init(): bool
     {
-        
+
         try {
             // Check dependencies
             if (!$this->check_dependencies()) {
@@ -155,7 +155,7 @@ abstract class FeatureBase
      */
     protected function init_hooks(): void
     {
-    
+
         // Assets
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
@@ -184,20 +184,20 @@ abstract class FeatureBase
     /**
      * Register settings
      */
-    protected function register_settings(): void
-    {
-        if ($this->has_settings) {
-            register_setting(
-                'cobra_ai_' . $this->feature_id . '_settings',
-                'cobra_ai_' . $this->feature_id . '_options',
-                [
-                    'type' => 'array',
-                    'sanitize_callback' => [$this, 'sanitize_settings'],
-                    'default' => $this->get_feature_default_options()
-                ]
-            );
-        }
-    }
+    // protected function register_settings(): void
+    // {
+    //     if ($this->has_settings) {
+    //         register_setting(
+    //             'cobra_ai_' . $this->feature_id . '_settings',
+    //             'cobra_ai_' . $this->feature_id . '_options',
+    //             [
+    //                 'type' => 'array',
+    //                 'sanitize_callback' => [$this, 'sanitize_settings'],
+    //                 'default' => $this->get_feature_default_options()
+    //             ]
+    //         );
+    //     }
+    // }
     // validate_settings abstract method
     protected function validate_settings(array $settings): array
     {
@@ -213,28 +213,29 @@ abstract class FeatureBase
      */
     public function sanitize_settings(array $settings): array
     {
-
-
         try {
             // Allow features to validate settings through their validate_settings method
             if (method_exists($this, 'validate_settings')) {
-
                 $settings = $this->validate_settings($settings);
             }
-            // print_r($settings);
+
             // Basic sanitization for common setting types
             foreach ($settings as $key => $value) {
                 if (empty($value)) {
                     continue;
                 }
-                // var_dump($value);
 
                 if (is_string($value)) {
-                    // Sanitize text fields
-                    $settings[$key] = sanitize_text_field($value);
-                } elseif (is_string($value) && is_email($value)) {
-                    // Sanitize email fields
-                    $settings[$key] = sanitize_email($value);
+                    if ($this->is_html_allowed_field($key)) {
+                        // Allow HTML for specific fields
+                        $settings[$key] = wp_unslash($value);
+                    } elseif (is_email($value)) {
+                        // Sanitize email fields
+                        $settings[$key] = sanitize_email($value);
+                    } else {
+                        // Sanitize general text fields
+                        $settings[$key] = sanitize_text_field($value);
+                    }
                 } elseif (is_numeric($value)) {
                     // Convert numeric strings to proper type
                     $settings[$key] = strpos($value, '.') !== false ? (float)$value : (int)$value;
@@ -242,8 +243,6 @@ abstract class FeatureBase
                     // Recursively sanitize nested arrays
                     $settings[$key] = $this->sanitize_settings($value);
                 }
-                // echo "<br> -2- ";
-
             }
 
             // Allow features to perform additional sanitization
@@ -251,7 +250,6 @@ abstract class FeatureBase
                 'cobra_ai_feature_sanitize_settings_' . $this->get_feature_id(),
                 $settings
             );
-
 
             return $settings;
         } catch (\Exception $e) {
@@ -337,6 +335,7 @@ abstract class FeatureBase
     {
         try {
             // Install database tables
+            $this->setup();
             if (!empty($this->tables)) {
                 cobra_ai_db()->register_feature_tables($this->feature_id, $this->tables);
                 cobra_ai_db()->install_feature_tables($this->feature_id);
@@ -468,7 +467,7 @@ abstract class FeatureBase
      */
     public function enqueue_assets(): void
     {
- 
+
         if (file_exists($this->path . 'assets/css/public.css')) {
             wp_enqueue_style(
                 'cobra-ai-' . $this->feature_id,
@@ -477,7 +476,7 @@ abstract class FeatureBase
                 $this->version
             );
         }
- 
+
         // JavaScript
         if (file_exists($this->path . 'assets/js/public.js')) {
             wp_enqueue_script(
@@ -494,7 +493,6 @@ abstract class FeatureBase
                 'i18n' => $this->get_js_translations()
             ]);
         }
-        
     }
 
     /**
@@ -901,5 +899,14 @@ abstract class FeatureBase
     public function log(string $level, string $message, array $context = []): void
     {
         cobra_ai_db()->log($level, $message, $context);
+    }
+
+
+    /**
+     * is html allowed field
+     */
+    protected function is_html_allowed_field(string $field): bool
+    {
+        return false;
     }
 }

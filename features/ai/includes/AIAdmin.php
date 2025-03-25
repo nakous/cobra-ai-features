@@ -28,7 +28,7 @@ class AIAdmin
             throw new \Exception('AI Feature not initialized');
         }
 
-        $this->init_hooks();
+        // $this->init_hooks();
     }
 
     /**

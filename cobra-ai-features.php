@@ -120,8 +120,9 @@ final class CobraAI
             'Database.php',
             'Admin.php',
             'APIManager.php',
+            // 'Loader.php',
             'utilities/functions.php',
-            'Utilities/Validator.php'
+            'utilities/Validator.php'
         ];
 
         foreach ($files as $file) {
@@ -228,11 +229,12 @@ final class CobraAI
             // Convert feature-id to PascalCase for namespace
             $namespace = str_replace(' ', '', ucwords(str_replace('-', ' ', $feature_id))); // hello-world -> HelloWorld
             $class_name = 'CobraAI\\Features\\' . $namespace . '\\Feature';
+            $namespace = strtolower($namespace); // Use kebab-case for directory
             $feature_dir = COBRA_AI_FEATURES_DIR . $namespace; // Use PascalCase for directory
             $class_file = $feature_dir . '/Feature.php';
 
             if (!is_dir($feature_dir) || !file_exists($class_file)) {
-                throw new \Exception("Feature not found: {$feature_id}");
+                throw new \Exception("Feature not found: {$class_file}");
             }
 
             // Include the file
@@ -376,6 +378,7 @@ final class CobraAI
         // Convert kebab-case to PascalCase
         $namespace = str_replace(' ', '', ucwords(str_replace('-', ' ', $feature_id)));
         $class_name = 'CobraAI\\Features\\' . $namespace . '\\Feature';
+        $namespace = strtolower($namespace);
         $feature_dir = COBRA_AI_FEATURES_DIR . $namespace;
         $class_file = $feature_dir . '/Feature.php';
 
@@ -386,6 +389,8 @@ final class CobraAI
                 $this->container['features'][$feature_id] = new $class_name();
                 return $this->container['features'][$feature_id];
             }
+        }else{
+            // error_log("Feature not found: {$class_file}");
         }
 
         return null;
@@ -402,29 +407,30 @@ final class CobraAI
         try {
             // Get feature directories
             $feature_dirs = glob(COBRA_AI_FEATURES_DIR . '*', GLOB_ONLYDIR);
+            // print_r($feature_dirs);
             $active_features = get_option('cobra_ai_enabled_features', []);
-
+            // error_log(print_r($feature_dirs, true));
             foreach ($feature_dirs as $dir) {
                 $feature_id = basename($dir);
-
+                // print_r($feature_id) ; echo  "<br>";
                 // Skip if feature is already loaded
                 if (isset($this->container['features'][$feature_id])) {
                     continue;
                 }
-                // print_r($this->container['features']);
+                // print_r($feature_id) ; echo  "-----2<br>";
                 // Skip inactive features if not requested
                 if (!$include_inactive && !in_array($feature_id, $active_features)) {
                     continue;
                 }
-
+                // print_r($feature_id) ; echo  "********3<br>";
                 // Try to load the feature
                 $feature = $this->get_feature($feature_id);
-                // print_r($feature);
+                // var_dump($feature);
                 if ($feature) {
                     $this->container['features'][$feature_id] = $feature;
                 }
             }
-
+//  print_r($this->container['features']);
             return $this->container['features'];
         } catch (\Exception $e) {
             $this->db->log('error', 'Failed to get features', [
@@ -471,4 +477,26 @@ function cobra_ai(): CobraAI
 // // Initialize the plugin
 global $cobra_ai;
 $cobra_ai = CobraAI::instance();
+// echo "Cobra AI Features loaded";
+// add_action('rest_api_init', function () {
+//     $endpoints = rest_get_server()->get_routes();
+//     foreach ($endpoints as $route => $handlers) {
+//         echo "<h3>Route: " . esc_html($route) . "</h3>";
+//         foreach ($handlers as $handler) {
+//             if (isset($handler['permission_callback'])) {
+//                 echo "<p><strong>Permissions:</strong> " . (is_callable($handler['permission_callback']) ? 'Has Callback' : 'None') . "</p>";
+//             }
+//         }
+//     }
+// });
+// add_action('wp', function() {
+//     if (is_404()) {
+//         global $wp_query, $wp_rewrite;
+//         error_log('404 Debug Info:');
+//         error_log('Query: ' . print_r($wp_query->query, true));
+//         error_log('Request: ' . print_r($wp_query->request, true));
+//         error_log('Rewrite Rules: ' . print_r($wp_rewrite->rules, true));
+//     }
+// });
 
+ 

@@ -1,0 +1,5 @@
+goal : Invite friends and earn rewards!
+
+plan 
+    event condition  action 
+

@@ -1,0 +1,18 @@
+POpup ads : feature to launch popup ads on the website
+    - create popup ads
+    - display popup ads
+    - manage popup ads
+
+content type:
+    - title 
+    short description
+    image / video
+    link
+    start date
+    end date
+    display on mobile
+    theme 
+
+template :
+    - popup ads template for mobile / desktop
+

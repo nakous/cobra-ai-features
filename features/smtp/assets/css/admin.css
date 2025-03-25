@@ -1,0 +1,119 @@
+/**
+ * SMTP Admin Styles
+ */
+
+/* Tab Navigation */
+.cobra-ai-smtp-settings .nav-tab-wrapper {
+    margin-bottom: 20px;
+}
+
+.cobra-ai-smtp-settings h2 {
+    margin-top: 20px;
+}
+
+/* Tab Content */
+.settings-tab {
+    display: none;
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-top: none;
+    padding: 20px;
+}
+
+.settings-tab.active-tab {
+    display: block;
+}
+
+/* Test Email Section */
+.test-email-container {
+    background: #fff;
+    padding: 15px 20px;
+    margin-top: 10px;
+    margin-bottom: 20px;
+}
+
+.test-email-container h3 {
+    margin-top: 0;
+}
+
+.test-email-actions {
+    margin-top: 20px;
+}
+
+.test-email-actions .spinner {
+    float: none;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+#test-email-result {
+    margin-top: 15px;
+    margin-bottom: 0;
+}
+
+#test-email-result.hidden {
+    display: none;
+}
+
+/* Form Styling */
+.form-table th {
+    width: 200px;
+}
+
+.form-table .description {
+    font-size: 13px;
+    margin-top: 5px;
+    color: #666;
+}
+
+/* Toggle Controls */
+.toggle-label {
+    display: inline-block;
+    margin-bottom: 5px;
+}
+
+/* SMTP Setting Groups */
+.smtp-setting,
+.smtp-auth-setting,
+.pop-setting {
+    display: none;
+}
+
+/* Help Section Styling */
+.cobra-help-document {
+    max-width: 800px;
+    margin: 20px auto;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.help-section {
+    margin-bottom: 30px;
+}
+
+.help-section h3 {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+    margin-bottom: 15px;
+    color: #23282d;
+}
+
+.help-section h4 {
+    margin: 15px 0 10px;
+    color: #23282d;
+}
+
+.help-section ul {
+    margin-left: 20px;
+    list-style-type: disc;
+}
+
+.help-section ul li {
+    margin-bottom: 6px;
+}
+
+/* Provider-specific settings */
+.help-section ul li strong {
+    display: inline-block;
+    min-width: 120px;
+}

@@ -319,51 +319,68 @@ $recaptcha_available = $this->is_recaptcha_available();
             <div class="email-templates">
                 <h3><?php _e('Global Email Template', 'cobra-ai'); ?></h3>
                 <?php
-                wp_editor(
-                    $settings['emails']['global_template'],
-                    'global_template',
-                    [
-                        'textarea_name' => 'settings[emails][global_template]',
-                        'textarea_rows' => 15,
-                        'media_buttons' => false
-                    ]
-                );
+                // wp_editor(
+                //     $settings['emails']['global_template'],
+                //     'global_template',
+                //     [
+                //         'textarea_name' => 'settings[emails][global_template]',
+                //         'textarea_rows' => 15,
+                //         'media_buttons' => false,
+                //         'tinymce' => [
+                //             'valid_elements' => '*[*]', // Allow all HTML elements and attributes
+                //             'extended_valid_elements' => '*[*]' // Allow extended elements
+                //         ],
+                //         'quicktags' => true // Enable HTML mode
+                //     ]
+                // );
                 ?>
+                <textarea name="settings[emails][global_template]" rows="15" cols="80"><?php echo esc_textarea($settings['emails']['global_template']); ?></textarea>
+
                 <p class="description">
                     <?php _e('Available variables: {site_name}, {site_url}, {header}, {content}, {footer}', 'cobra-ai'); ?>
                 </p>
 
                 <h3><?php _e('Verification Email', 'cobra-ai'); ?></h3>
                 <?php
-                wp_editor(
-                    $settings['emails']['verification'],
-                    'verification_email',
-                    [
-                        'textarea_name' => 'settings[emails][verification]',
-                        'textarea_rows' => 15,
-                        'media_buttons' => false
-                    ]
-                );
+                // wp_editor(
+                //     $settings['emails']['verification'],
+                //     'verification_email',
+                //     [
+                //         'textarea_name' => 'settings[emails][verification]',
+                //         'textarea_rows' => 15,
+                //         'media_buttons' => false
+                //     ]
+                // );
                 ?>
+                <textarea name="settings[emails][verification]" rows="15" cols="80"><?php echo esc_textarea($settings['emails']['verification']); ?></textarea>
                 <p class="description">
                     <?php _e('Available variables: {user_name}, {verification_link}, {expiry_time}', 'cobra-ai'); ?>
                 </p>
 
                 <h3><?php _e('Confirmation Email', 'cobra-ai'); ?></h3>
                 <?php
-                wp_editor(
-                    $settings['emails']['confirmation'],
-                    'confirmation_email',
-                    [
-                        'textarea_name' => 'settings[emails][confirmation]',
-                        'textarea_rows' => 15,
-                        'media_buttons' => false
-                    ]
-                );
+                // wp_editor(
+                //     $settings['emails']['confirmation'],
+                //     'confirmation_email',
+                //     [
+                //         'textarea_name' => 'settings[emails][confirmation]',
+                //         'textarea_rows' => 15,
+                //         'media_buttons' => false
+                //     ]
+                // );
                 ?>
+                <textarea name="settings[emails][confirmation]" rows="15" cols="80"><?php echo esc_textarea($settings['emails']['confirmation']); ?></textarea>
                 <p class="description">
                     <?php _e('Available variables: {user_name}, {login_link}', 'cobra-ai'); ?>
                 </p>
+
+                <h3><?php _e('Email footer', 'cobra-ai'); ?></h3>
+                <div>
+                <?php
+                $footer = $this->email->get_email_footer();
+                echo $footer;
+                ?>
+                </div>
             </div>
 
         <?php elseif ($current_tab === 'fields'): ?>

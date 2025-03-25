@@ -1,0 +1,161 @@
+Core feature Structure:
+    Integration with existing Stripe features
+Stripe API Integration:
+    Create and manage Stripe plans(content type)
+    Handle subscriptions (create, update, cancel)
+    Process payments and refunds
+
+Admin Interface:
+    Dashboard to view all subscriptions
+    Functionality to manage subscriptions (unsubscribe, refund)
+    Display subscription details and payment history
+    Create and manage Stripe plans(content type)
+
+Custom Hooks:
+    Subscription imported
+    New payment received
+    Subscription cancelled
+    Subscription refunded
+
+database :
+    stripe_plans (inclu the product and plan)
+    stripe_subscriptions (inclu refunds and disputes)
+    stripe_payments (inclu the subscriptionid and paymentid and  invoiceid )
+    stripe_disputes
+
+ content type : plans
+    in front add btn to content type plan to subscribe
+
+page and shortcode:
+    create  shortcodes checkout seccuss and faild
+    create page with shortcode for checkout seccuss and faild
+
+
+features/StripeSubscription/
+├── Feature.php                   # Main feature class
+├── includes/
+│   ├── StripeSubscriptionAPI.php       # Subscription-specific API handling
+│   ├── StripeSubscriptionAdmin.php     # Admin interface functionality
+│   ├── StripeSubscriptionPlans.php     # Plans management
+│   ├── StripeSubscriptionPayments.php  # Payment processing
+│   └── StripeSubscriptionWebhook.php   # Webhook handlers
+├── views/
+│   ├── admin/
+│   │   ├── dashboard.php        # Subscription dashboard
+│   │   ├── plans.php           # Plans management interface
+│   │   ├── subscriptions.php   # Subscriptions management
+│   │   └── settings.php        # Feature settings
+│   └── public/
+│       ├── checkout.php        # Checkout form template
+│       ├── success.php         # Success page template
+│       └── cancel.php          # Cancellation page template
+├── assets/
+│   ├── css/
+│   │   ├── admin.css
+│   │   └── public.css
+│   ├── js/
+│   │   ├── admin.js
+│   │   └── public.js
+│   └── help.html               # Feature documentation
+└── templates/
+    ├── email/
+    │   ├── subscription-created.php
+    │   ├── subscription-cancelled.php
+    │   └── payment-failed.php
+    └── shortcodes/
+        ├── checkout.php
+        ├── subscription-details.php
+        └── plan-list.php
+
+Database Tables:
+
+stripe_plans:
+- id (bigint)
+- plan_id (varchar) // Stripe plan ID
+- product_id (varchar) // Stripe product ID
+- name (varchar)
+- description (text)
+- amount (decimal)
+- currency (varchar)
+- interval (varchar) // month, year etc
+- interval_count (int)
+- status (varchar)
+- created_at (datetime)
+- updated_at (datetime)
+
+stripe_subscriptions:
+- id (bigint)
+- subscription_id (varchar) // Stripe subscription ID
+- customer_id (varchar) // Stripe customer ID
+- plan_id (bigint) // References stripe_plans
+- user_id (bigint) // WordPress user ID
+- status (varchar)
+- current_period_start (datetime)
+- current_period_end (datetime)
+- cancel_at_period_end (boolean)
+- cancel_reason (text)
+- created_at (datetime)
+- updated_at (datetime)
+
+stripe_payments:
+- id (bigint)
+- payment_id (varchar) // Stripe payment intent ID
+- subscription_id (bigint) // References stripe_subscriptions
+- invoice_id (varchar) // Stripe invoice ID
+- amount (decimal)
+- currency (varchar)
+- status (varchar)
+- refunded (boolean)
+- refund_id (varchar)
+- created_at (datetime)
+
+stripe_disputes:
+- id (bigint)
+- dispute_id (varchar) // Stripe dispute ID
+- payment_id (bigint) // References stripe_payments
+- amount (decimal)
+- currency (varchar)
+- status (varchar)
+- reason (varchar)
+- evidence_details (text)
+- created_at (datetime)
+- updated_at (datetime)
+
+Custom Post Type: stripe_plan
+
+- Title (Plan name)
+- Editor (Plan description)
+- Custom fields:
+  - stripe_plan_id
+  - price
+  - currency
+  - interval
+  - interval_count
+  - features (repeater)
+  - status
+  - trial_days
+
+Actions/Filters:
+
+Actions:
+- cobra_ai_subscription_created
+- cobra_ai_subscription_updated
+- cobra_ai_subscription_cancelled
+- cobra_ai_payment_successful
+- cobra_ai_payment_failed
+- cobra_ai_refund_processed
+- cobra_ai_dispute_received
+
+Filters:
+- cobra_ai_subscription_args
+- cobra_ai_plan_data
+- cobra_ai_payment_data
+- cobra_ai_checkout_fields
+- cobra_ai_subscription_status
+
+Shortcodes:
+[stripe_checkout plan_id="123"]
+[stripe_success]
+[stripe_cancel]
+[stripe_plans]
+[stripe_subscription_details]

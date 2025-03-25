@@ -1,12 +1,21 @@
-<!-- Verification Email (verification.html) -->
-<p>Hello {user_name},</p>
-
-<p>Thank you for registering. Please verify your email address by clicking the link below:</p>
-
-<p style="text-align: center;">
-    {verification_link}
-</p>
-
-<p>This link will expire in {expiry_time}.</p>
-
-<p>If you didn't register for an account, please ignore this email.</p>
+<div style="font-family: Arial, sans-serif; color: #333333; line-height: 1.5;">
+    <p style="font-size: 16px; margin-bottom: 20px;">Hello <strong>{user_name}</strong>,</p>
+    
+    <p style="font-size: 16px; margin-bottom: 25px;">Thank you for registering with us! To complete your registration and access your account, please verify your email address by clicking the button below:</p>
+    
+    <div style="text-align: center; margin: 30px 0;">
+        <a href="{verification_link}" style="display: inline-block; background-color: #0056b3; color: #ffffff; font-weight: bold; padding: 12px 30px; text-decoration: none; border-radius: 4px; font-size: 16px;">Verify My Email</a>
+    </div>
+    
+    <p style="font-size: 15px; margin-bottom: 20px;">If the button doesn't work, you can also copy and paste the following link into your browser:</p>
+    
+    <p style="background-color: #f5f5f5; padding: 12px; border-radius: 4px; font-family: monospace; font-size: 14px; word-break: break-all; margin-bottom: 25px;">
+        {verification_link}
+    </p>
+    
+    <p style="font-size: 15px; color: #666666; margin-bottom: 15px;"><strong>Important:</strong> This link will expire in <span style="color: #0056b3; font-weight: bold;">{expiry_time}</span>.</p>
+    
+    <p style="font-size: 15px; margin-bottom: 25px;">If you didn't request this registration, please ignore this email or contact our support team.</p>
+    
+    <p style="font-size: 16px; margin-bottom: 15px;">Thank you,<br>The {site_name} Team</p>
+</div>

@@ -17,8 +17,8 @@ use function CobraAI\{
 defined('ABSPATH') || exit;
 
 // Get features information
-$available_features = cobra_ai()->get_features(true);  // Get all features including inactive
-$active_features = get_option('cobra_ai_enabled_features', []);
+// $available_features = cobra_ai()->get_features(true);  // Get all features including inactive
+// $active_features = get_option('cobra_ai_enabled_features', []);
 $feature_errors = [];
 
 // Get feature dependencies and status
@@ -32,7 +32,7 @@ foreach ($available_features as $feature_id => $feature) {
     }
 }
 ?>
-
+ 
 <div class="wrap cobra-ai-features">
     <h1 class="wp-heading-inline">
         <?php echo esc_html__('Cobra AI Features', 'cobra-ai'); ?>

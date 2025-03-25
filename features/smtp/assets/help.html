@@ -1,0 +1,145 @@
+<div class="cobra-help-document">
+    <h2>SMTP Documentation</h2>
+    
+    <div class="help-section">
+      <h3>Overview</h3>
+      <p>
+        The SMTP feature allows you to configure custom SMTP and POP settings for WordPress emails. 
+        This can significantly improve email deliverability by using a dedicated email service provider instead 
+        of relying on your web server's default mail function.
+      </p>
+    </div>
+    
+    <div class="help-section">
+      <h3>Key Features</h3>
+      <ul>
+        <li>Configure SMTP settings for reliable email sending</li>
+        <li>Optional POP before SMTP authentication</li>
+        <li>Custom from name and email address</li>
+        <li>Send test emails to verify your configuration</li>
+        <li>Support for TLS and SSL encryption</li>
+        <li>Compatible with major email providers (Gmail, Outlook, SendGrid, etc.)</li>
+      </ul>
+    </div>
+    
+    <div class="help-section">
+      <h3>Settings Explained</h3>
+      
+      <h4>General Settings</h4>
+      <ul>
+        <li><strong>Enable Email Service</strong> - Turn the feature on or off.</li>
+        <li><strong>From Email</strong> - The email address that will appear in the "From" field of sent emails.</li>
+        <li><strong>From Name</strong> - The name that will appear alongside the From Email.</li>
+      </ul>
+      
+      <h4>SMTP Settings</h4>
+      <ul>
+        <li><strong>Enable SMTP</strong> - Use SMTP for sending emails instead of PHP's mail() function.</li>
+        <li><strong>SMTP Host</strong> - Your email provider's SMTP server address (e.g., smtp.gmail.com).</li>
+        <li><strong>SMTP Port</strong> - The port used for SMTP communication (common ports: 25, 465, 587).</li>
+        <li><strong>Encryption</strong> - Choose between None, TLS, or SSL based on your provider's requirements.</li>
+        <li><strong>Authentication</strong> - Whether your SMTP server requires authentication.</li>
+        <li><strong>Username</strong> - Your email account username or full email address.</li>
+        <li><strong>Password</strong> - Your email account password or app password.</li>
+      </ul>
+      
+      <h4>POP Settings</h4>
+      <p>Some email providers require POP authentication before allowing SMTP sending.</p>
+      <ul>
+        <li><strong>Enable POP before SMTP</strong> - Use if your provider requires this authentication method.</li>
+        <li><strong>POP Host</strong> - Your email provider's POP server address (e.g., pop.gmail.com).</li>
+        <li><strong>POP Port</strong> - The port used for POP communication (common ports: 110, 995).</li>
+        <li><strong>Username</strong> - Your email account username.</li>
+        <li><strong>Password</strong> - Your email account password.</li>
+      </ul>
+    </div>
+    
+    <div class="help-section">
+      <h3>Common Email Provider Settings</h3>
+      
+      <h4>Gmail</h4>
+      <ul>
+        <li>SMTP Host: smtp.gmail.com</li>
+        <li>SMTP Port: 587</li>
+        <li>Encryption: TLS</li>
+        <li>Authentication: Yes</li>
+        <li>Username: Your full Gmail address</li>
+        <li>Password: Your app password (requires 2FA setup)</li>
+      </ul>
+      
+      <h4>Outlook/Office 365</h4>
+      <ul>
+        <li>SMTP Host: smtp.office365.com</li>
+        <li>SMTP Port: 587</li>
+        <li>Encryption: TLS</li>
+        <li>Authentication: Yes</li>
+        <li>Username: Your full Outlook address</li>
+        <li>Password: Your Outlook password or app password</li>
+      </ul>
+      
+      <h4>SendGrid</h4>
+      <ul>
+        <li>SMTP Host: smtp.sendgrid.net</li>
+        <li>SMTP Port: 587</li>
+        <li>Encryption: TLS</li>
+        <li>Authentication: Yes</li>
+        <li>Username: apikey</li>
+        <li>Password: Your SendGrid API key</li>
+      </ul>
+    </div>
+    
+    <div class="help-section">
+      <h3>Troubleshooting</h3>
+      
+      <h4>Email Not Sending</h4>
+      <ul>
+        <li>Verify your SMTP credentials are correct.</li>
+        <li>Check if your host blocks outgoing SMTP connections.</li>
+        <li>Try different port numbers (587 or 465).</li>
+        <li>Check if your email provider requires app passwords.</li>
+        <li>Ensure your From Email is authorized to send through your SMTP provider.</li>
+      </ul>
+      
+      <h4>Authentication Errors</h4>
+      <ul>
+        <li>Confirm your username is in the correct format (sometimes full email is required).</li>
+        <li>Check if you need to create an app-specific password.</li>
+        <li>Verify your account doesn't have security features blocking external access.</li>
+      </ul>
+      
+      <h4>Using Gmail</h4>
+      <p>If using Gmail, you need to:</p>
+      <ol>
+        <li>Enable 2-Step Verification in your Google account.</li>
+        <li>Create an App Password specifically for your WordPress site.</li>
+        <li>Use this App Password instead of your regular Gmail password.</li>
+      </ol>
+    </div>
+    
+    <div class="help-section">
+      <h3>Test Email</h3>
+      <p>
+        Always use the Test Email functionality to verify your settings. If the test email fails, check the error message for clues about what's wrong with your configuration.
+      </p>
+    </div>
+    
+    <div class="help-section">
+      <h3>Security Notes</h3>
+      <p>
+        Email credentials are stored in the WordPress database. While we take precautions to store these securely, it's recommended to:
+      </p>
+      <ul>
+        <li>Use app-specific passwords when possible instead of your main account password.</li>
+        <li>Create a dedicated email account for sending WordPress emails.</li>
+        <li>Ensure your WordPress site uses HTTPS to encrypt data transmission.</li>
+      </ul>
+    </div>
+    
+    <div class="help-section">
+      <h3>Support</h3>
+      <p>
+        If you're experiencing issues with the SMTP feature, please check our 
+        <a href="https://example.com/cobra-ai/smtp/faq" target="_blank">FAQ</a> 
+        or contact our support team.
+      </p>
+    </div>

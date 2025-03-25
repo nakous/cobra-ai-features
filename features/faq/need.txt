@@ -1,0 +1,18 @@
+feature FAQ use case and needed:
+
+Setting for FAQ:
+- text for FAQ title
+- text for FAQ content
+- Nember of FAQ to display
+- display FAQ category
+- order by date or order by title or order more view
+- footer text for FAQ with link 
+-user pagenation  or load more button
+
+content type for FAQ post
+content type for FAQ category
+
+page for FAQ TO DISPLAY :
+ 
+- FAQ search with autocomplete or search with category
+- first display last N FAQ

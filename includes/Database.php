@@ -210,10 +210,10 @@ class Database
      */
     public function install_feature_tables(string $feature_id): bool
     {
-        $this->log('error', "Failed to install tables for feature: $feature_id", [
-            'array' => print_r($this->feature_tables,true),
-            'tables' => $this->feature_tables[$feature_id]
-        ]);
+        // $this->log('error', "Failed to install tables for feature: $feature_id", [
+        //     'array' => print_r($this->feature_tables,true),
+        //     'tables' => $this->feature_tables[$feature_id]
+        // ]);
         if (!isset($this->feature_tables[$feature_id])) {
             $this->log('error', "No tables registered for feature: $feature_id");
             return false;
