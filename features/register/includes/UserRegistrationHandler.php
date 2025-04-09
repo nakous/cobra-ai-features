@@ -36,20 +36,31 @@ class UserRegistrationHandler
 
             // Set default role
             $user = get_user_by('id', $user_id);
-            $user->set_role($settings['general']['default_role']);
+            // checl meta cobra_google_registered if === 1 and exist
+            $cobra_google_registered = get_user_meta($user_id, 'cobra_google_registered', true);
+            if ($cobra_google_registered === "1") {
+                $user->set_role('subscriber');
+                update_user_meta($user_id, '_email_verified', true);
+                update_user_meta($user_id, '_registration_date', current_time('mysql'));
+                $this->log_action($user_id, 'register', 'completed');
+                return;
+            }else {
+                $user->set_role($settings['general']['default_role']);
 
-            // Generate verification token
-            $token = $this->generate_verification_token($user_id);
-
-            // Save registration data
-            update_user_meta($user_id, '_email_verified', false);
-            update_user_meta($user_id, '_registration_date', current_time('mysql'));
-
-            // Log registration
-            $this->log_action($user_id, 'register', 'completed');
-
-            // Send verification email
-            $this->email_handler->send_verification_email($user_id, $token);
+                // Generate verification token
+                $token = $this->generate_verification_token($user_id);
+    
+                // Save registration data
+                update_user_meta($user_id, '_email_verified', false);
+                update_user_meta($user_id, '_registration_date', current_time('mysql'));
+    
+                // Log registration
+                $this->log_action($user_id, 'register', 'completed');
+    
+                // Send verification email
+                $this->email_handler->send_verification_email($user_id, $token);
+            }
+           
         } catch (\Exception $e) {
             $this->log_action($user_id, 'register', 'failed', ['error' => $e->getMessage()]);
         }
@@ -64,8 +75,8 @@ class UserRegistrationHandler
             return;
         }
         try {
-             
-              
+
+
             // Get settings
             $settings = $this->feature->get_settings();
 
@@ -102,7 +113,7 @@ class UserRegistrationHandler
             // Verify token
             if (!$this->verify_token($user_id, $token, 'email_verify')) {
                 $redirect_url = add_query_arg(
-                    ['verified' => '0'],                    
+                    ['verified' => '0'],
                     $this->get_page_url('login')
                 );
                 wp_redirect($redirect_url);
@@ -195,7 +206,7 @@ class UserRegistrationHandler
         // update option user 
         // not Show Toolbar when viewing site fpr user
         update_user_meta($user_id, 'show_admin_bar_front', 'false');
-        
+
         if (is_wp_error($user_id)) {
             throw new \Exception($user_id->get_error_message());
         }

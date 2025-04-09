@@ -1,5 +1,5 @@
 <?php
-// templates/faq-display.php
+// faq/templates/faq-display.php
 
 $settings = $this->get_settings();
 $categories = get_terms([

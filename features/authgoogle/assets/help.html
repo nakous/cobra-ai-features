@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        .help-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .help-content h1 {
+            color: #1d2327;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+        }
+
+        .help-content h2 {
+            color: #2271b1;
+            margin-top: 30px;
+        }
+
+        .help-content h3 {
+            color: #1d2327;
+            margin-top: 25px;
+        }
+
+        .help-content code {
+            background: #f0f0f1;
+            padding: 3px 5px;
+            border-radius: 3px;
+            font-family: Monaco, Consolas, "Andale Mono", "DejaVu Sans Mono", monospace;
+        }
+
+        .help-content pre {
+            background: #f6f7f7;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        .help-content .tip {
+            background: #f0f6fc;
+            border-left: 4px solid #2271b1;
+            padding: 12px 24px;
+            margin: 1.5em 0;
+        }
+
+        .help-content .warning {
+            background: #fcf9e8;
+            border-left: 4px solid #dba617;
+            padding: 12px 24px;
+            margin: 1.5em 0;
+        }
+
+        .help-section {
+            margin-bottom: 40px;
+        }
+
+        .step {
+            margin-bottom: 20px;
+            padding-left: 24px;
+            position: relative;
+        }
+
+        .step::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #2271b1;
+        }
+
+        .image-container {
+            margin: 20px 0;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .image-caption {
+            font-style: italic;
+            text-align: center;
+            margin-top: 10px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="help-content">
+        <h1>Google Authentication Documentation</h1>
+
+        <div class="help-section">
+            <h2>Getting Started</h2>
+            <p>The Google Authentication feature allows your users to sign in using their Google accounts. This streamlines the login process and can increase user registration on your WordPress site. New users are automatically registered with the subscriber role.</p>
+
+            <div class="tip">
+                <strong>Quick Start:</strong> Use the shortcode <code>[cobra_google_login]</code> to display the Google login button on any page.
+            </div>
+        </div>
+
+        <div class="help-section">
+            <h2>Setting Up Google Authentication</h2>
+            <h3>Step 1: Create a Google Cloud Project</h3>
+            <div class="step">Go to the <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a></div>
+            <div class="step">Create a new project or select an existing one</div>
+            <div class="step">Navigate to "APIs & Services" → "OAuth consent screen"</div>
+            <div class="step">
+                Configure the consent screen:
+                <ul>
+                    <li>Choose "External" user type (unless you're using Google Workspace)</li>
+                    <li>Enter your app name and user support email</li>
+                    <li>Add your domain to "Authorized domains"</li>
+                    <li>Enter developer contact information</li>
+                </ul>
+            </div>
+            <div class="step">Save and continue</div>
+            
+            <h3>Step 2: Configure OAuth Credentials</h3>
+            <div class="step">In the Google Cloud Console, go to "APIs & Services" → "Credentials"</div>
+            <div class="step">Click "Create Credentials" and select "OAuth client ID"</div>
+            <div class="step">Select "Web application" as the application type</div>
+            <div class="step">Enter a name for your OAuth client</div>
+            <div class="step">Under "Authorized JavaScript origins", add your website's URL (e.g., <code>https://example.com</code>)</div>
+            <div class="step">
+                Under "Authorized redirect URIs", add the redirect URL from your plugin settings:
+                <br>
+                <code>https://example.com/wp-json/cobra-ai/v1/google-auth/callback</code>
+            </div>
+            <div class="step">Click "Create" to generate your credentials</div>
+            <div class="step">Note your Client ID and Client Secret</div>
+
+            <h3>Step 3: Configure Plugin Settings</h3>
+            <div class="step">Go to "Cobra AI" → "Google Authentication" in your WordPress admin</div>
+            <div class="step">Enable Google Login</div>
+            <div class="step">Enter your Google Client ID and Client Secret</div>
+            <div class="step">Configure the default user role (recommended: Subscriber)</div>
+            <div class="step">Save changes</div>
+        </div>
+
+        <div class="help-section">
+            <h2>Using the Google Login Button</h2>
+            <p>The Google login button can be added in multiple ways:</p>
+            
+            <h3>WordPress Login Page</h3>
+            <p>The Google login button is automatically added to the WordPress login page if enabled in the settings.</p>
+            
+            <h3>Shortcode</h3>
+            <p>Use the shortcode <code>[cobra_google_login]</code> to display the button anywhere on your site.</p>
+            
+            <h3>WooCommerce Integration</h3>
+            <p>The Google login button is automatically added to the WooCommerce login form if WooCommerce is installed and activated.</p>
+        </div>
+
+        <div class="help-section">
+            <h2>How It Works</h2>
+            <h3>Authentication Flow</h3>
+            <ol>
+                <li>User clicks the "Login with Google" button</li>
+                <li>User is redirected to Google's authentication page</li>
+                <li>User grants permission to your application</li>
+                <li>Google redirects back to your site with an authorization code</li>
+                <li>The plugin exchanges the code for access tokens</li>
+                <li>The plugin retrieves the user's profile information from Google</li>
+                <li>If the user exists (by email or Google ID), they are logged in</li>
+                <li>If the user doesn't exist and auto-registration is enabled, a new user is created</li>
+                <li>The user is logged in and redirected to the appropriate page</li>
+            </ol>
+
+            <h3>User Data Storage</h3>
+            <p>All Google user data is stored as WordPress user meta:</p>
+            <ul>
+                <li><code>cobra_google_id</code>: The user's Google ID</li>
+                <li><code>cobra_google_email</code>: The user's Google email</li>
+                <li><code>cobra_google_name</code>: The user's Google name</li>
+                <li><code>cobra_google_picture</code>: The URL to the user's Google profile picture</li>
+                <li><code>cobra_google_last_login</code>: The timestamp of the user's last login</li>
+                <li><code>cobra_google_registered</code>: Indicates if the user was registered through Google</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h2>Troubleshooting</h2>
+            
+            <h3>Common Issues</h3>
+            <h4>Login Button Not Appearing</h4>
+            <ul>
+                <li>Check if Google Authentication is enabled in settings</li>
+                <li>Verify that you've entered valid Google Client ID</li>
+                <li>Check for JavaScript errors in the browser console</li>
+            </ul>
+            
+            <h4>Google Login Fails</h4>
+            <ul>
+                <li>Verify that your Client ID and Client Secret are correctly entered</li>
+                <li>Check if your redirect URI exactly matches what's configured in Google Cloud Console</li>
+                <li>Make sure your domain is added to the authorized domains in Google Cloud Console</li>
+                <li>Check if your OAuth consent screen is properly configured</li>
+            </ul>
+            
+            <h4>User Not Created</h4>
+            <ul>
+                <li>Check if auto-registration is enabled in the settings</li>
+                <li>Verify that the user doesn't already exist with the same email</li>
+                <li>Check WordPress logs for error messages</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h2>Security Best Practices</h2>
+            <div class="warning">
+                <p><strong>Important:</strong> Always keep your Google Client Secret secure. Never share it publicly or commit it to version control.</p>
+            </div>
+            
+            <ul>
+                <li>Use HTTPS for your website to ensure secure transmission of authentication tokens</li>
+                <li>Regularly review the users who have registered through Google</li>
+                <li>Keep your WordPress installation and the plugin updated</li>
+                <li>Limit the scopes requested to only what's necessary (email and profile information)</li>
+                <li>Periodically review and revoke access for unused applications in the Google Cloud Console</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h2>Customization</h2>
+            <h3>Button Text</h3>
+            <p>You can customize the text on the Google login button from the settings page.</p>
+            
+            <h3>Styling</h3>
+            <p>The Google login button can be styled using CSS. The main button has the class <code>cobra-google-login-button</code>.</p>
+            
+            <h3>Advanced Customization</h3>
+            <p>For advanced customization, you can modify the plugin's CSS file (<code>assets/css/google-login.css</code>) or add custom CSS to your theme:</p>
+            
+<pre>
+/* Change button color */
+.cobra-google-login-button {
+    background-color: #DB4437; /* Google red */
+}
+
+/* Change button size */
+.cobra-google-login-button {
+    max-width: 300px;
+    height: 50px;
+}
+
+/* Change button text color */
+.cobra-google-login-text {
+    color: #ffffff;
+    font-weight: bold;
+}
+</pre>
+        </div>
+
+        <div class="help-section">
+            <h2>Need More Help?</h2>
+            <p>If you need additional assistance:</p>
+            <ul>
+                <li>Check the plugin documentation</li>
+                <li>Contact support through your account dashboard</li>
+                <li>Submit a feature request or bug report</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

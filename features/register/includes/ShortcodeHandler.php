@@ -10,17 +10,15 @@ class ShortcodeHandler
      * Parent feature instance
      */
     private $feature;
-    private $session_started = false; 
+    private $session_started = false;
     /**
      * Constructor
      */
     public function __construct($feature)
     {
         $this->feature = $feature;
-       
-        
     }
-    
+
     public function short_add_action()
     {
         add_action('plugins_loaded', [$this, 'init_session'], 1);
@@ -32,20 +30,22 @@ class ShortcodeHandler
         add_action('admin_post_cobra_login_action', [$this, 'handle_login_submission']);
 
 
-    
+
         add_action('admin_post_nopriv_cobra_register_action', [$this, 'handle_registration_submission']);
         add_action('admin_post_cobra_register_action', [$this, 'handle_registration_submission']);
     }
-    public function init_session(): void {
+    public function init_session(): void
+    {
         if (PHP_SESSION_NONE === session_status() && !$this->session_started) {
             $this->session_started = true;
             @session_start();
         }
     }
-     /**
+    /**
      * Register form actions
      */
-    public function register_form_actions(): void {
+    public function register_form_actions(): void
+    {
         if (isset($_POST['cobra_login'])) {
             do_action('admin_post_' . ($this->is_user_logged_in() ? '' : 'nopriv_') . 'cobra_login_action');
         }
@@ -57,7 +57,8 @@ class ShortcodeHandler
     /**
      * Handle login form submission
      */
-    public function handle_login_submission(): void {
+    public function handle_login_submission(): void
+    {
         // Verify nonce
         if (!check_ajax_referer('cobra_login', '_wpnonce', false)) {
             $this->set_error_message(__('Invalid request.', 'cobra-ai'));
@@ -88,13 +89,13 @@ class ShortcodeHandler
             $this->redirect_back();
         }
 
-        
+
         // if (!get_user_meta($user->ID, '_email_verified', true)) {
         //     wp_logout();
         //     $this->set_error_message(__('Please verify your email address before logging in.', 'cobra-ai'));
         //     $this->redirect_back();
         // }
- 
+
         // Successful login
         $this->redirect_after_login();
     }
@@ -103,7 +104,7 @@ class ShortcodeHandler
      */
     public function login_form($atts = []): string
     {
-      
+
         if (is_user_logged_in()) {
             return $this->get_logged_in_message();
         }
@@ -113,7 +114,7 @@ class ShortcodeHandler
         // Include the form template with action URL
         $form_action = admin_url('admin-post.php');
         include $this->feature->get_path() . 'views/forms/login.php';
-        unset($_SESSION['cobra_form_data_login' ]);
+        unset($_SESSION['cobra_form_data_login']);
         return ob_get_clean();
     }
 
@@ -121,7 +122,8 @@ class ShortcodeHandler
     /**
      * Handle registration form submission
      */
-    public function handle_registration_submission(): void {
+    public function handle_registration_submission(): void
+    {
         // Verify nonce
         if (!check_ajax_referer('cobra_register', '_wpnonce', false)) {
             $this->set_error_message(__('Invalid request.', 'cobra-ai'));
@@ -257,22 +259,23 @@ class ShortcodeHandler
      */
     public function reset_password_form($atts = []): string
     {
-        if (is_user_logged_in()) {
-            wp_redirect($this->get_page_url('account'));
-            exit;
-        }
+        // if (is_user_logged_in()) {
+        //     wp_redirect($this->get_page_url('account'));
+        //     exit;
+        // }
 
-        // Verify reset key
-        $user_id = isset($_GET['user_id']) ? absint($_GET['user_id']) : 0;
-        $key = isset($_GET['key']) ? sanitize_text_field($_GET['key']) : '';
 
-        if (!$user_id || !$key || !$this->verify_reset_key($user_id, $key)) {
-            return '<p class="error">' . __('Invalid or expired password reset link.', 'cobra-ai') . '</p>';
-        }
 
         $errors = new \WP_Error();
         $success = false;
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cobra_reset_password'])) {
+            // Verify reset key
+            $user_id = isset($_GET['user_id']) ? absint($_GET['user_id']) : 0;
+            $key = isset($_GET['key']) ? sanitize_text_field($_GET['key']) : '';
+
+            if (!$user_id || !$key || !$this->verify_reset_key($user_id, $key)) {
+                return '<p class="error">' . __('Invalid or expired password reset link.', 'cobra-ai') . '</p>';
+            }
             list($errors, $success) = $this->process_reset_password($user_id, $key);
         }
 
@@ -349,8 +352,8 @@ class ShortcodeHandler
 
         return $message;
     }
-    
-  
+
+
 
     /**
      * Process forgot password form
@@ -1007,7 +1010,7 @@ class ShortcodeHandler
     }
 
 
- 
+
     /**
      * Add an error message to the session
      *
@@ -1015,7 +1018,8 @@ class ShortcodeHandler
      * @param string $type Optional error type/key
      * @return void
      */
-    private function set_error_message($message, string $type = 'general'): void {
+    private function set_error_message($message, string $type = 'general'): void
+    {
         if (session_status() !== PHP_SESSION_ACTIVE) {
             return;
         }
@@ -1048,7 +1052,8 @@ class ShortcodeHandler
      * @param string|null $type Specific error type to retrieve (null for all)
      * @return array
      */
-    private function get_error_messages(?string $type = null): array {
+    private function get_error_messages(?string $type = null): array
+    {
         if (session_status() !== PHP_SESSION_ACTIVE || !isset($_SESSION['cobra_login_errors'])) {
             return [];
         }
@@ -1077,7 +1082,8 @@ class ShortcodeHandler
      * @param string|null $type Specific error type to check
      * @return bool
      */
-    private function has_errors(?string $type = null): bool {
+    private function has_errors(?string $type = null): bool
+    {
         if (session_status() !== PHP_SESSION_ACTIVE || !isset($_SESSION['cobra_login_errors'])) {
             return false;
         }
@@ -1095,10 +1101,11 @@ class ShortcodeHandler
      * @param string|null $type Specific error type to render
      * @return string
      */
- 
-    private function render_error_messages(?string $type = null): string {
+
+    private function render_error_messages(?string $type = null): string
+    {
         $errors = $this->get_error_messages($type);
-        
+
         if (empty($errors)) {
             return '';
         }
@@ -1123,15 +1130,15 @@ class ShortcodeHandler
     /**
      * Redirect back to login page
      */
-    private function redirect_back(): void {
+    private function redirect_back(): void
+    {
         // wp_safe_redirect(wp_get_referer() ?: home_url());
         // exit;
         $referer = wp_get_referer() ?: home_url();
-        
+
         // Determine form type from POST data
-        $form_type = isset($_POST['cobra_login']) ? 'login' : 
-                   (isset($_POST['cobra_register']) ? 'register' : '');
-    
+        $form_type = isset($_POST['cobra_login']) ? 'login' : (isset($_POST['cobra_register']) ? 'register' : '');
+
         if ($form_type && !empty($_POST)) {
             // Store form data before redirect
             $this->store_form_data($form_type, $_POST);
@@ -1140,21 +1147,24 @@ class ShortcodeHandler
         wp_safe_redirect($referer);
         exit;
     }
-    private function store_form_data(string $form_type, array $data): void {
+    private function store_form_data(string $form_type, array $data): void
+    {
         if (session_status() === PHP_SESSION_ACTIVE) {
             // Remove sensitive data
             unset($data['password']);
             unset($data['_wpnonce']);
             unset($data['_wp_http_referer']);
-            
+
             $_SESSION['cobra_form_data_' . $form_type] = $data;
         }
     }
-    private function get_field_value(string $field, string $form_type): string {
+    private function get_field_value(string $field, string $form_type): string
+    {
         $stored_data = $this->get_stored_form_data($form_type);
         return esc_attr($stored_data[$field] ?? '');
     }
-    private function get_stored_form_data(string $form_type): array {
+    private function get_stored_form_data(string $form_type): array
+    {
         if (session_status() === PHP_SESSION_ACTIVE && isset($_SESSION['cobra_form_data_' . $form_type])) {
             $data = $_SESSION['cobra_form_data_' . $form_type];
             // unset($_SESSION['cobra_form_data_' . $form_type]);
@@ -1165,7 +1175,8 @@ class ShortcodeHandler
     /**
      * Redirect after successful login
      */
-    private function redirect_after_login(): void {
+    private function redirect_after_login(): void
+    {
         wp_safe_redirect($this->get_redirect_url('after_login'));
         exit;
     }
@@ -1173,7 +1184,8 @@ class ShortcodeHandler
     /**
      * Get logged in message
      */
-    private function get_logged_in_message(): string {
+    private function get_logged_in_message(): string
+    {
         if (current_user_can('edit_users')) {
             return sprintf(
                 '<div class="cobra-message info">%s</div>',
@@ -1189,9 +1201,10 @@ class ShortcodeHandler
         );
     }
 
-   
 
-    private function is_user_logged_in(): bool {
+
+    private function is_user_logged_in(): bool
+    {
         return is_user_logged_in();
     }
 }

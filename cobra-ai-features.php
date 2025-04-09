@@ -151,6 +151,7 @@ final class CobraAI
     public function init_plugin(): void
     {
         try {
+            
             load_plugin_textdomain('cobra-ai', false, dirname(plugin_basename(__FILE__)) . '/languages');
             do_action('cobra_ai_loaded');
         } catch (\Exception $e) {

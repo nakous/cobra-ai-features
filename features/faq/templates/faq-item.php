@@ -1,5 +1,5 @@
 <?php
-// templates/faq-item.php
+// faq/templates/faq-item.php
 
 $faq_categories = get_the_terms($faq->ID, $this->taxonomy);
 $category_names = [];

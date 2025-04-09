@@ -564,6 +564,19 @@ abstract class FeatureBase
             return wp_parse_args($settings, $this->get_feature_default_options());
         }
 
+        // if key has '.' in it, explode it and get the all values
+        if (strpos($key, '.') !== false) {
+            $keys = explode('.', $key);
+            $value = $settings;
+            foreach ($keys as $k) {
+                if (isset($value[$k])) {
+                    $value = $value[$k];
+                } else {
+                    return $default;
+                }
+            }
+            return $value;
+        }
         return $settings[$key] ?? $this->get_feature_default_options()[$key] ?? $default;
     }
 

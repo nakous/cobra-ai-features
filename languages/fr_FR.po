@@ -1,0 +1,161 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Cobra AI\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-31 12:00+0000\n"
+"PO-Revision-Date: 2025-03-31 12:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr_FR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Poedit 3.2\n"
+"X-Poedit-KeywordsList: __;_e;esc_html__;esc_html_e;esc_attr__;esc_attr_e;_n:1,2\n"
+"X-Poedit-Basepath: ..\n"
+"X-Poedit-SearchPath-0: .\n"
+
+msgid "Your account is not verified. Please check your email for verification link."
+msgstr "Votre compte n'est pas vérifié. Veuillez vérifier votre e-mail pour le lien de vérification."
+
+msgid "If you did not receive the email, click the button below to resend the verification email."
+msgstr "Si vous n'avez pas reçu l'e-mail, cliquez sur le bouton ci-dessous pour renvoyer l'e-mail de vérification."
+
+msgid "Resend Verification Email"
+msgstr "Renvoyer l'e-mail de vérification"
+
+msgid "Your profile has been updated successfully."
+msgstr "Votre profil a été mis à jour avec succès."
+
+msgid "Profile"
+msgstr "Profil"
+
+msgid "Change Password"
+msgstr "Changer le mot de passe"
+
+msgid "Profile Picture"
+msgstr "Photo de profil"
+
+msgid "Privacy"
+msgstr "Confidentialité"
+
+msgid "Update Profile"
+msgstr "Mettre à jour le profil"
+
+msgid "Logout"
+msgstr "Déconnexion"
+
+msgid "Current Password"
+msgstr "Mot de passe actuel"
+
+msgid "New Password"
+msgstr "Nouveau mot de passe"
+
+msgid "Confirm New Password"
+msgstr "Confirmer le nouveau mot de passe"
+
+msgid "Change Password"
+msgstr "Changer le mot de passe"
+
+msgid "Upload New Picture"
+msgstr "Télécharger une nouvelle photo"
+
+msgid "Maximum file size: 2MB. Allowed types: JPG, PNG, GIF"
+msgstr "Taille maximale du fichier : 2 Mo. Types autorisés : JPG, PNG, GIF"
+
+msgid "Remove current picture"
+msgstr "Supprimer la photo actuelle"
+
+msgid "Update Picture"
+msgstr "Mettre à jour la photo"
+
+msgid "Make my profile public"
+msgstr "Rendre mon profil public"
+
+msgid "Allow other users to view your profile information."
+msgstr "Permettre aux autres utilisateurs de voir les informations de votre profil."
+
+msgid "Receive email notifications"
+msgstr "Recevoir des notifications par e-mail"
+
+msgid "Receive updates and notifications via email."
+msgstr "Recevoir des mises à jour et des notifications par e-mail."
+
+msgid "Update Privacy Settings"
+msgstr "Mettre à jour les paramètres de confidentialité"
+
+msgid "Your Privacy Rights"
+msgstr "Vos droits à la vie privée"
+
+msgid "You have the right to:"
+msgstr "Vous avez le droit de :"
+
+msgid "Request a copy of your data"
+msgstr "Demander une copie de vos données"
+
+msgid "Request data correction"
+msgstr "Demander la correction de vos données"
+
+msgid "Request data deletion"
+msgstr "Demander la suppression de vos données"
+
+msgid "View Privacy Policy"
+msgstr "Voir la politique de confidentialité"
+
+msgid "Export My Data"
+msgstr "Exporter mes données"
+
+msgid "Delete Account"
+msgstr "Supprimer le compte"
+
+msgid "Select Country"
+msgstr "Sélectionner un pays"
+
+msgid "Password is too short"
+msgstr "Le mot de passe est trop court"
+
+msgid "Very Weak"
+msgstr "Très faible"
+
+msgid "Weak"
+msgstr "Faible"
+
+msgid "Medium"
+msgstr "Moyen"
+
+msgid "Strong"
+msgstr "Fort"
+
+msgid "Very Strong"
+msgstr "Très fort"
+
+msgid "Passwords do not match"
+msgstr "Les mots de passe ne correspondent pas"
+
+msgid "Download a copy of your personal data?"
+msgstr "Télécharger une copie de vos données personnelles ?"
+
+msgid "Failed to generate export. Please try again."
+msgstr "Échec de la génération de l'export. Veuillez réessayer."
+
+msgid "Are you sure you want to delete your account? This action cannot be undone."
+msgstr "Êtes-vous sûr de vouloir supprimer votre compte ? Cette action ne peut pas être annulée."
+
+msgid "Please enter your password to confirm account deletion:"
+msgstr "Veuillez entrer votre mot de passe pour confirmer la suppression du compte :"
+
+msgid "Failed to delete account. Please try again."
+msgstr "Échec de la suppression du compte. Veuillez réessayer."
+
+msgid "An error occurred. Please try again."
+msgstr "Une erreur s'est produite. Veuillez réessayer."
+
+msgid "Resend verification email?"
+msgstr "Renvoyer l'e-mail de vérification ?"
+
+msgid "Verification email has been sent."
+msgstr "L'e-mail de vérification a été envoyé."
+
+msgid "Failed to resend verification email. Please try again."
+msgstr "Échec de l'envoi de l'e-mail de vérification. Veuillez réessayer."

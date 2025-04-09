@@ -1,5 +1,5 @@
 <?php
-// views/settings.php
+// faq/views/settings.php
 
 // Security check
 if (!defined('ABSPATH')) {
