@@ -12,15 +12,15 @@ class Feature extends FeatureBase
     /**
      * Feature properties
      */
-    protected $feature_id = 'credits';
-    protected $name = 'Credits System';
-    protected $description = 'Manage user credits with multiple credit types, expiration, and tracking';
-    protected $version = '1.0.0';
-    protected $author = 'Cobra AI';
-    protected $has_settings = true;
-    protected $has_admin = true;
-    protected $min_wp_version = '5.8';
-    protected $min_php_version = '7.4';
+    protected string $feature_id = 'credits';
+    protected string $name = 'Credits System';
+    protected string $description = 'Manage user credits with multiple credit types, expiration, and tracking';
+    protected string $version = '1.1.0';
+    protected string $author = 'Onlevelup.com';
+    protected bool $has_settings = true;
+    protected bool $has_admin = true;
+    protected string $min_wp_version = '5.8';
+    protected string $min_php_version = '7.4';
 
     /**
      * Feature components

@@ -10,12 +10,12 @@ use function CobraAI\{
 
 class Feature extends FeatureBase
 {
-    protected $feature_id = 'contact';
-    protected $name = 'Contact Form';
-    protected $description = 'Add a customizable contact form to your website with spam protection and admin reply interface';
-    protected $version = '1.0.0';
-    protected $author = 'Cobra AI';
-    protected $has_settings = true;
+    protected string $feature_id = 'contact';
+    protected string $name = 'Contact Form';
+    protected string $description = 'Add a customizable contact form to your website with spam protection and admin reply interface';
+    protected string $version = '1.1.0';
+    protected string $author = 'Onlevelup.com';
+    protected bool $has_settings = true;
 
     protected function setup(): void
     {

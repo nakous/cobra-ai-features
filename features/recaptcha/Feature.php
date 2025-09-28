@@ -7,17 +7,26 @@ use CobraAI\Features\Recaptcha\Includes\RecaptchaHandler;
 
 class Feature extends FeatureBase
 {
-    protected $feature_id = 'recaptcha';
-    protected $name = 'Google reCAPTCHA';
-    protected $description = 'Add Google reCAPTCHA protection to various WordPress forms';
-    protected $version = '1.0.0';
-    protected $author = 'Your Name';
-    protected $has_settings = true;
-    protected $has_admin = true;
+    protected string $feature_id = 'recaptcha';
+    protected string $name = 'Google reCAPTCHA';
+    protected string $description = 'Add Google reCAPTCHA protection to various WordPress forms';
+    protected string $version = '1.1.0';
+    protected string $author = 'Onlevelup.com';
+    protected bool $has_settings = true;
+    protected bool $has_admin = true;
+    
     /**
      * Class instances
      */
     private $handler;
+    
+    /**
+     * Performance optimizations - cached values
+     */
+    private ?array $cached_settings = null;
+    private ?string $cached_client_ip = null;
+    private ?bool $cached_ip_allowlisted = null;
+    private ?bool $cached_ready_status = null;
     /**
      * Setup feature
      */
@@ -77,7 +86,10 @@ class Feature extends FeatureBase
         // Add AJAX handlers
         add_action('wp_ajax_cobra_ai_test_recaptcha', [$this, 'handle_test_recaptcha']);
         if (is_admin()) {
-            add_action('admin_notices', [$this, 'display_status_notices'], 10);
+            // Use a unique hook to prevent duplicate registrations
+            if (!has_action('admin_notices', [$this, 'display_status_notices'])) {
+                add_action('admin_notices', [$this, 'display_status_notices'], 10);
+            }
         }
     }
 
@@ -226,16 +238,22 @@ class Feature extends FeatureBase
     }
 
     /**
+     * Generic method to add reCAPTCHA to any form (optimized)
+     */
+    private function add_recaptcha_to_form(string $form_type): void
+    {
+        if (!$this->is_form_enabled($form_type) || $this->is_ip_allowlisted()) {
+            return;
+        }
+        $this->render_recaptcha($form_type);
+    }
+
+    /**
      * Add reCAPTCHA to login form
      */
     public function add_to_login_form(): void
     {
-        $settings = $this->get_settings();
-        if (!isset($settings['enabled_forms']['login']) || !$settings['enabled_forms']['login'] || $this->is_ip_allowlisted()) {
-            return;
-        }
-
-        $this->render_recaptcha('login');
+        $this->add_recaptcha_to_form('login');
     }
 
     /**
@@ -243,12 +261,7 @@ class Feature extends FeatureBase
      */
     public function add_to_register_form(): void
     {
-        $settings = $this->get_settings();
-        if (!$settings['enabled_forms']['register'] || $this->is_ip_allowlisted()) {
-            return;
-        }
-
-        $this->render_recaptcha('register');
+        $this->add_recaptcha_to_form('register');
     }
 
     /**
@@ -256,12 +269,7 @@ class Feature extends FeatureBase
      */
     public function add_to_lostpassword_form(): void
     {
-        $settings = $this->get_settings();
-        if (!$settings['enabled_forms']['lostpassword'] || $this->is_ip_allowlisted()) {
-            return;
-        }
-
-        $this->render_recaptcha('lostpassword');
+        $this->add_recaptcha_to_form('lostpassword');
     }
 
     /**
@@ -269,12 +277,7 @@ class Feature extends FeatureBase
      */
     public function add_to_comment_form(): void
     {
-        $settings = $this->get_settings();
-        if (!$settings['enabled_forms']['comments'] || $this->is_ip_allowlisted()) {
-            return;
-        }
-
-        $this->render_recaptcha('comments');
+        $this->add_recaptcha_to_form('comments');
     }
 
     /**
@@ -282,12 +285,7 @@ class Feature extends FeatureBase
      */
     public function add_to_protected_post_form(): void
     {
-        $settings = $this->get_settings();
-        if (!$settings['enabled_forms']['protected_posts'] || $this->is_ip_allowlisted()) {
-            return;
-        }
-
-        $this->render_recaptcha('protected_posts');
+        $this->add_recaptcha_to_form('protected_posts');
     }
     /**
      * Validate registration form
@@ -487,15 +485,39 @@ class Feature extends FeatureBase
         return $messages[$code] ?? $default_messages[$code] ?? __('An error occurred.', 'cobra-ai');
     }
     /**
-     * Check if IP is allowlisted
+     * Get cached settings with performance optimization
+     */
+    protected function get_cached_settings(): array
+    {
+        if ($this->cached_settings === null) {
+            $this->cached_settings = $this->get_settings();
+        }
+        return $this->cached_settings;
+    }
+
+    /**
+     * Check if form is enabled (optimized)
+     */
+    private function is_form_enabled(string $form_type): bool
+    {
+        $settings = $this->get_cached_settings();
+        return !empty($settings['enabled_forms'][$form_type]);
+    }
+
+    /**
+     * Check if IP is allowlisted (cached)
      */
     private function is_ip_allowlisted(): bool
     {
-        $settings = $this->get_settings();
+        if ($this->cached_ip_allowlisted !== null) {
+            return $this->cached_ip_allowlisted;
+        }
+
+        $settings = $this->get_cached_settings();
         $allowlisted_ips = $settings['allowlisted_ips'] ?? [];
 
         if (empty($allowlisted_ips)) {
-            return false;
+            return $this->cached_ip_allowlisted = false;
         }
 
         $client_ip = $this->get_client_ip();
@@ -505,15 +527,19 @@ class Feature extends FeatureBase
             $allowlisted_ips = array_filter(array_map('trim', explode("\n", $allowlisted_ips)));
         }
 
-        return in_array($client_ip, $allowlisted_ips);
+        return $this->cached_ip_allowlisted = in_array($client_ip, $allowlisted_ips);
     }
 
     /**
-     * Get client IP address
+     * Get client IP address (cached)
      */
     protected function get_client_ip(): string
     {
-        $ip_headers = [
+        if ($this->cached_client_ip !== null) {
+            return $this->cached_client_ip;
+        }
+
+        static $ip_headers = [
             'HTTP_CLIENT_IP',
             'HTTP_X_FORWARDED_FOR',
             'HTTP_X_FORWARDED',
@@ -527,26 +553,32 @@ class Feature extends FeatureBase
             if (!empty($_SERVER[$header])) {
                 $ip = trim(explode(',', $_SERVER[$header])[0]);
                 if (filter_var($ip, FILTER_VALIDATE_IP)) {
-                    return $ip;
+                    return $this->cached_client_ip = $ip;
                 }
             }
         }
 
-        return '';
+        return $this->cached_client_ip = '';
     }
 
     /**
-     * Enqueue reCAPTCHA scripts
+     * Enqueue reCAPTCHA scripts (optimized)
      */
     public function enqueue_recaptcha(): void
     {
-        $settings = $this->get_settings();
+        static $scripts_enqueued = false;
+        
+        if ($scripts_enqueued) {
+            return;
+        }
+
+        $settings = $this->get_cached_settings();
 
         if (empty($settings['site_key']) || $this->is_ip_allowlisted()) {
             return;
         }
 
-        // Enqueue Google reCAPTCHA API
+        // Build Google reCAPTCHA API URL
         $url = 'https://www.google.com/recaptcha/api.js';
         $params = [];
 
@@ -562,6 +594,7 @@ class Feature extends FeatureBase
             $url .= '?' . http_build_query($params);
         }
 
+        // Enqueue scripts
         wp_enqueue_script(
             'google-recaptcha',
             $url,
@@ -570,7 +603,6 @@ class Feature extends FeatureBase
             true
         );
 
-        // Enqueue our custom script
         wp_enqueue_script(
             'cobra-recaptcha',
             $this->assets_url . 'js/recaptcha.js',
@@ -579,6 +611,7 @@ class Feature extends FeatureBase
             true
         );
 
+        // Localize script data
         wp_localize_script('cobra-recaptcha', 'cobraRecaptcha', [
             'version' => $settings['version'],
             'siteKey' => $settings['site_key'],
@@ -590,43 +623,56 @@ class Feature extends FeatureBase
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('cobra-recaptcha-verify')
         ]);
+        
+        $scripts_enqueued = true;
     }
 
     /**
-     * Render reCAPTCHA
+     * Render reCAPTCHA (optimized)
      */
     public function render_recaptcha(string $form_type): void
     {
-        $settings = $this->get_settings();
-        if ($settings['version'] === 'v2') {
-            echo sprintf(
-                '<div class="cobra-recaptcha" data-form="%s" data-sitekey="%s" data-theme="%s" data-size="%s"></div>',
-                esc_attr($form_type),
-                esc_attr($settings['site_key']),
-                esc_attr($settings['theme']),
-                esc_attr($settings['size'])
-            );
-        }
-
-        if ($settings['version'] === 'v3') {
-            echo sprintf(
-                '<div class="cobra-recaptcha" data-form="%s" data-sitekey="%s" data-version="%s" data-threshold="%s"></div>',
-                esc_attr($form_type),
-                esc_attr($settings['site_key']),
-                esc_attr($settings['version']),
-                esc_attr($settings['score_threshold'])
-            );
-        }
-
-        // invisible reCAPTCHA
-        if ($settings['version'] === 'invisible') {
-            echo sprintf(
-                '<button class="g-recaptcha cobra-recaptcha" data-form="%s" data-sitekey="%s" data-size="%s" data-badge="%s" data-callback="onCobraRecaptchaSubmit"></button>',
-                esc_attr($form_type),
-                esc_attr($settings['site_key']),
-                esc_attr($settings['size']),
-                esc_attr($settings['badge_position'])
-            );
+        $settings = $this->get_cached_settings();
+        $version = $settings['version'] ?? 'v2';
+        $site_key = esc_attr($settings['site_key']);
+        $form_type_attr = esc_attr($form_type);
+        
+        $html_templates = [
+            'v2' => '<div class="cobra-recaptcha" data-form="%s" data-sitekey="%s" data-theme="%s" data-size="%s"></div>',
+            'v3' => '<div class="cobra-recaptcha" data-form="%s" data-sitekey="%s" data-version="%s" data-threshold="%s"></div>',
+            'invisible' => '<button class="g-recaptcha cobra-recaptcha" data-form="%s" data-sitekey="%s" data-size="%s" data-badge="%s" data-callback="onCobraRecaptchaSubmit"></button>'
+        ];
+        
+        switch ($version) {
+            case 'v2':
+                printf(
+                    $html_templates['v2'],
+                    $form_type_attr,
+                    $site_key,
+                    esc_attr($settings['theme']),
+                    esc_attr($settings['size'])
+                );
+                break;
+                
+            case 'v3':
+                printf(
+                    $html_templates['v3'],
+                    $form_type_attr,
+                    $site_key,
+                    esc_attr($version),
+                    esc_attr($settings['score_threshold'])
+                );
+                break;
+                
+            case 'invisible':
+                printf(
+                    $html_templates['invisible'],
+                    $form_type_attr,
+                    $site_key,
+                    esc_attr($settings['size']),
+                    esc_attr($settings['badge_position'])
+                );
+                break;
         }
     }
 
@@ -667,16 +713,26 @@ class Feature extends FeatureBase
         }
 
         // Check API keys
+        $key_errors = [];
+        
         if (empty($settings['site_key'])) {
-            $status['errors'][] = __('Site key is not configured.', 'cobra-ai');
+            $key_errors[] = __('Site key is not configured', 'cobra-ai');
         } elseif (!preg_match('/^[a-zA-Z0-9_-]+$/', $settings['site_key'])) {
-            $status['errors'][] = __('Site key format is invalid.', 'cobra-ai');
+            $key_errors[] = __('Site key format is invalid', 'cobra-ai');
         }
 
         if (empty($settings['secret_key'])) {
-            $status['errors'][] = __('Secret key is not configured.', 'cobra-ai');
+            $key_errors[] = __('Secret key is not configured', 'cobra-ai');
         } elseif (!preg_match('/^[a-zA-Z0-9_-]+$/', $settings['secret_key'])) {
-            $status['errors'][] = __('Secret key format is invalid.', 'cobra-ai');
+            $key_errors[] = __('Secret key format is invalid', 'cobra-ai');
+        }
+        
+        // Group API key errors into a single message
+        if (!empty($key_errors)) {
+            $status['errors'][] = sprintf(
+                __('API keys configuration: %s.', 'cobra-ai'),
+                implode(', ', $key_errors)
+            );
         }
 
         // Check if any forms are enabled
@@ -727,84 +783,86 @@ class Feature extends FeatureBase
     }
 
     /**
-     * Check if reCAPTCHA is properly configured and ready
-     * 
-     * @return bool
+     * Check if reCAPTCHA is properly configured and ready (cached)
      */
     public function is_ready(): bool
     {
-        $status = $this->get_status();
-        return $status['is_ready'];
+        if ($this->cached_ready_status !== null) {
+            return $this->cached_ready_status;
+        }
+        
+        $settings = $this->get_cached_settings();
+        $ready = !empty($settings['site_key']) && 
+                 !empty($settings['secret_key']) && 
+                 in_array($settings['version'] ?? '', ['v2', 'v3', 'invisible']);
+        
+        return $this->cached_ready_status = $ready;
     }
 
-  
-
     /**
-     * Display status notices in admin
+     * Display status notices in admin (optimized)
      */
     public function display_status_notices(): void
     {
-       
-         
+        // Simple static check to prevent multiple displays
+        static $notice_shown = false;
+        if ($notice_shown) {
+            return;
+        }
+        
+        // Only show on relevant admin pages
+        if (!$this->should_show_admin_notices()) {
+            return;
+        }
  
         $status = $this->get_status();
+        $notice_shown = true;
    
-        // Show errors
+        // Show errors only
         if (!empty($status['errors'])) {
-?>
-            <div class="notice notice-error is-dismissible">
-                <p>
-                    <strong><?php echo esc_html__('reCAPTCHA Configuration Errors:', 'cobra-ai'); ?></strong>
-                </p>
-                <ul>
-                    <?php foreach ($status['errors'] as $error): ?>
-                        <li><?php echo esc_html($error); ?></li>
-                    <?php endforeach; ?>
-                </ul>
-                <p>
-                    <a href="<?php echo esc_url(admin_url('admin.php?page=cobra-ai-recaptcha')); ?>"
-                        class="button button-secondary">
-                        <?php echo esc_html__('Configure reCAPTCHA', 'cobra-ai'); ?>
-                    </a>
-                </p>
-            </div>
-        <?php
+            $this->render_error_notice($status['errors']);
         }
-
-        // Show warnings
-        /* if (!empty($status['warnings'])) {
-        ?>
-            <div class="notice notice-warning is-dismissible">
-                <p>
-                    <strong><?php echo esc_html__('reCAPTCHA Warnings:', 'cobra-ai'); ?></strong>
-                </p>
-                <ul>
-                    <?php foreach ($status['warnings'] as $warning): ?>
-                        <li><?php echo esc_html($warning); ?></li>
-                    <?php endforeach; ?>
-                </ul>
-            </div>
-        <?php
+    }
+    
+    /**
+     * Check if admin notices should be displayed
+     */
+    private function should_show_admin_notices(): bool
+    {
+        if (!function_exists('get_current_screen')) {
+            return false;
         }
-        */
-
-        // Show success message if everything is configured correctly
-       /* if ($status['is_ready']) {
+        
+        $screen = get_current_screen();
+        return $screen && in_array($screen->id, [
+            'toplevel_page_cobra-ai',
+            'cobra-ai_page_cobra-ai-recaptcha', 
+            'cobra-ai_page_cobra-ai-features',
+            'plugins'
+        ]);
+    }
+    
+    /**
+     * Render error notice
+     */
+    private function render_error_notice(array $errors): void
+    {
         ?>
-            <div class="notice notice-success is-dismissible">
-                <p>
-                    <strong><?php echo esc_html__('reCAPTCHA is properly configured and active.', 'cobra-ai'); ?></strong>
-                </p>
-                <?php if (!empty($status['messages'])): ?>
-                    <ul>
-                        <?php foreach ($status['messages'] as $message): ?>
-                            <li><?php echo esc_html($message); ?></li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php endif; ?>
-            </div>
-<?php
-        }*/
+        <div class="notice notice-error is-dismissible">
+            <p><strong><?php echo esc_html__('reCAPTCHA Configuration Errors:', 'cobra-ai'); ?></strong></p>
+            <ul>
+                <?php foreach ($errors as $error): ?>
+                    <li><?php echo esc_html($error); ?></li>
+                <?php endforeach; ?>
+            </ul>
+            <p>
+                <a href="<?php echo esc_url(admin_url('admin.php?page=cobra-ai-recaptcha')); ?>"
+                   class="button button-secondary">
+                    <?php echo esc_html__('Configure reCAPTCHA', 'cobra-ai'); ?>
+                </a>
+            </p>
+        </div>
+        <?php
     }
 
     /**
@@ -815,28 +873,15 @@ class Feature extends FeatureBase
         $active_features = get_option('cobra_ai_enabled_features', []);
         return in_array($this->feature_id, $active_features);
     }
-//  TODO: delete this function
     /**
-     * Check if logs table exists
+     * Clear performance caches
      */
-    private function check_logs_table(): bool
+    public function clear_cache(): void
     {
-        global $wpdb;
-        $table_name = $this->get_logs_table();
-
-        if (empty($table_name)) {
-            return false;
-        }
-
-        return $wpdb->get_var("SHOW TABLES LIKE '{$table_name}'") === $table_name;
-    }
-//  TODO: delete this function
-    /**
-     * Get logs table name
-     */
-    public function get_logs_table(): string
-    {
-        return $this->tables['recaptcha_logs']['name'] ?? '';
+        $this->cached_settings = null;
+        $this->cached_client_ip = null;
+        $this->cached_ip_allowlisted = null;
+        $this->cached_ready_status = null;
     }
 
     public function handle_test_recaptcha(): void

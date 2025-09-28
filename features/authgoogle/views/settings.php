@@ -60,6 +60,51 @@ $this->display_settings_errors();
                     </label>
                 </td>
             </tr>
+            
+            <tr>
+                <th scope="row"><?php echo esc_html__('Display Options', 'cobra-ai'); ?></th>
+                <td>
+                    <fieldset>
+                        <legend class="screen-reader-text"><?php echo esc_html__('Where to show Google login', 'cobra-ai'); ?></legend>
+                        
+                        <label>
+                            <input type="checkbox" 
+                                   name="settings[display][show_on_login]" 
+                                   value="1" 
+                                   <?php checked($settings['display']['show_on_login'] ?? true); ?>>
+                            <?php echo esc_html__('Show on Cobra AI Login Form', 'cobra-ai'); ?>
+                        </label><br>
+                        
+                        <label>
+                            <input type="checkbox" 
+                                   name="settings[display][show_on_register]" 
+                                   value="1" 
+                                   <?php checked($settings['display']['show_on_register'] ?? true); ?>>
+                            <?php echo esc_html__('Show on Cobra AI Registration Form', 'cobra-ai'); ?>
+                        </label><br>
+                        
+                        <label>
+                            <input type="checkbox" 
+                                   name="settings[display][show_on_wordpress_login]" 
+                                   value="1" 
+                                   <?php checked($settings['display']['show_on_wordpress_login'] ?? false); ?>>
+                            <?php echo esc_html__('Show on WordPress Default Login Form', 'cobra-ai'); ?>
+                        </label><br>
+                        
+                        <label>
+                            <input type="checkbox" 
+                                   name="settings[display][show_on_woocommerce]" 
+                                   value="1" 
+                                   <?php checked($settings['display']['show_on_woocommerce'] ?? false); ?>>
+                            <?php echo esc_html__('Show on WooCommerce Forms', 'cobra-ai'); ?>
+                        </label>
+                        
+                        <p class="description">
+                            <?php echo esc_html__('Choose where to display the Google login button. Cobra AI forms use hooks for modular integration.', 'cobra-ai'); ?>
+                        </p>
+                    </fieldset>
+                </td>
+            </tr>
 
             <tr>
                 <th scope="row"><?php echo esc_html__('Default User Role', 'cobra-ai'); ?></th>

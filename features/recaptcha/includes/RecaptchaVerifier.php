@@ -18,6 +18,11 @@ class RecaptchaVerifier {
      * Verification endpoint
      */
     private const VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify';
+    
+    /**
+     * Performance optimization - cached client IP
+     */
+    private ?string $cached_client_ip = null;
 
     /**
      * Constructor
@@ -201,10 +206,14 @@ class RecaptchaVerifier {
     }
 
     /**
-     * Get client IP address
+     * Get client IP address (cached)
      */
     private function get_client_ip(): string {
-        $ip_headers = [
+        if ($this->cached_client_ip !== null) {
+            return $this->cached_client_ip;
+        }
+        
+        static $ip_headers = [
             'HTTP_CLIENT_IP',
             'HTTP_X_FORWARDED_FOR',
             'HTTP_X_FORWARDED',
@@ -218,12 +227,12 @@ class RecaptchaVerifier {
             if (!empty($_SERVER[$header])) {
                 $ip = trim(explode(',', $_SERVER[$header])[0]);
                 if (filter_var($ip, FILTER_VALIDATE_IP)) {
-                    return $ip;
+                    return $this->cached_client_ip = $ip;
                 }
             }
         }
 
-        return '';
+        return $this->cached_client_ip = '';
     }
 
     /**

@@ -10,25 +10,34 @@ defined('ABSPATH') || exit;
 class Database
 {
     /**
-     * Instance of this class
+     * Singleton instance
      */
-    private static $instance = null;
+    private static ?Database $instance = null;
 
     /**
      * Database version
      */
-    private $version = '1.0.0';
+    private string $version = '1.0.0';
 
     /**
      * Core plugin tables schema
      */
-    private $core_tables = [];
+    private array $core_tables = [];
 
     /**
      * Feature tables registry
      */
-    private $feature_tables = [];
-    private $tables_installed = false;
+    private array $feature_tables = [];
+    
+    /**
+     * Installation status cache
+     */
+    private bool $tables_installed = false;
+    
+    /**
+     * Database connection cache
+     */
+    private $wpdb = null;
     /**
      * Get singleton instance
      */
@@ -41,9 +50,33 @@ class Database
     }
 
     /**
-     * Constructor
+     * Constructor - Initialize database components
      */
     private function __construct()
+    {
+        global $wpdb;
+        $this->wpdb = $wpdb;
+        
+        // Ne vérifier et installer les tables que si WordPress est complètement chargé
+        if (function_exists('did_action') && (did_action('init') || did_action('wp_loaded'))) {
+            $this->define_core_tables();
+            $this->check_version();
+        } else {
+            // Attendre que WordPress soit chargé si les fonctions sont disponibles
+            if (function_exists('add_action')) {
+                add_action('init', [$this, 'delayed_init'], 1);
+            } else {
+                // Si WordPress n'est pas disponible, initialiser quand même pour éviter l'erreur
+                $this->define_core_tables();
+                // Mais ne pas vérifier la version
+            }
+        }
+    }
+    
+    /**
+     * Initialisation différée après que WordPress soit chargé
+     */
+    public function delayed_init(): void
     {
         $this->define_core_tables();
         $this->check_version();
@@ -135,6 +168,11 @@ class Database
      */
     private function check_version(): void
     {
+        // Ne vérifier la version que si WordPress est disponible
+        if (!function_exists('get_option')) {
+            return;
+        }
+        
         $stored_version = get_option('cobra_ai_db_version');
 
         if ($stored_version !== $this->version) {
@@ -150,8 +188,22 @@ class Database
         if ($this->tables_installed) {
             return;
         }
+        
+        // Vérifier que WordPress et les outils nécessaires sont disponibles
+        if (!defined('ABSPATH') || !function_exists('dbDelta')) {
+            if (defined('ABSPATH') && file_exists(ABSPATH . 'wp-admin/includes/upgrade.php')) {
+                require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+            } else {
+                // Créer les tables manuellement si dbDelta n'est pas disponible
+                $this->create_tables_manually();
+                return;
+            }
+        }
+        
         global $wpdb;
-        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        if (!$wpdb) {
+            return; // $wpdb n'est pas disponible
+        }
 
         $charset_collate = $wpdb->get_charset_collate();
 
@@ -161,8 +213,34 @@ class Database
             dbDelta($sql);
         }
         $this->tables_installed = true;
-        // Update version
-        update_option('cobra_ai_db_version', $this->version);
+        // Update version only if WordPress function is available
+        if (function_exists('update_option')) {
+            update_option('cobra_ai_db_version', $this->version);
+        }
+    }
+    
+    /**
+     * Create tables manually when dbDelta is not available
+     */
+    private function create_tables_manually(): void
+    {
+        global $wpdb;
+        if (!$wpdb) {
+            return;
+        }
+        
+        $charset_collate = $wpdb->get_charset_collate();
+        
+        foreach ($this->core_tables as $table_id => $table_info) {
+            $sql = $this->generate_table_sql($table_info['name'], $table_info['schema'], $charset_collate);
+            $wpdb->query($sql);
+        }
+        
+        $this->tables_installed = true;
+        
+        if (function_exists('update_option')) {
+            update_option('cobra_ai_db_version', $this->version);
+        }
     }
 
     /**
@@ -210,10 +288,6 @@ class Database
      */
     public function install_feature_tables(string $feature_id): bool
     {
-        // $this->log('error', "Failed to install tables for feature: $feature_id", [
-        //     'array' => print_r($this->feature_tables,true),
-        //     'tables' => $this->feature_tables[$feature_id]
-        // ]);
         if (!isset($this->feature_tables[$feature_id])) {
             $this->log('error', "No tables registered for feature: $feature_id");
             return false;
@@ -270,32 +344,113 @@ class Database
     }
 
     /**
-     * Log system message
+     * Unified logging system
      */
     public function log(string $level, string $message, array $context = []): bool
     {
-        // Check if tables exist before logging
-        if (!$this->tables_installed) {
-            error_log("Cobra AI Log: [$level] $message");
-            return false;  // Return false when tables aren't installed
-        }
-
         try {
-            global $wpdb;
-            return $wpdb->insert(
-                $this->core_tables['system_logs']['name'],
-                [
-                    'level' => $level,
-                    'message' => $message,
-                    'context' => is_array($context) ? json_encode($context) : null
-                ],
-                ['%s', '%s', '%s']
-            ) !== false;  // Return true if insert was successful, false otherwise
-
+            // Validate log level
+            $valid_levels = ['debug', 'info', 'warning', 'error', 'critical'];
+            if (!in_array($level, $valid_levels)) {
+                $level = 'info';
+            }
+            
+            // Use database logging if tables are installed
+            if ($this->tables_installed) {
+                // Utiliser current_time si disponible, sinon date()
+                $current_time = function_exists('current_time') ? current_time('mysql') : date('Y-m-d H:i:s');
+                $context_json = function_exists('wp_json_encode') ? wp_json_encode($context) : json_encode($context);
+                
+                return $this->wpdb->insert(
+                    $this->core_tables['system_logs']['name'],
+                    [
+                        'level' => $level,
+                        'message' => $message,
+                        'context' => !empty($context) ? $context_json : null,
+                        'ip_address' => $this->get_client_ip(),
+                        'created_at' => $current_time
+                    ],
+                    ['%s', '%s', '%s', '%s', '%s']
+                ) !== false;
+            }
+            
+            // Fallback to error_log
+            $log_time = function_exists('current_time') ? current_time('Y-m-d H:i:s') : date('Y-m-d H:i:s');
+            $formatted_message = sprintf(
+                '[Cobra AI] %s - [%s] %s',
+                $log_time,
+                strtoupper($level),
+                $message
+            );
+            
+            if (!empty($context)) {
+                $context_str = function_exists('wp_json_encode') ? wp_json_encode($context) : json_encode($context);
+                $formatted_message .= ' ' . $context_str;
+            }
+            
+            error_log($formatted_message);
+            return true;
+            
         } catch (\Exception $e) {
+            // Emergency fallback
             error_log('Cobra AI Logging Error: ' . $e->getMessage());
-            return false;  // Return false on error
+            return false;
         }
+    }
+    
+    /**
+     * Get client IP address
+     */
+    private function get_client_ip(): string
+    {
+        // Check for various headers that may contain the real IP
+        $ip_headers = [
+            'HTTP_CF_CONNECTING_IP',     // Cloudflare
+            'HTTP_CLIENT_IP',            // Proxy
+            'HTTP_X_FORWARDED_FOR',      // Load balancer/proxy
+            'HTTP_X_FORWARDED',          // Proxy
+            'HTTP_X_CLUSTER_CLIENT_IP',  // Cluster
+            'HTTP_FORWARDED_FOR',        // Proxy
+            'HTTP_FORWARDED',            // Proxy
+            'REMOTE_ADDR'                // Standard
+        ];
+        
+        foreach ($ip_headers as $header) {
+            if (!empty($_SERVER[$header])) {
+                $ip = $_SERVER[$header];
+                // Handle comma-separated IPs (X-Forwarded-For)
+                if (strpos($ip, ',') !== false) {
+                    $ip = trim(explode(',', $ip)[0]);
+                }
+                // Validate IP
+                if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                    return $ip;
+                }
+            }
+        }
+        
+        return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    }
+    
+    /**
+     * Emergency logging when normal logging fails
+     */
+    private function emergency_log(string $message, array $context = []): void
+    {
+        $formatted = sprintf(
+            '[Cobra AI Emergency] %s - %s',
+            date('Y-m-d H:i:s'),
+            $message
+        );
+        
+        if (!empty($context)) {
+            $formatted .= ' ' . json_encode($context, JSON_UNESCAPED_UNICODE);
+        }
+        
+        error_log($formatted);
+    }
+
+    /**
     }
 
    
@@ -308,13 +463,15 @@ class Database
         try {
             global $wpdb;
 
+            $user_id = $user_id ?? (function_exists('get_current_user_id') ? get_current_user_id() : null);
+            
             return $wpdb->insert(
                 $this->core_tables['analytics']['name'],
                 [
                     'feature_id' => $feature_id,
                     'event_type' => $event_type,
                     'event_data' => $event_data ? json_encode($event_data) : null,
-                    'user_id' => $user_id ?? get_current_user_id()
+                    'user_id' => $user_id
                 ],
                 ['%s', '%s', '%s', '%d']
             );
@@ -405,7 +562,7 @@ class Database
             }, $results ?: []);
 
         } catch (\Exception $e) {
-            error_log('Cobra AI Error getting logs: ' . $e->getMessage());
+            $this->emergency_log('Error getting logs', ['error' => $e->getMessage()]);
             return [];
         }
     }
@@ -425,7 +582,7 @@ class Database
 
             return true;
         } catch (\Exception $e) {
-            error_log('Cobra AI Error cleaning logs: ' . $e->getMessage());
+            $this->emergency_log('Error cleaning logs', ['error' => $e->getMessage(), 'days' => $days]);
             return false;
         }
     }

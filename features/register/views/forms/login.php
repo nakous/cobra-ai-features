@@ -2,9 +2,10 @@
 // Prevent direct access
 defined('ABSPATH') || exit;
 ?>
-<?php if ($is_feature_authGoogle_enabled): ?> 
-    <?php echo do_shortcode('[cobra_google_login]'); ?>
-<?php endif; ?>
+<?php
+// Hook for third-party login integrations (e.g., Google Auth)
+do_action('cobra_before_login_form');
+?>
  
 <div class="cobra-login-wrapper">
     <?php

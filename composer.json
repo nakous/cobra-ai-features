@@ -10,6 +10,11 @@
             "email": "mustapha.nak@gmail.com"
         }
     ],
+    "scripts": {
+        "copy-plugin": [
+            "cmd /c xcopy \"C:\\Users\\nakrn3\\Desktop\\projet\\cobra-ai-features\" \"C:\\xampp\\htdocs\\wp\\wp-content\\plugins\\cobra-ai-features\" /E /I /Y"
+        ]
+    },
     "require": {
         "php": ">=7.4",
         "composer/installers": "^2.0",

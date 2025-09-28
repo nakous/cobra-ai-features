@@ -9,13 +9,13 @@ class Feature extends FeatureBase {
     /**
      * Feature properties
      */
-    protected $feature_id = 'extension';
-    protected $name = 'Extension manager API';
-    protected $description = 'Integrate multiple AI providers with tracking and management';
-    protected $version = '1.0.0';
-    protected $author = 'Cobra AI';
-    protected $has_settings = false;
-    protected $has_admin = false;
+    protected string $feature_id = 'extension';
+    protected string $name = 'Extension manager API';
+    protected string $description = 'Integrate multiple AI providers with tracking and management';
+    protected string $version = '1.1.0';
+    protected string $author = 'Onlevelup.com';
+    protected bool $has_settings = false;
+    protected bool $has_admin = false;
 
     /**
      * Feature components

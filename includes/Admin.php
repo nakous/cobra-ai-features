@@ -10,27 +10,27 @@ defined('ABSPATH') || exit;
 class Admin
 {
     /**
-     * Instance of this class
+     * Singleton instance
      */
-    private static $instance = null;
+    private static ?Admin $instance = null;
 
     /**
-     * Menu settings
+     * Menu configuration
      */
-    private $menu_slug = 'cobra-ai-dashboard';
-    private $capability = 'manage_options';
-    private $menu_position = 30;
-    private $menu_icon = 'dashicons-randomize';
+    private string $menu_slug = 'cobra-ai-dashboard';
+    private string $capability = 'manage_options';
+    private int $menu_position = 30;
+    private string $menu_icon = 'dashicons-randomize';
 
     /**
-     * Active features
+     * Admin notices queue
      */
-    // private $features = [];
-
+    private array $notices = [];
+    
     /**
-     * Admin notices
+     * Database instance cache
      */
-    private $notices = [];
+    private ?Database $db = null;
 
     /**
      * Get singleton instance
@@ -38,18 +38,17 @@ class Admin
     public static function get_instance(): self
     {
         if (null === self::$instance) {
-            // log instanses
-             
             self::$instance = new self();
         }
         return self::$instance;
     }
 
     /**
-     * Constructor
+     * Constructor - Initialize admin components
      */
     private function __construct()
     {
+        $this->db = Database::get_instance();
         $this->init_hooks();
         $this->cleanup_feature_list();
     }
@@ -116,7 +115,6 @@ class Admin
 
         // Sanitize and save settings
         $settings = isset($_POST['settings']) ? (array)$_POST['settings'] : [];
-        error_log(print_r($settings, true));
         $sanitized = $feature->sanitize_settings($settings);
 
 
@@ -578,7 +576,7 @@ class Admin
 
             return true;
         } catch (\Exception $e) {
-            cobra_ai_db()->log('error', sprintf(
+            $this->db->log('error', sprintf(
                 'Failed to activate feature %s: %s',
                 $feature_id,
                 $e->getMessage()

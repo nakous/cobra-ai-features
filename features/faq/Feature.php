@@ -11,12 +11,12 @@ use function CobraAI\{
 
 class Feature extends FeatureBase
 {
-    protected $feature_id = 'faq';
-    protected $name = 'FAQ Manager';
-    protected $description = 'Advanced FAQ management system with categories, search, and customizable display options';
-    protected $version = '1.0.0';
-    protected $author = 'Cobra AI';
-    protected $has_settings = true;
+    protected string $feature_id = 'faq';
+    protected string $name = 'FAQ Manager';
+    protected string $description = 'Advanced FAQ management system with categories, search, and customizable display options';
+    protected string $version = '1.1.0';
+    protected string $author = 'Onlevelup.com';
+    protected bool $has_settings = true;
 
     protected $post_type = 'cobra_faq';
     protected $taxonomy = 'cobra_faq_category';

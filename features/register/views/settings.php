@@ -113,32 +113,55 @@ $recaptcha_available = $this->is_recaptcha_available();
                 $page_fields = [
                     'login' => [
                         'label' => __('Login Page', 'cobra-ai'),
-                        'description' => __('Page containing the [user_login] shortcode.', 'cobra-ai'),
-                        'shortcode' => '[user_login]'
+                        'description' => __('Page containing the [cobra_login] shortcode.', 'cobra-ai'),
+                        'shortcode' => '[cobra_login]'
                     ],
                     'register' => [
                         'label' => __('Registration Page', 'cobra-ai'),
-                        'description' => __('Page containing the [user_register] shortcode.', 'cobra-ai'),
-                        'shortcode' => '[user_register]'
+                        'description' => __('Page containing the [cobra_register] shortcode.', 'cobra-ai'),
+                        'shortcode' => '[cobra_register]'
                     ],
                     'forgot_password' => [
                         'label' => __('Forgot Password Page', 'cobra-ai'),
-                        'description' => __('Page containing the [user_forgot_password] shortcode.', 'cobra-ai'),
-                        'shortcode' => '[user_forgot_password]'
+                        'description' => __('Page containing the [cobra_forgot_password] shortcode.', 'cobra-ai'),
+                        'shortcode' => '[cobra_forgot_password]'
                     ],
                     'reset_password' => [
                         'label' => __('Reset Password Page', 'cobra-ai'),
-                        'description' => __('Page containing the [user_reset_password] shortcode.', 'cobra-ai'),
-                        'shortcode' => '[user_reset_password]'
+                        'description' => __('Page containing the [cobra_reset_password] shortcode.', 'cobra-ai'),
+                        'shortcode' => '[cobra_reset_password]'
                     ],
                     'account' => [
                         'label' => __('Account Page', 'cobra-ai'),
-                        'description' => __('Page containing the [user_account] shortcode.', 'cobra-ai'),
-                        'shortcode' => '[user_account]'
+                        'description' => __('Page containing the [cobra_account] shortcode.', 'cobra-ai'),
+                        'shortcode' => '[cobra_account]'
                     ]
                 ];
 
-                foreach ($page_fields as $field => $config): ?>
+                // Function to check if page exists and has correct content
+                $check_page_status = function($page_id, $shortcode) {
+                    if (empty($page_id)) {
+                        return ['exists' => false, 'has_shortcode' => false];
+                    }
+                    
+                    $page = get_post($page_id);
+                    if (!$page || $page->post_status !== 'publish') {
+                        return ['exists' => false, 'has_shortcode' => false];
+                    }
+                    
+                    $has_shortcode = strpos($page->post_content, $shortcode) !== false;
+                    return ['exists' => true, 'has_shortcode' => $has_shortcode, 'page' => $page];
+                };
+
+                foreach ($page_fields as $field => $config): 
+                    $page_status = $check_page_status($settings['pages'][$field] ?? '', $config['shortcode']);
+                    
+                    // Reset setting if page doesn't exist
+                    if (!empty($settings['pages'][$field]) && !$page_status['exists']) {
+                        $settings['pages'][$field] = '';
+                        // Note: Settings will be updated when user saves the form
+                    }
+                ?>
                     <tr>
                         <th scope="row">
                             <label for="page_<?php echo esc_attr($field); ?>">
@@ -167,7 +190,7 @@ $recaptcha_available = $this->is_recaptcha_available();
                                 );
                                 ?>
                             </p>
-                            <?php if (empty($settings['pages'][$field])): ?>
+                            <?php if (empty($settings['pages'][$field]) || !$page_status['exists']): ?>
                                 <button type="button"
                                     class="button create-page"
                                     data-page="<?php echo esc_attr($field); ?>"
@@ -175,7 +198,19 @@ $recaptcha_available = $this->is_recaptcha_available();
                                     data-shortcode="<?php echo esc_attr($config['shortcode']); ?>">
                                     <?php _e('Create Page', 'cobra-ai'); ?>
                                 </button>
+                                <?php if (!empty($settings['pages'][$field]) && !$page_status['exists']): ?>
+                                    <p class="description" style="color: #d63638;">
+                                        <strong><?php _e('Warning:', 'cobra-ai'); ?></strong> 
+                                        <?php _e('The selected page no longer exists and has been reset.', 'cobra-ai'); ?>
+                                    </p>
+                                <?php endif; ?>
                             <?php else: ?>
+                                <?php if (!$page_status['has_shortcode']): ?>
+                                    <p class="description" style="color: #d63638;">
+                                        <strong><?php _e('Warning:', 'cobra-ai'); ?></strong> 
+                                        <?php printf(__('The page does not contain the required shortcode %s', 'cobra-ai'), '<code>' . esc_html($config['shortcode']) . '</code>'); ?>
+                                    </p>
+                                <?php endif; ?>
                                 <a href="<?php echo esc_url(get_edit_post_link($settings['pages'][$field])); ?>"
                                     class="button"
                                     target="_blank">
@@ -186,6 +221,12 @@ $recaptcha_available = $this->is_recaptcha_available();
                                     target="_blank">
                                     <?php _e('View Page', 'cobra-ai'); ?>
                                 </a>
+                                <button type="button"
+                                    class="button button-secondary reset-page"
+                                    data-field="<?php echo esc_attr($field); ?>"
+                                    title="<?php _e('Reset page selection', 'cobra-ai'); ?>">
+                                    <?php _e('Reset', 'cobra-ai'); ?>
+                                </button>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -199,35 +240,122 @@ $recaptcha_available = $this->is_recaptcha_available();
                 </tr>
 
                 <?php
-                // Define URL fields
-                $url_fields = [
+                // Define redirect fields with page selectors
+                $redirect_fields = [
                     'after_login' => [
                         'label' => __('Redirect After Login', 'cobra-ai'),
-                        'description' => __('Where to redirect users after successful login. Leave empty to use the Account page.', 'cobra-ai')
+                        'description' => __('Where to redirect users after successful login. Leave empty to use the Account page.', 'cobra-ai'),
+                        'type' => 'page_or_url'
                     ],
                     'after_logout' => [
                         'label' => __('Redirect After Logout', 'cobra-ai'),
-                        'description' => __('Where to redirect users after logout. Leave empty to use the Login page.', 'cobra-ai')
+                        'description' => __('Where to redirect users after logout. Leave empty to use the Login page.', 'cobra-ai'),
+                        'type' => 'page_or_url'
                     ],
                     'policy' => [
-                        'label' => __('Privacy Policy URL', 'cobra-ai'),
-                        'description' => __('URL to your privacy policy page.', 'cobra-ai')
+                        'label' => __('Privacy Policy Page', 'cobra-ai'),
+                        'description' => __('Select or specify your privacy policy page.', 'cobra-ai'),
+                        'type' => 'page_or_url',
+                        'default_search' => 'privacy policy'
                     ]
                 ];
 
-                foreach ($url_fields as $field => $config): ?>
+                foreach ($redirect_fields as $field => $config):
+                    $current_value = $settings['redirects'][$field] ?? '';
+                    $selected_page_id = '';
+                    $custom_url = $current_value;
+                    
+                    // Check if current value is a page ID or URL
+                    // A page ID should be numeric and the page should exist
+                    if (is_numeric($current_value) && get_post($current_value) && get_post_status($current_value) === 'publish') {
+                        $selected_page_id = $current_value;
+                        $custom_url = '';
+                    } elseif (!empty($current_value) && (filter_var($current_value, FILTER_VALIDATE_URL) || strpos($current_value, '/') !== false)) {
+                        // It's a URL (either full URL or relative path)
+                        $selected_page_id = '';
+                        $custom_url = $current_value;
+                    }
+                    
+                    // For policy field, try to find default privacy policy page only if no current value
+                    if ($field === 'policy' && empty($current_value)) {
+                        $privacy_pages = get_pages([
+                            'meta_key' => '_wp_page_template',
+                            'meta_value' => 'page-privacy.php',
+                            'number' => 1
+                        ]);
+                        if (empty($privacy_pages)) {
+                            $privacy_pages = get_posts([
+                                'post_type' => 'page',
+                                'post_status' => 'publish',
+                                's' => 'privacy policy',
+                                'posts_per_page' => 1
+                            ]);
+                        }
+                        if (!empty($privacy_pages)) {
+                            $selected_page_id = $privacy_pages[0]->ID;
+                            $custom_url = '';
+                        }
+                    }
+                ?>
                     <tr>
                         <th scope="row">
-                            <label for="url_<?php echo esc_attr($field); ?>">
+                            <label for="redirect_<?php echo esc_attr($field); ?>">
                                 <?php echo esc_html($config['label']); ?>
                             </label>
                         </th>
                         <td>
-                            <input type="url"
-                                name="settings[redirects][<?php echo esc_attr($field); ?>]"
-                                id="url_<?php echo esc_attr($field); ?>"
-                                value="<?php echo esc_url($settings['redirects'][$field] ?? ''); ?>"
-                                class="regular-text">
+                            <div class="redirect-field-container">
+                                <!-- Page Selector -->
+                                <div class="page-selector" style="margin-bottom: 10px;">
+                                    <label>
+                                        <input type="radio" 
+                                               name="redirect_type_<?php echo esc_attr($field); ?>" 
+                                               value="page" 
+                                               <?php checked(!empty($selected_page_id)); ?>
+                                               class="redirect-type-radio">
+                                        <?php _e('Select a page:', 'cobra-ai'); ?>
+                                    </label>
+                                    <select name="settings[redirects][<?php echo esc_attr($field); ?>]_page"
+                                            id="redirect_page_<?php echo esc_attr($field); ?>"
+                                            class="regular-text redirect-page-select"
+                                            style="margin-left: 10px;"
+                                            <?php disabled(empty($selected_page_id)); ?>>
+                                        <option value=""><?php _e('-- Select Page --', 'cobra-ai'); ?></option>
+                                        <?php foreach ($pages as $page): ?>
+                                            <option value="<?php echo esc_attr($page->ID); ?>"
+                                                <?php selected($selected_page_id, $page->ID); ?>>
+                                                <?php echo esc_html($page->post_title); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                
+                                <!-- Custom URL -->
+                                <div class="url-selector">
+                                    <label>
+                                        <input type="radio" 
+                                               name="redirect_type_<?php echo esc_attr($field); ?>" 
+                                               value="url" 
+                                               <?php checked(empty($selected_page_id) && !empty($custom_url)); ?>
+                                               class="redirect-type-radio">
+                                        <?php _e('Or enter custom URL:', 'cobra-ai'); ?>
+                                    </label>
+                                    <input type="url"
+                                           name="settings[redirects][<?php echo esc_attr($field); ?>]_url"
+                                           id="redirect_url_<?php echo esc_attr($field); ?>"
+                                           value="<?php echo esc_url($custom_url); ?>"
+                                           class="regular-text redirect-url-input"
+                                           style="margin-left: 10px;"
+                                           placeholder="https://example.com/page"
+                                           <?php disabled(!empty($selected_page_id) && empty($custom_url)); ?>>
+                                </div>
+                                
+                                <!-- Hidden field for final value -->
+                                <input type="hidden" 
+                                       name="settings[redirects][<?php echo esc_attr($field); ?>]" 
+                                       id="final_redirect_<?php echo esc_attr($field); ?>"
+                                       value="<?php echo esc_attr($current_value); ?>">
+                            </div>
                             <p class="description">
                                 <?php echo esc_html($config['description']); ?>
                             </p>
@@ -238,8 +366,8 @@ $recaptcha_available = $this->is_recaptcha_available();
 
             <script>
                 jQuery(document).ready(function($) {
-                    // Handle page creation
-                    $('.create-page').on('click', function() {
+                    // Handle page creation - Use event delegation for dynamically created buttons
+                    $(document).on('click', '.create-page', function() {
                         var button = $(this);
                         var pageData = button.data();
 
@@ -272,6 +400,29 @@ $recaptcha_available = $this->is_recaptcha_available();
                         });
                     });
 
+                    // Handle page reset - Use event delegation for dynamically created buttons
+                    $(document).on('click', '.reset-page', function() {
+                        var button = $(this);
+                        var field = button.data('field');
+                        var container = button.parent();
+                        var select = container.find('select[name="settings[pages][' + field + ']"]');
+                        
+                        if (confirm('<?php esc_js(_e('Are you sure you want to reset this page selection?', 'cobra-ai')); ?>')) {
+                            // Reset select value
+                            select.val('');
+                            
+                            // Trigger change event to update interface
+                            select.trigger('change');
+                            
+                            // Show success message
+                            var successMsg = $('<p class="description" style="color: #00a32a;"><strong><?php esc_js(_e('Page setting reset successfully.', 'cobra-ai')); ?></strong></p>');
+                            container.append(successMsg);
+                            setTimeout(function() {
+                                successMsg.fadeOut();
+                            }, 3000);
+                        }
+                    });
+
                     // Handle page selection changes
                     $('select[name^="settings[pages]"]').on('change', function() {
                         var select = $(this);
@@ -279,20 +430,29 @@ $recaptcha_available = $this->is_recaptcha_available();
                         var pageId = select.val();
 
                         container.find('.button').remove();
+                        container.find('.description[style*="color"]').remove();
 
                         if (pageId) {
                             container.append(
                                 '<a href="<?php echo admin_url('post.php?action=edit&post='); ?>' + pageId +
                                 '" class="button" target="_blank"><?php esc_js(_e('Edit Page', 'cobra-ai')); ?></a> ' +
                                 '<a href="<?php echo home_url('?p='); ?>' + pageId +
-                                '" class="button" target="_blank"><?php esc_js(_e('View Page', 'cobra-ai')); ?></a>'
+                                '" class="button" target="_blank"><?php esc_js(_e('View Page', 'cobra-ai')); ?></a> ' +
+                                '<button type="button" class="button button-secondary reset-page" ' +
+                                'data-field="' + select.attr('id').replace('page_', '') + '" ' +
+                                'title="<?php esc_js(_e('Reset page selection', 'cobra-ai')); ?>">' +
+                                '<?php esc_js(_e('Reset', 'cobra-ai')); ?></button>'
                             );
                         } else {
+                            var fieldName = select.attr('id').replace('page_', '');
+                            var shortcode = select.closest('tr').find('code').text();
+                            var pageLabel = select.closest('tr').find('th label').text();
+                            
                             container.append(
                                 '<button type="button" class="button create-page" ' +
-                                'data-page="' + select.attr('id').replace('page_', '') + '" ' +
-                                'data-title="' + select.find('option:first').text().replace('-- Select ', '').replace(' --', '') + '" ' +
-                                'data-shortcode="' + select.closest('tr').find('code').text() + '">' +
+                                'data-page="' + fieldName + '" ' +
+                                'data-title="' + pageLabel + '" ' +
+                                'data-shortcode="' + shortcode + '">' +
                                 '<?php esc_js(_e('Create Page', 'cobra-ai')); ?></button>'
                             );
                         }
@@ -312,6 +472,38 @@ $recaptcha_available = $this->is_recaptcha_available();
                 .form-table code {
                     background: #f0f0f1;
                     padding: 2px 6px;
+                }
+
+                .redirect-field-container {
+                    max-width: 600px;
+                }
+
+                .redirect-field-container .page-selector,
+                .redirect-field-container .url-selector {
+                    display: flex;
+                    align-items: center;
+                    margin-bottom: 8px;
+                }
+
+                .redirect-field-container label {
+                    display: flex;
+                    align-items: center;
+                    margin-right: 10px;
+                    font-weight: normal;
+                }
+
+                .redirect-field-container input[type="radio"] {
+                    margin-right: 5px;
+                }
+
+                .redirect-field-container select,
+                .redirect-field-container input[type="url"] {
+                    min-width: 300px;
+                }
+
+                .redirect-field-container select:disabled,
+                .redirect-field-container input:disabled {
+                    opacity: 0.6;
                 }
             </style>
         <?php elseif ($current_tab === 'emails'): ?>
@@ -479,6 +671,78 @@ $recaptcha_available = $this->is_recaptcha_available();
                 $required.prop('disabled', true).prop('checked', false);
             }
         });
+
+        // Handle redirect field radio buttons and final value calculation
+        $('.redirect-type-radio').on('change', function() {
+            var fieldContainer = $(this).closest('.redirect-field-container');
+            var pageSelect = fieldContainer.find('.redirect-page-select');
+            var urlInput = fieldContainer.find('.redirect-url-input');
+            var hiddenInput = fieldContainer.find('input[type="hidden"]');
+            
+            if ($(this).val() === 'page') {
+                pageSelect.prop('disabled', false);
+                urlInput.prop('disabled', true).val('');
+                
+                // Update final value with selected page ID
+                var pageId = pageSelect.val();
+                hiddenInput.val(pageId);
+            } else {
+                pageSelect.prop('disabled', true);
+                urlInput.prop('disabled', false);
+                
+                // Update final value with URL
+                var url = urlInput.val();
+                hiddenInput.val(url);
+            }
+        });
+
+        // Handle page select changes
+        $('.redirect-page-select').on('change', function() {
+            var fieldContainer = $(this).closest('.redirect-field-container');
+            var hiddenInput = fieldContainer.find('input[type="hidden"]');
+            var pageRadio = fieldContainer.find('input[name$="[page]"]:radio');
+            
+            // Make sure page radio is selected when page is chosen
+            pageRadio.prop('checked', true);
+            hiddenInput.val($(this).val());
+            
+            // Disable URL input when page is selected
+            var urlInput = fieldContainer.find('.redirect-url-input');
+            urlInput.prop('disabled', true);
+        });
+
+        // Handle URL input changes
+        $('.redirect-url-input').on('input', function() {
+            var fieldContainer = $(this).closest('.redirect-field-container');
+            var hiddenInput = fieldContainer.find('input[type="hidden"]');
+            var urlRadio = fieldContainer.find('input[value="url"]:radio');
+            
+            // Make sure URL radio is selected when URL is entered
+            urlRadio.prop('checked', true);
+            hiddenInput.val($(this).val());
+            
+            // Disable page select when URL is entered
+            var pageSelect = fieldContainer.find('.redirect-page-select');
+            pageSelect.prop('disabled', true);
+        });
+
+        // Initialize redirect fields on page load
+        $('.redirect-field-container').each(function() {
+            var container = $(this);
+            var pageRadio = container.find('input[value="page"]:radio');
+            var urlRadio = container.find('input[value="url"]:radio');
+            var pageSelect = container.find('.redirect-page-select');
+            var urlInput = container.find('.redirect-url-input');
+            
+            if (pageRadio.is(':checked')) {
+                pageSelect.prop('disabled', false);
+                urlInput.prop('disabled', true);
+            } else if (urlRadio.is(':checked')) {
+                urlInput.prop('disabled', false);
+                pageSelect.prop('disabled', true);
+            }
+        });
+
         // Save the form data before submitting
         $('form').on('submit', function() {
             localStorage.setItem('lastTab', '<?php echo esc_js($current_tab); ?>');

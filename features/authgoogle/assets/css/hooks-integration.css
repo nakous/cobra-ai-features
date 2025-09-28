@@ -1,0 +1,175 @@
+/**
+ * CSS for Google Auth Hook Integration
+ * Styles for Google authentication when used via hooks in Cobra AI forms
+ */
+
+.cobra-google-auth-wrapper {
+    margin: 0 0 20px 0;
+    padding: 15px 0;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+    position: relative;
+}
+
+.cobra-google-auth-wrapper::after {
+    content: 'OR';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fff;
+    padding: 0 15px;
+    color: #666;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Google Login Button Styles */
+.cobra-google-auth-wrapper .cobra-google-login-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: #4285f4;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+    min-width: 180px;
+}
+
+.cobra-google-auth-wrapper .cobra-google-login-btn:hover {
+    background: #3367d6;
+    color: white;
+}
+
+.cobra-google-auth-wrapper .cobra-google-login-btn:active {
+    background: #2851a3;
+    transform: translateY(1px);
+}
+
+/* Google Icon */
+.cobra-google-auth-wrapper .cobra-google-icon {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+    .cobra-google-auth-wrapper {
+        margin: 0 0 15px 0;
+        padding: 10px 0;
+    }
+    
+    .cobra-google-auth-wrapper .cobra-google-login-btn {
+        width: 100%;
+        min-width: auto;
+        padding: 14px 20px;
+    }
+}
+
+/* Integration with Login Form */
+.cobra-login-wrapper .cobra-google-auth-wrapper {
+    margin-top: 0;
+}
+
+/* Integration with Register Form */
+.cobra-register-wrapper .cobra-google-auth-wrapper {
+    margin-top: 0;
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+    .cobra-google-auth-wrapper {
+        border-bottom-color: #444;
+    }
+    
+    .cobra-google-auth-wrapper::after {
+        background: #1a1a1a;
+        color: #ccc;
+    }
+}
+
+/* Loading state for Google button */
+.cobra-google-auth-wrapper .cobra-google-login-btn.loading {
+    position: relative;
+    color: transparent;
+    pointer-events: none;
+}
+
+.cobra-google-auth-wrapper .cobra-google-login-btn.loading::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 16px;
+    height: 16px;
+    border: 2px solid white;
+    border-radius: 50%;
+    border-right-color: transparent;
+    transform: translate(-50%, -50%);
+    animation: google-button-loading 0.8s linear infinite;
+}
+
+@keyframes google-button-loading {
+    from {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+/* Error state */
+.cobra-google-auth-wrapper .cobra-google-error {
+    background: #fbeaea;
+    border: 1px solid #dc3232;
+    color: #dc3232;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-top: 10px;
+    font-size: 13px;
+    text-align: left;
+}
+
+/* Success state */
+.cobra-google-auth-wrapper .cobra-google-success {
+    background: #edfaef;
+    border: 1px solid #46b450;
+    color: #2e7d32;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-top: 10px;
+    font-size: 13px;
+    text-align: left;
+}
+
+/* Hide wrapper when Google is not configured */
+.cobra-google-auth-wrapper:empty {
+    display: none;
+}
+
+/* Animation for wrapper appearance */
+.cobra-google-auth-wrapper {
+    opacity: 0;
+    animation: fadeInUp 0.3s ease forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

@@ -5,7 +5,10 @@
  * Description: Modular AI-powered features for WordPress
  * Version: 1.0.0
  * Author: Nakous Mustapha
- * Author URI: https://onlevelup.com
+ * Auth            do_action('cobra_ai_features_loaded');
+        } catch (\Exception $e) {
+            $this->log_error('Features initialization failed', $e);
+        }RI: https://onlevelup.com
  * Text Domain: cobra-ai
  * Domain Path: /languages
  * Requires at least: 5.8
@@ -31,20 +34,28 @@ final class CobraAI
      * Plugin version
      */
     const VERSION = '1.0.0';
-    public Database  $db;
-    public APIManager $api;     // Make API manager accessible
+    
+    /**
+     * Core components
+     */
+    public Database $db;
+    public APIManager $api;
     public Admin $admin;
-    // public Loader $loader;
-    private array  $features = [];
+    
     /**
      * Plugin instance
      */
     private static ?CobraAI $instance = null;
-
+    
     /**
-     * Plugin components
+     * Plugin components container
      */
-    private $container = [];
+    private array $container = [];
+    
+    /**
+     * Loaded features cache
+     */
+    private array $features = [];
 
     /**
      * Get plugin instance
@@ -54,7 +65,6 @@ final class CobraAI
         if (null === self::$instance) {
             self::$instance = new self();
         }
-        // cobra_ai_db()->log('info', 'Initializing plugin -0--instance');
         return self::$instance;
     }
 
@@ -63,18 +73,21 @@ final class CobraAI
      */
     private function __construct()
     {
-
-        $this->define_constants();
-
-        if (!$this->check_requirements()) {
-            return;
+        try {
+            $this->define_constants();
+            
+            if (!$this->check_requirements()) {
+                return;
+            }
+            
+            $this->include_files();
+            $this->init_database();
+            $this->init_container();
+            $this->init_hooks();
+            
+        } catch (\Exception $e) {
+            $this->log_error('Plugin initialization failed', $e);
         }
-
-        $this->include_files();
-        $this->init_database();
-
-        $this->init_container();
-        $this->init_hooks();
     }
 
     /**
@@ -102,7 +115,15 @@ final class CobraAI
             return false;
         }
 
-        if (version_compare($GLOBALS['wp_version'], '5.8', '<')) {
+        // Vérifier la version WordPress de manière sûre
+        $wp_version = null;
+        if (function_exists('get_bloginfo')) {
+            $wp_version = \get_bloginfo('version');
+        } elseif (isset($GLOBALS['wp_version'])) {
+            $wp_version = $GLOBALS['wp_version'];
+        }
+        
+        if ($wp_version && version_compare($wp_version, '5.8', '<')) {
             add_action('admin_notices', [$this, 'wp_version_notice']);
             return false;
         }
@@ -120,7 +141,6 @@ final class CobraAI
             'Database.php',
             'Admin.php',
             'APIManager.php',
-            // 'Loader.php',
             'utilities/functions.php',
             'utilities/Validator.php'
         ];
@@ -135,8 +155,6 @@ final class CobraAI
      */
     private function init_hooks(): void
     {
-        // echo "Cobra AI Features loaded";
-        // Plugin lifecycle hooks
         register_activation_hook(__FILE__, [$this, 'activate']);
         register_deactivation_hook(__FILE__, [$this, 'deactivate']);
 
@@ -155,12 +173,12 @@ final class CobraAI
             load_plugin_textdomain('cobra-ai', false, dirname(plugin_basename(__FILE__)) . '/languages');
             do_action('cobra_ai_loaded');
         } catch (\Exception $e) {
-            $this->handle_error($e);
+            $this->log_error('Plugin initialization failed', $e);
         }
     }
 
     /**
-     * Initialize database separately
+     * Initialize database
      */
     private function init_database(): void
     {
@@ -168,8 +186,8 @@ final class CobraAI
             $this->db = Database::get_instance();
             $this->db->install_or_upgrade();
         } catch (\Exception $e) {
-            // Simple error logging to error_log since DB isn't ready
-            error_log('Cobra AI Database Init Error: ' . $e->getMessage());
+            // Use simple error_log since DB isn't ready yet
+            $this->log_error('Database initialization failed', $e, true);
         }
     }
 
@@ -179,82 +197,99 @@ final class CobraAI
     private function init_container(): void
     {
         try {
-            // Initialize core components
+            // Core components
             $this->container['db'] = $this->db;
-
             $this->container['api'] = $this->api = APIManager::get_instance();
-            // $this->container['loader'] = $this->loader = Loader::get_instance();
-
-            // if (is_admin()) {
-                $this->container['admin'] = $this->admin = Admin::get_instance();
-            // }
-
-            $this->container['features'] = $this->features;
-
+            $this->container['admin'] = $this->admin = Admin::get_instance();
+            $this->container['features'] = &$this->features;
+            
             do_action('cobra_ai_init_container', $this->container);
         } catch (\Exception $e) {
-            $this->handle_error($e);
+            $this->log_error('Container initialization failed', $e);
         }
     }
 
     /**
-     * Initialize features
+     * Initialize active features
      */
     public function init_features(): void
     {
-
         try {
             $active_features = get_option('cobra_ai_enabled_features', []);
-            $feature_dirs = glob(COBRA_AI_FEATURES_DIR . '*', GLOB_ONLYDIR);
-
-            foreach ($feature_dirs as $dir) {
-                $feature_id = basename($dir);
-                if (in_array($feature_id, $active_features)) {
-
-                    $this->load_feature($feature_id);
-                }
+            
+            if (empty($active_features)) {
+                return;
             }
-
+            
+            foreach ($active_features as $feature_id) {
+                $this->load_feature($feature_id);
+            }
+            
             do_action('cobra_ai_features_loaded');
         } catch (\Exception $e) {
-            $this->handle_error($e);
+            $this->log_error('Features initialization failed', $e);
         }
     }
 
     /**
      * Load individual feature
      */
-    private function load_feature(string $feature_id): void
+    private function load_feature(string $feature_id): ?FeatureBase
     {
-        try {
-            // Convert feature-id to PascalCase for namespace
-            $namespace = str_replace(' ', '', ucwords(str_replace('-', ' ', $feature_id))); // hello-world -> HelloWorld
-            $class_name = 'CobraAI\\Features\\' . $namespace . '\\Feature';
-            $namespace = strtolower($namespace); // Use kebab-case for directory
-            $feature_dir = COBRA_AI_FEATURES_DIR . $namespace; // Use PascalCase for directory
-            $class_file = $feature_dir . '/Feature.php';
-
-            if (!is_dir($feature_dir) || !file_exists($class_file)) {
-                throw new \Exception("Feature not found: {$class_file}");
-            }
-
-            // Include the file
-            require_once $class_file;
-
-            if (class_exists($class_name)) {
-                $feature = new $class_name();
-                $this->container['features'][$feature_id] = $feature;
-
-                if (method_exists($feature, 'init') && $feature->is_feature_active($feature_id)) {
-                
-                    $feature->init();
-                }
-            } else {
-                throw new \Exception("Feature class not found: {$class_name}");
-            }
-        } catch (\Exception $e) {
-            error_log('Failed to load feature: ' . $e->getMessage());
+        // Return cached feature if exists
+        if (isset($this->features[$feature_id])) {
+            return $this->features[$feature_id];
         }
+        
+        try {
+            $class_info = $this->get_feature_class_info($feature_id);
+            
+            if (!file_exists($class_info['file'])) {
+                $this->log_error("Feature file not found: {$class_info['file']}", [
+                    'feature_id' => $feature_id,
+                    'expected_path' => $class_info['file']
+                ]);
+                return null; // Retourner null au lieu de lever une exception
+            }
+            
+            require_once $class_info['file'];
+            
+            if (!class_exists($class_info['class'])) {
+                throw new \Exception("Feature class not found: {$class_info['class']}");
+            }
+            
+            $feature = new $class_info['class']();
+            $this->features[$feature_id] = $feature;
+            $this->container['features'][$feature_id] = $feature;
+            
+            if (method_exists($feature, 'init') && $feature->is_feature_active($feature_id)) {
+                $feature->init();
+            }
+            
+            return $feature;
+            
+        } catch (\Exception $e) {
+            $this->log_error("Failed to load feature: {$feature_id}", $e);
+            return null;
+        }
+    }
+    
+    /**
+     * Get feature class information
+     */
+    private function get_feature_class_info(string $feature_id): array
+    {
+        $namespace = str_replace(' ', '', ucwords(str_replace('-', ' ', $feature_id)));
+        $class_name = 'CobraAI\\Features\\' . $namespace . '\\Feature';
+        $feature_dir = COBRA_AI_FEATURES_DIR . strtolower($namespace);
+        $class_file = $feature_dir . '/Feature.php';
+        
+        return [
+            'class' => $class_name,
+            'file' => $class_file,
+            'dir' => $feature_dir,
+            'namespace' => $namespace
+        ];
     }
 
     /**
@@ -275,7 +310,7 @@ final class CobraAI
                 flush_rewrite_rules();
             }
         } catch (\Exception $e) {
-            $this->handle_error($e);
+            $this->log_error('Plugin activation failed', $e);
         }
     }
 
@@ -290,19 +325,34 @@ final class CobraAI
     }
 
     /**
-     * Error handling
+     * Unified error logging
      */
-    private function handle_error(\Throwable $error): void
+    private function log_error(string $message, \Throwable $error, bool $force_error_log = false): void
     {
-        if (isset($this->container['db'])) {
-            $this->container['db']->log('error', $error->getMessage(), [
-                'file' => $error->getFile(),
-                'line' => $error->getLine(),
-                'trace' => $error->getTraceAsString()
-            ]);
+        $error_data = [
+            'message' => $error->getMessage(),
+            'file' => $error->getFile(),
+            'line' => $error->getLine(),
+            'trace' => $error->getTraceAsString()
+        ];
+        
+        // Use database logging if available, otherwise fallback to error_log
+        if (!$force_error_log && isset($this->db) && $this->db instanceof Database) {
+            $this->db->log('error', $message, $error_data);
+        } else {
+            $formatted_message = sprintf(
+                '[Cobra AI] %s - %s: %s in %s:%d',
+                date('Y-m-d H:i:s'),
+                $message,
+                $error->getMessage(),
+                basename($error->getFile()),
+                $error->getLine()
+            );
+            error_log($formatted_message);
         }
-
-        if (WP_DEBUG) {
+        
+        // Re-throw in debug mode
+        if (defined('WP_DEBUG') && WP_DEBUG && !$force_error_log) {
             throw $error;
         }
     }
@@ -369,76 +419,52 @@ final class CobraAI
     /**
      * Get feature instance
      */
-    public function get_feature(string $feature_id)
+    public function get_feature(string $feature_id): ?FeatureBase
     {
-        // Check if feature exists in container
-        if (isset($this->container['features'][$feature_id])) {
-            return $this->container['features'][$feature_id];
+        // Return cached feature
+        if (isset($this->features[$feature_id])) {
+            return $this->features[$feature_id];
         }
-
-        // Convert kebab-case to PascalCase
-        $namespace = str_replace(' ', '', ucwords(str_replace('-', ' ', $feature_id)));
-        $class_name = 'CobraAI\\Features\\' . $namespace . '\\Feature';
-        $namespace = strtolower($namespace);
-        $feature_dir = COBRA_AI_FEATURES_DIR . $namespace;
-        $class_file = $feature_dir . '/Feature.php';
-
-        if (file_exists($class_file)) {
-            require_once $class_file;
-
-            if (class_exists($class_name)) {
-                $this->container['features'][$feature_id] = new $class_name();
-                return $this->container['features'][$feature_id];
-            }
-        }else{
-            // error_log("Feature not found: {$class_file}");
-        }
-
-        return null;
+        
+        // Try to load feature on-demand
+        return $this->load_feature($feature_id);
     }
 
     /**
      * Get all available features
-     *
-     * @param bool $include_inactive Whether to include inactive features
-     * @return array<string, FeatureBase> Array of feature instances
      */
     public function get_features(bool $include_inactive = true): array
     {
         try {
-            // Get feature directories
             $feature_dirs = glob(COBRA_AI_FEATURES_DIR . '*', GLOB_ONLYDIR);
-            // print_r($feature_dirs);
-            $active_features = get_option('cobra_ai_enabled_features', []);
-            // error_log(print_r($feature_dirs, true));
+            
+            if (empty($feature_dirs)) {
+                return $this->features;
+            }
+            
+            $active_features = $include_inactive ? [] : get_option('cobra_ai_enabled_features', []);
+            
             foreach ($feature_dirs as $dir) {
                 $feature_id = basename($dir);
-                // print_r($feature_id) ; echo  "<br>";
-                // Skip if feature is already loaded
-                if (isset($this->container['features'][$feature_id])) {
+                
+                // Skip if already loaded
+                if (isset($this->features[$feature_id])) {
                     continue;
                 }
-                // print_r($feature_id) ; echo  "-----2<br>";
+                
                 // Skip inactive features if not requested
                 if (!$include_inactive && !in_array($feature_id, $active_features)) {
                     continue;
                 }
-                // print_r($feature_id) ; echo  "********3<br>";
-                // Try to load the feature
-                $feature = $this->get_feature($feature_id);
-                // var_dump($feature);
-                if ($feature) {
-                    $this->container['features'][$feature_id] = $feature;
-                }
+                
+                $this->get_feature($feature_id);
             }
-//  print_r($this->container['features']);
-            return $this->container['features'];
+            
+            return $this->features;
+            
         } catch (\Exception $e) {
-            $this->db->log('error', 'Failed to get features', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return [];
+            $this->log_error('Failed to get features list', $e);
+            return $this->features;
         }
     }
     /**
@@ -475,29 +501,8 @@ function cobra_ai(): CobraAI
     return $cobra_ai;
 }
 
-// // Initialize the plugin
+// Initialize the plugin
 global $cobra_ai;
 $cobra_ai = CobraAI::instance();
-// echo "Cobra AI Features loaded";
-// add_action('rest_api_init', function () {
-//     $endpoints = rest_get_server()->get_routes();
-//     foreach ($endpoints as $route => $handlers) {
-//         echo "<h3>Route: " . esc_html($route) . "</h3>";
-//         foreach ($handlers as $handler) {
-//             if (isset($handler['permission_callback'])) {
-//                 echo "<p><strong>Permissions:</strong> " . (is_callable($handler['permission_callback']) ? 'Has Callback' : 'None') . "</p>";
-//             }
-//         }
-//     }
-// });
-// add_action('wp', function() {
-//     if (is_404()) {
-//         global $wp_query, $wp_rewrite;
-//         error_log('404 Debug Info:');
-//         error_log('Query: ' . print_r($wp_query->query, true));
-//         error_log('Request: ' . print_r($wp_query->request, true));
-//         error_log('Rewrite Rules: ' . print_r($wp_rewrite->rules, true));
-//     }
-// });
 
  

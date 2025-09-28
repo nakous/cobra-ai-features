@@ -6,13 +6,13 @@ use CobraAI\FeatureBase;
 
 class Feature extends FeatureBase
 {
-    protected $feature_id = 'register';
-    protected $name = 'User Registration';
-    protected $description = 'Enhanced user registration with email verification and admin approval';
-    protected $version = '1.0.0';
-    protected $author = 'Your Name';
-    protected $has_settings = true;
-    protected $has_admin = true;
+    protected string $feature_id = 'register';
+    protected string $name = 'User Registration';
+    protected string $description = 'Enhanced user registration with email verification and admin approval';
+    protected string $version = '1.1.0';
+    protected string $author = 'Onlevelup.com';
+    protected bool $has_settings = true;
+    protected bool $has_admin = true;
 
     /**
      * User registration handler
@@ -174,6 +174,7 @@ class Feature extends FeatureBase
         add_action('personal_options_update', [$this, 'save_custom_user_fields']);
         add_action('edit_user_profile_update', [$this, 'save_custom_user_fields']);
         add_action('wp_ajax_cobra_create_page', [$this, 'handle_create_page']);
+        add_action('wp_ajax_cobra_reset_page_setting', [$this, 'handle_reset_page_setting']);
         // resend_verification
         add_action('wp_ajax_cobra_resend_verification', [$this->registration, 'handle_resend_verification']);
         // User management
@@ -517,6 +518,56 @@ class Feature extends FeatureBase
             ]);
         }
     }
+
+    /**
+     * Handle AJAX request to reset page setting
+     */
+    public function handle_reset_page_setting(): void
+    {
+        error_log("handle_reset_page_setting called");
+        
+        try {
+            // Verify nonce
+            if (!check_ajax_referer('cobra_reset_page', 'nonce', false)) {
+                error_log("Nonce verification failed");
+                throw new \Exception(__('Invalid security token.', 'cobra-ai'));
+            }
+
+            // Verify permissions
+            if (!current_user_can('manage_options')) {
+                error_log("Permission check failed");
+                throw new \Exception(__('You do not have permission to reset page settings.', 'cobra-ai'));
+            }
+
+            // Get and validate data
+            $field = sanitize_key($_POST['field'] ?? '');
+            error_log("Field to reset: " . $field);
+
+            if (!$field) {
+                error_log("Field is empty");
+                throw new \Exception(__('Missing required field data.', 'cobra-ai'));
+            }
+
+            // Reset the setting
+            $result = $this->update_setting('pages.' . $field, '');
+            error_log("Update result: " . ($result ? 'success' : 'failed'));
+            
+            if (!$result) {
+                throw new \Exception(__('Failed to reset page setting.', 'cobra-ai'));
+            }
+
+            error_log("Reset successful");
+            wp_send_json_success([
+                'message' => __('Page setting reset successfully.', 'cobra-ai')
+            ]);
+        } catch (\Exception $e) {
+            error_log("Exception in handle_reset_page_setting: " . $e->getMessage());
+            wp_send_json_error([
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
     /**
      * Update settings
      */
@@ -548,8 +599,30 @@ class Feature extends FeatureBase
                         $new_settings['pages'] ?? [],
                         $current_settings['pages'] ?? []
                     );
+                    
+                    // Process redirect fields with page/url selection
+                    $redirects = $new_settings['redirects'] ?? [];
+                    $processed_redirects = [];
+                    
+                    foreach (['after_login', 'after_logout', 'policy'] as $redirect_field) {
+                        // Check if we have the final processed value
+                        if (isset($redirects[$redirect_field])) {
+                            $processed_redirects[$redirect_field] = $redirects[$redirect_field];
+                        }
+                        // Otherwise, process from page/url fields (fallback for direct form submission)
+                        elseif (isset($redirects[$redirect_field . '_page']) && !empty($redirects[$redirect_field . '_page'])) {
+                            $processed_redirects[$redirect_field] = $redirects[$redirect_field . '_page'];
+                        }
+                        elseif (isset($redirects[$redirect_field . '_url']) && !empty($redirects[$redirect_field . '_url'])) {
+                            $processed_redirects[$redirect_field] = $redirects[$redirect_field . '_url'];
+                        }
+                        else {
+                            $processed_redirects[$redirect_field] = '';
+                        }
+                    }
+                    
                     $settings_to_update['redirects'] = wp_parse_args(
-                        $new_settings['redirects'] ?? [],
+                        $processed_redirects,
                         $current_settings['redirects'] ?? []
                     );
                     break;
@@ -616,6 +689,36 @@ class Feature extends FeatureBase
             'passwordRequirements' => __('Password does not meet the requirements', 'cobra-ai'),
             'passwordMismatch' => __('Passwords do not match', 'cobra-ai')
         ];
+    }
+
+    /**
+     * Update a specific setting using dot notation
+     * Example: update_setting('pages.login', 123)
+     */
+    public function update_setting(string $key, $value): bool
+    {
+        $current_settings = $this->get_settings();
+        $keys = explode('.', $key);
+        $temp = &$current_settings;
+        
+        // Navigate to the parent of the key to update
+        for ($i = 0; $i < count($keys) - 1; $i++) {
+            if (!isset($temp[$keys[$i]])) {
+                $temp[$keys[$i]] = [];
+            }
+            $temp = &$temp[$keys[$i]];
+        }
+        
+        // Set the final value
+        $temp[$keys[count($keys) - 1]] = $value;
+        
+        // Use the parent FeatureBase update_settings method
+        try {
+            return parent::update_settings($current_settings);
+        } catch (\Exception $e) {
+            error_log("Failed to update setting {$key}: " . $e->getMessage());
+            return false;
+        }
     }
 
     protected function is_html_allowed_field(string $key): bool
