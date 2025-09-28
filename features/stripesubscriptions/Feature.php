@@ -32,81 +32,9 @@ class Feature extends FeatureBase
     public function __construct()
     {
         parent::__construct();
-        global $wpdb;
-        // Define feature tables
-        $this->tables = [
 
-            'stripe_subscriptions' => [
-                'name' => $wpdb->prefix . 'cobra_stripe_subscriptions',
-                'schema' => [
-                    'id' => 'bigint(20) NOT NULL AUTO_INCREMENT',
-                    'subscription_id' => 'varchar(100) NOT NULL',
-                    'customer_id' => 'varchar(100) NOT NULL',
-                    'plan_id' => 'bigint(20) NOT NULL',
-                    'user_id' => 'bigint(20) NOT NULL',
-                    'status' => "enum('active','past_due','canceled','incomplete','incomplete_expired','trialing','unpaid','paused') NOT NULL",
-                    'current_period_start' => 'datetime NOT NULL',
-                    'current_period_end' => 'datetime NOT NULL',
-                    'cancel_at_period_end' => 'tinyint(1) NOT NULL DEFAULT 0',
-                    'cancel_reason' => 'text',
-                    'created_at' => 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
-                    'updated_at' => 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
-                    'PRIMARY KEY' => '(id)',
-                    'UNIQUE KEY' => 'subscription_id (subscription_id)',
-                    'KEY' => [
-                        'customer_id' => '(customer_id)',
-                        'plan_id' => '(plan_id)',
-                        'user_id' => '(user_id)',
-                        'status' => '(status)',
-                        'created_at' => '(created_at)'
-                    ]
-                ]
-            ],
-            'stripe_payments' => [
-                'name' => $wpdb->prefix . 'cobra_stripe_payments',
-                'schema' => [
-                    'id' => 'bigint(20) NOT NULL AUTO_INCREMENT',
-                    'payment_id' => 'varchar(100) NOT NULL',
-                    'subscription_id' => 'bigint(20) NOT NULL',
-                    'invoice_id' => 'varchar(100)',
-                    'amount' => 'decimal(10,2) NOT NULL',
-                    'currency' => 'varchar(3) NOT NULL',
-                    'status' => "enum('pending','succeeded','failed','refunded') NOT NULL",
-                    'refunded' => 'tinyint(1) NOT NULL DEFAULT 0',
-                    'refund_id' => 'varchar(100)',
-                    'created_at' => 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
-                    'PRIMARY KEY' => '(id)',
-                    'UNIQUE KEY' => 'payment_id (payment_id)',
-                    'KEY' => [
-                        'subscription_id' => '(subscription_id)',
-                        'status' => '(status)',
-                        'created_at' => '(created_at)'
-                    ]
-                ]
-            ],
-            'stripe_disputes' => [
-                'name' => $wpdb->prefix . 'cobra_stripe_disputes',
-                'schema' => [
-                    'id' => 'bigint(20) NOT NULL AUTO_INCREMENT',
-                    'dispute_id' => 'varchar(100) NOT NULL',
-                    'payment_id' => 'bigint(20) NOT NULL',
-                    'amount' => 'decimal(10,2) NOT NULL',
-                    'currency' => 'varchar(3) NOT NULL',
-                    'status' => "enum('warning_needs_response','warning_under_review','warning_closed','needs_response','under_review','won','lost') NOT NULL",
-                    'reason' => 'varchar(100) NOT NULL',
-                    'evidence_details' => 'text',
-                    'created_at' => 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
-                    'updated_at' => 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
-                    'PRIMARY KEY' => '(id)',
-                    'UNIQUE KEY' => 'dispute_id (dispute_id)',
-                    'KEY' => [
-                        'payment_id' => '(payment_id)',
-                        'status' => '(status)',
-                        'created_at' => '(created_at)'
-                    ]
-                ]
-            ]
-        ];
+        // Define feature tables
+
     }
     /**
      * Setup feature
@@ -115,7 +43,80 @@ class Feature extends FeatureBase
     {
 
         try {
+            global $wpdb;
+            $this->tables = [
 
+                'stripe_subscriptions' => [
+                    'name' => $wpdb->prefix . 'cobra_stripe_subscriptions',
+                    'schema' => [
+                        'id' => 'bigint(20) NOT NULL AUTO_INCREMENT',
+                        'subscription_id' => 'varchar(100) NOT NULL',
+                        'customer_id' => 'varchar(100) NOT NULL',
+                        'plan_id' => 'bigint(20) NOT NULL',
+                        'user_id' => 'bigint(20) NOT NULL',
+                        'status' => "enum('active','past_due','canceled','incomplete','incomplete_expired','trialing','unpaid','paused') NOT NULL",
+                        'current_period_start' => 'datetime NOT NULL',
+                        'current_period_end' => 'datetime NOT NULL',
+                        'cancel_at_period_end' => 'tinyint(1) NOT NULL DEFAULT 0',
+                        'cancel_reason' => 'text',
+                        'created_at' => 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
+                        'updated_at' => 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+                        'PRIMARY KEY' => '(id)',
+                        'UNIQUE KEY' => 'subscription_id (subscription_id)',
+                        'KEY' => [
+                            'customer_id' => '(customer_id)',
+                            'plan_id' => '(plan_id)',
+                            'user_id' => '(user_id)',
+                            'status' => '(status)',
+                            'created_at' => '(created_at)'
+                        ]
+                    ]
+                ],
+                'stripe_payments' => [
+                    'name' => $wpdb->prefix . 'cobra_stripe_payments',
+                    'schema' => [
+                        'id' => 'bigint(20) NOT NULL AUTO_INCREMENT',
+                        'payment_id' => 'varchar(100) NOT NULL',
+                        'subscription_id' => 'bigint(20) NOT NULL',
+                        'invoice_id' => 'varchar(100)',
+                        'amount' => 'decimal(10,2) NOT NULL',
+                        'currency' => 'varchar(3) NOT NULL',
+                        'status' => "enum('pending','succeeded','failed','refunded') NOT NULL",
+                        'refunded' => 'tinyint(1) NOT NULL DEFAULT 0',
+                        'refund_id' => 'varchar(100)',
+                        'created_at' => 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
+                        'PRIMARY KEY' => '(id)',
+                        'UNIQUE KEY' => 'payment_id (payment_id)',
+                        'KEY' => [
+                            'subscription_id' => '(subscription_id)',
+                            'status' => '(status)',
+                            'created_at' => '(created_at)'
+                        ]
+                    ]
+                ],
+                'stripe_disputes' => [
+                    'name' => $wpdb->prefix . 'cobra_stripe_disputes',
+                    'schema' => [
+                        'id' => 'bigint(20) NOT NULL AUTO_INCREMENT',
+                        'dispute_id' => 'varchar(100) NOT NULL',
+                        'payment_id' => 'bigint(20) NOT NULL',
+                        'amount' => 'decimal(10,2) NOT NULL',
+                        'currency' => 'varchar(3) NOT NULL',
+                        'status' => "enum('warning_needs_response','warning_under_review','warning_closed','needs_response','under_review','won','lost') NOT NULL",
+                        'reason' => 'varchar(100) NOT NULL',
+                        'evidence_details' => 'text',
+                        'created_at' => 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
+                        'updated_at' => 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+                        'PRIMARY KEY' => '(id)',
+                        'UNIQUE KEY' => 'dispute_id (dispute_id)',
+                        'KEY' => [
+                            'payment_id' => '(payment_id)',
+                            'status' => '(status)',
+                            'created_at' => '(created_at)'
+                        ]
+                    ]
+                ]
+            ];
             if (class_exists('\CobraAI\Features\Stripe\Feature')) {
                 $this->stripe_feature = new \CobraAI\Features\Stripe\Feature();
             } else {
@@ -175,13 +176,55 @@ class Feature extends FeatureBase
         add_action('cobra_ai_stripe_customer_subscription_created', [$this->webhook, 'handle_subscription_created']);
         add_action('cobra_ai_stripe_customer_subscription_updated', [$this->webhook, 'handle_subscription_updated']);
         add_action('cobra_ai_stripe_customer_subscription_deleted', [$this->webhook, 'handle_subscription_deleted']);
-        add_action('cobra_ai_stripe_invoice_payment_succeeded', [$this->webhook, 'handle_payment_succeeded']);
-        add_action('cobra_ai_stripe_invoice_payment_failed', [$this->webhook, 'handle_payment_failed']);
-        add_action('cobra_ai_stripe_charge_refunded', [$this->webhook, 'handle_refund']);
-        add_action('cobra_ai_stripe_charge_dispute_created', [$this->webhook, 'handle_dispute_created']);
-        add_filter('the_content', [$this, 'filter_plan_content']);
+        // handle_trial_ending
+        add_action('cobra_ai_stripe_customer_subscription_trial_ending', [$this->webhook, 'handle_trial_ending']);
+
+
+        add_action('cobra_ai_stripe_invoice_payment_succeeded', [$this->webhook, 'handle_invoice_paid']);
+        add_action('cobra_ai_stripe_invoice_payment_failed', [$this->webhook, 'handle_invoice_failed']);
+        // handle_upcoming_invoice
+        add_action('cobra_ai_stripe_invoice_upcoming', [$this->webhook, 'handle_upcoming_invoice']);
+
+        // Refund and dispute events
+        add_action('cobra_ai_stripe_charge_refunded', [$this->payments, 'handle_refund_event']);
+        add_action('cobra_ai_stripe_charge_dispute_created', [$this->payments, 'handle_dispute_created']);
+        add_action('cobra_ai_stripe_charge_dispute_updated', [$this->webhook, 'handle_dispute_updated']);
+        add_action('cobra_ai_stripe_charge_dispute_closed', [$this->webhook, 'handle_dispute_closed']);
+        // add_filter('the_content', [$this, 'filter_plan_content']);
+        add_action('cobra_register_profile_tab', [$this, 'cobra_subscription_account_custom_tab']);
+        add_action('cobra_register_profile_tab_content', [$this, 'cobra_subscription_account_custom_tab_content'], 10, 2);
     }
 
+    function cobra_subscription_account_custom_tab()
+    {
+        // Check if the user is logged in
+        if (!is_user_logged_in()) {
+            return;
+        }
+
+?>
+        <li>
+            <a href="#subscription" data-tab="subscription">
+                <?php _e('My subscription', 'cobra-ai'); ?>
+            </a>
+        </li>
+    <?php
+    }
+    function cobra_subscription_account_custom_tab_content()
+    {
+        // Check if the user is logged in
+        if (!is_user_logged_in()) {
+            return;
+        }
+
+        
+
+        // Display the content for the subscription tab
+        echo '<div class="cobra-tab-content" id="subscription-content">';
+        
+        echo do_shortcode('[stripe_subscription_details]');
+        echo '</div>';
+    }
     protected function register_shortcodes(): void
     {
         // add_shortcode('stripe_checkout', [$this, 'render_checkout_shortcode']);
@@ -189,6 +232,8 @@ class Feature extends FeatureBase
         add_shortcode('stripe_cancel', [$this, 'render_cancel_shortcode']);
         add_shortcode('stripe_plans', [$this, 'render_plans_shortcode']);
         add_shortcode('stripe_subscription_details', [$this, 'render_subscription_details_shortcode']);
+
+        add_shortcode('stripe_action_subscription', [$this, 'shortcode_action_subscription']);
     }
     public function enqueue_assets_stripe_var($hook): void
     {
@@ -202,7 +247,7 @@ class Feature extends FeatureBase
         // Check if post contains any of our shortcodes
         foreach ($shortcodes as $shortcode) {
 
-            if (has_shortcode($post->post_content, $shortcode)) {
+            if (has_shortcode($post->post_content, $shortcode) || get_post_type($post) === 'stripe_plan') {
 
                 // wp_enqueue_script('jquery');
 
@@ -424,7 +469,7 @@ class Feature extends FeatureBase
     private function render_error(string $message): string
     {
         ob_start();
-?>
+    ?>
         <div class="cobra-error-message">
             <div class="error-icon">⚠️</div>
             <h2><?php echo esc_html__('Oops! Something went wrong', 'cobra-ai'); ?></h2>
@@ -446,7 +491,7 @@ class Feature extends FeatureBase
         ], $atts);
 
         ob_start();
-        include __DIR__ . '/views/public/cancel.php';
+        include __DIR__ . '/views/public/cancel.php'; 
         return ob_get_clean();
     }
 
@@ -487,7 +532,8 @@ class Feature extends FeatureBase
         ], $atts);
 
         ob_start();
-        include __DIR__ . '/views/public/subscription-details.php';
+
+        include __DIR__ . '/templates/subscription-details.php';
         return ob_get_clean();
     }
 
@@ -653,7 +699,130 @@ class Feature extends FeatureBase
                     });
                 });
             </script>
-<?php endif;
+        <?php endif;
+
+        return ob_get_clean();
+    }
+    /**
+     * Shortcode for displaying subscription plan action buttons
+     * 
+     * @param array $atts Shortcode attributes
+     * @return string Formatted HTML for subscription action
+     */
+    public function shortcode_action_subscription($atts)
+    {
+        // Extract attributes with defaults
+        $attributes = shortcode_atts(array(
+            'id' => get_the_ID(), // Default to current post ID if not specified
+        ), $atts);
+
+        $post_id = absint($attributes['id']);
+
+        // Verify post exists and is the correct type
+        $post = get_post($post_id);
+        if (!$post || get_post_type($post) !== 'stripe_plan') {
+            return '<p>' . esc_html__('Invalid subscription plan.', 'cobra-ai') . '</p>';
+        }
+        $stripe_price_id = get_post_meta($post_id, '_stripe_price_id', true);
+
+        // Get plan details
+        $plan_data = $this->get_plans()->get_plan($post_id);
+
+        // Check if user has this plan
+        $current_user_id = get_current_user_id();
+        $is_logged_in = is_user_logged_in();
+        $current_plan = false;
+
+        if ($is_logged_in) {
+            $user_subscription = $this->get_subscriptions()->get_user_subscription($current_user_id);
+            $current_plan = $user_subscription && $user_subscription->plan_id === $post_id;
+        }
+
+        // Build the output
+        ob_start();
+        ?>
+        <div class="plan-action">
+            <?php if (!$is_logged_in): ?>
+                <a href="<?php echo esc_url(wp_login_url(get_permalink())); ?>" class="button login-to-subscribe">
+                    <?php echo esc_html__('Login to Subscribe', 'cobra-ai'); ?>
+                </a>
+                <p class="login-note">
+                    <?php echo esc_html__('Don\'t have an account?', 'cobra-ai'); ?>
+                    <a href="<?php echo esc_url(wp_registration_url()); ?>">
+                        <?php echo esc_html__('Sign up', 'cobra-ai'); ?>
+                    </a>
+                </p>
+            <?php elseif ($current_plan): ?>
+                <div class="current-plan-notice">
+                    <span class="dashicons dashicons-yes-alt"></span>
+                    <?php echo esc_html__('You\'re currently on this plan', 'cobra-ai'); ?>
+                </div>
+                <a href="<?php echo esc_url(get_permalink(get_option('cobra_ai_account_page'))); ?>" class="button secondary">
+                    <?php echo esc_html__('Manage Subscription', 'cobra-ai'); ?>
+                </a>
+            <?php else: ?>
+                <button class="button subscribe-button"
+                    data-plan-id="<?php echo esc_attr($post_id); ?>"
+                    data-price-id="<?php echo esc_attr($stripe_price_id); ?>">
+                    <?php echo esc_html__('Subscribe Now', 'cobra-ai'); ?>
+                </button>
+                <?php if ($plan_data['trial_enabled']): ?>
+                    <p class="trial-note">
+                        <?php printf(
+                            esc_html__('Start your %d-day free trial today', 'cobra-ai'),
+                            absint($plan_data['trial_days'])
+                        ); ?>
+                    </p>
+                <?php endif; ?>
+            <?php endif; ?>
+        </div>
+
+        <?php if ($is_logged_in && !$current_plan): ?>
+            <script>
+                jQuery(document).ready(function($) {
+                    $('.subscribe-button').on('click', async function() {
+                        const button = $(this);
+                        const planId = button.data('plan-id');
+                        const priceId = button.data('price-id');
+
+                        // Visual feedback
+                        button.prop('disabled', true).addClass('processing')
+                            .html('<span class="spinner"></span> <?php echo esc_js(__('Processing...', 'cobra-ai')); ?>');
+
+                        try {
+                            const response = await $.ajax({
+                                url: CobraSubscription.ajax_url,
+                                type: 'POST',
+                                data: {
+                                    action: 'cobra_create_checkout_session',
+                                    plan_id: planId,
+                                    price_id: priceId,
+                                    nonce: CobraSubscription.nonce
+                                }
+                            });
+
+                            if (!response.success) {
+                                throw new Error(response.data.message || '<?php echo esc_js(__('Checkout failed', 'cobra-ai')); ?>');
+                            }
+
+                            // Redirect to checkout
+                            window.location.href = response.data.checkout_url;
+
+                        } catch (error) {
+                            console.error('Checkout error:', error);
+
+                            // Show error to user
+                            alert(error.message || '<?php echo esc_js(__('Failed to process subscription', 'cobra-ai')); ?>');
+
+                            // Reset button
+                            button.prop('disabled', false).removeClass('processing')
+                                .text('<?php echo esc_js(__('Subscribe Now', 'cobra-ai')); ?>');
+                        }
+                    });
+                });
+            </script>
+        <?php endif; ?>
+<?php
 
         return ob_get_clean();
     }

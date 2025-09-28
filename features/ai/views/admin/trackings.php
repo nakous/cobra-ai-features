@@ -360,8 +360,8 @@ if (isset($_GET['message'])) {
                         $('.tracking-status').text(data.status);
                         $('.tracking-date').text(data.created_at);
                         $('.tracking-tokens').text(data.consumed);
-                        $('.tracking-prompt pre').text(data.prompt);
-                        $('.tracking-response pre').text(data.response);
+                        $('.tracking-prompt pre').html(data.prompt);
+                        $('.tracking-response pre').html(data.response);
 
                         // Show modal
                         $('#tracking-modal').fadeIn();

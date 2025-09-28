@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        .help-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .help-content h1 {
+            color: #1d2327;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+        }
+
+        .help-content h2 {
+            color: #2271b1;
+            margin-top: 30px;
+        }
+
+        .help-content h3 {
+            color: #1d2327;
+            margin-top: 25px;
+        }
+
+        .help-content code {
+            background: #f0f0f1;
+            padding: 3px 5px;
+            border-radius: 3px;
+            font-family: Monaco, Consolas, "Andale Mono", "DejaVu Sans Mono", monospace;
+        }
+
+        .help-content pre {
+            background: #f6f7f7;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        .help-content .tip {
+            background: #f0f6fc;
+            border-left: 4px solid #2271b1;
+            padding: 12px 24px;
+            margin: 1.5em 0;
+        }
+
+        .help-content .warning {
+            background: #fcf9e8;
+            border-left: 4px solid #dba617;
+            padding: 12px 24px;
+            margin: 1.5em 0;
+        }
+
+        .help-section {
+            margin-bottom: 40px;
+        }
+
+        .step {
+            margin-bottom: 20px;
+            padding-left: 24px;
+            position: relative;
+        }
+
+        .step::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #2271b1;
+        }
+    </style>
+</head>
+<body>
+    <div class="help-content">
+        <h1>Contact Form Feature Documentation</h1>
+
+        <div class="help-section">
+            <h2>Getting Started</h2>
+            <p>The Contact Form feature allows you to add customizable contact forms to your website. Visitors can submit messages through these forms, and you can manage and respond to submissions from your WordPress admin panel.</p>
+
+            <div class="tip">
+                <strong>Quick Start:</strong> Use the shortcode <code>[cobra_contact_form]</code> to display the contact form on any page or post.
+            </div>
+        </div>
+
+        <div class="help-section">
+            <h2>Adding a Contact Form to Your Site</h2>
+            <h3>Using the Shortcode</h3>
+            <div class="step">Add the shortcode <code>[cobra_contact_form]</code> to any page, post, or widget area where you want the form to appear.</div>
+            <div class="step">Customize the form using the available parameters (see "Shortcode Parameters" section below).</div>
+            
+            <h3>Basic Example</h3>
+            <pre>[cobra_contact_form title="Get in Touch"]</pre>
+            
+            <h3>Advanced Example</h3>
+            <pre>[cobra_contact_form 
+    title="Contact Our Support Team" 
+    subject_options="Technical Support,Feature Request,Bug Report" 
+    submit_button_text="Send Support Request"
+    success_message="Thank you for contacting our support team. We'll get back to you shortly."
+]</pre>
+        </div>
+
+        <div class="help-section">
+            <h2>Shortcode Parameters</h2>
+            <p>You can customize the contact form using the following parameters:</p>
+            
+            <h3>Basic Parameters</h3>
+            <ul>
+                <li><code>title</code> - Adds a heading above the form</li>
+                <li><code>subject_options</code> - Comma-separated list of subject options for the dropdown</li>
+                <li><code>show_subject</code> - Set to "yes" or "no" to show or hide the subject field</li>
+                <li><code>submit_button_text</code> - Custom text for the submit button</li>
+            </ul>
+
+            <h3>Message Parameters</h3>
+            <ul>
+                <li><code>success_message</code> - Message displayed after successful submission</li>
+                <li><code>error_message</code> - Message displayed when an error occurs</li>
+                <li><code>redirect_url</code> - URL to redirect to after successful submission</li>
+            </ul>
+
+            <h3>Security Parameters</h3>
+            <ul>
+                <li><code>use_recaptcha</code> - Set to "yes" or "no" to enable or disable reCAPTCHA for this form</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h2>Managing Submissions</h2>
+            <p>You can view and manage all form submissions in the WordPress admin area.</p>
+            
+            <h3>Viewing Submissions</h3>
+            <div class="step">Go to <strong>Cobra AI > Contact Submissions</strong> in your WordPress admin menu.</div>
+            <div class="step">You'll see a list of all submissions with their status (unread, read, replied).</div>
+            <div class="step">Click on a submission to view its details and respond to it.</div>
+            
+            <h3>Replying to Submissions</h3>
+            <div class="step">Open a submission by clicking on its name in the submissions list.</div>
+            <div class="step">Scroll down to the "Send Response" section.</div>
+            <div class="step">Enter your response in the text area.</div>
+            <div class="step">Click the "Send Response" button to send an email reply to the contact.</div>
+            
+            <div class="tip">
+                <p>The contact will receive your response via email. The submission will be marked as "Replied" after your response is sent.</p>
+            </div>
+        </div>
+
+        <div class="help-section">
+            <h2>Configuring the Contact Form</h2>
+            <p>You can customize various aspects of the contact form through the settings page.</p>
+            
+            <h3>Accessing Settings</h3>
+            <div class="step">Go to <strong>Cobra AI > Contact Form</strong> in your WordPress admin menu.</div>
+            <div class="step">Navigate through the tabs to configure different aspects of the form.</div>
+            
+            <h3>Available Settings</h3>
+            <ul>
+                <li><strong>Form Fields</strong> - Control which fields are displayed and their labels</li>
+                <li><strong>reCAPTCHA</strong> - Configure Google reCAPTCHA to prevent spam</li>
+                <li><strong>Notifications</strong> - Set up email notifications for new submissions</li>
+                <li><strong>Messages</strong> - Customize the various messages displayed to users</li>
+                <li><strong>Styling</strong> - Adjust the appearance of the form</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h2>Setting Up reCAPTCHA</h2>
+            <p>To protect your form from spam, you can enable Google reCAPTCHA:</p>
+            
+            <div class="step">Create a reCAPTCHA site key and secret key at <a href="https://www.google.com/recaptcha/admin" target="_blank">https://www.google.com/recaptcha/admin</a></div>
+            <div class="step">Go to the reCAPTCHA tab in your Contact Form settings</div>
+            <div class="step">Enable reCAPTCHA and enter your site key and secret key</div>
+            <div class="step">Save your settings</div>
+            
+            <div class="warning">
+                <p>Make sure to keep your secret key confidential and never expose it in client-side code.</p>
+            </div>
+        </div>
+
+        <div class="help-section">
+            <h2>Email Templates</h2>
+            <p>You can customize both the notification emails sent to administrators and the reply emails sent to contacts.</p>
+            
+            <h3>Notification Email Variables</h3>
+            <ul>
+                <li><code>{{site_name}}</code> - Your website's name</li>
+                <li><code>{{name}}</code> - Sender's name</li>
+                <li><code>{{email}}</code> - Sender's email</li>
+                <li><code>{{subject}}</code> - Message subject</li>
+                <li><code>{{message}}</code> - Message content</li>
+                <li><code>{{submission_link}}</code> - Link to view the submission in admin</li>
+            </ul>
+            
+            <h3>Reply Email Variables</h3>
+            <ul>
+                <li><code>{{name}}</code> - Recipient's name</li>
+                <li><code>{{subject}}</code> - Original message subject</li>
+                <li><code>{{message}}</code> - Original message content</li>
+                <li><code>{{response}}</code> - Your response content</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h2>Troubleshooting</h2>
+            
+            <h3>Form Not Displaying</h3>
+            <ul>
+                <li>Ensure the shortcode is added correctly with square brackets: <code>[cobra_contact_form]</code></li>
+                <li>Check if the feature is enabled in Cobra AI Features</li>
+                <li>Try disabling other plugins that might conflict with the form</li>
+            </ul>
+            
+            <h3>Form Submissions Not Working</h3>
+            <ul>
+                <li>Check your browser console for JavaScript errors</li>
+                <li>Ensure your server allows AJAX requests</li>
+                <li>Temporarily disable reCAPTCHA to see if that's causing issues</li>
+            </ul>
+            
+            <h3>Email Notifications Not Received</h3>
+            <ul>
+                <li>Check your spam folder</li>
+                <li>Verify the notification recipients are set correctly</li>
+                <li>Try using an SMTP plugin to improve email delivery</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h2>Need More Help?</h2>
+            <p>If you encounter any issues or have questions not addressed in this documentation:</p>
+            <ul>
+                <li>Check our online documentation for updates</li>
+                <li>Contact support through your account dashboard</li>
+                <li>Submit a feature request or bug report</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

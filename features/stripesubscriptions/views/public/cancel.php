@@ -6,14 +6,26 @@ namespace CobraAI\Features\StripeSubscription\Views;
 defined('ABSPATH') || exit;
 
 // Get subscription data
-$subscription_id = sanitize_text_field($_GET['subscription'] ?? '');
-$subscription = $this->admin->get_subscription_by_id($subscription_id);
-
+$subscription_id = isset($_GET['subscription']) ? (int) $_GET['subscription'] : 0;
+$subscription = $this->get_subscriptions()->get_subscription_by_id($subscription_id);
+$plan = 0;
+if ($subscription && $subscription->plan_id) {
+    $plan = $this->get_plans()->get_plan_by_id($subscription->plan_id);
+}
 if (!$subscription || $subscription->user_id !== get_current_user_id()) {
-   // wp_die(__('Invalid subscription.', 'cobra-ai'));
+    ?>
+    <div class="cobra-cancel-error">
+        <h2><?php echo esc_html__('Unable to Cancel Subscription', 'cobra-ai'); ?></h2>
+        <p><?php echo esc_html__('There was a problem processing your cancellation request. Please make sure you are logged in and trying to cancel a valid subscription.', 'cobra-ai'); ?></p>
+        <a href="<?php echo esc_url(get_permalink($this->get_settings('plans_page'))); ?>" class="button-link">
+            <?php echo esc_html__('Back to Plans', 'cobra-ai'); ?>
+        </a>
+    </div>
+    <?php
+   exit;
 }
 
-$plan = $this->get_plan($subscription->plan_id);
+
 ?>
 
 <div class="cobra-cancel-wrapper">

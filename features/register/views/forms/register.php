@@ -2,7 +2,9 @@
 // Prevent direct access
 defined('ABSPATH') || exit;
 ?>
-
+<?php if ($is_feature_authGoogle_enabled): ?> 
+    <?php echo do_shortcode('[cobra_google_login]'); ?>
+<?php endif; ?>
 <div class="cobra-register-wrapper">
 
 
@@ -257,7 +259,7 @@ defined('ABSPATH') || exit;
     .toggle-password {
         position: absolute;
         right: 10px;
-        top: 50%;
+        top: 24px;
         transform: translateY(-50%);
         background: none;
         border: none;

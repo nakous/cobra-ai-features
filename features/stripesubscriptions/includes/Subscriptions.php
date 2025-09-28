@@ -181,12 +181,12 @@ class Subscriptions
         // Check for active subscription
         $count = $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) 
-         FROM {$$this->table_name} 
+         FROM {$this->table_name} 
          WHERE user_id = %d 
          AND status IN ('active', 'trialing')",
             $user_id
         ));
-
+ 
         return (int)$count > 0;
     }
     /**

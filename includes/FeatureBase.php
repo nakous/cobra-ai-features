@@ -490,6 +490,7 @@ abstract class FeatureBase
             wp_localize_script('cobra-ai-' . $this->feature_id, 'cobraAI' . ucfirst($this->feature_id), [
                 'ajax_url' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('cobra-ai-' . $this->feature_id),
+                'feature_id' => 'cobra-ai-' . $this->feature_id,
                 'i18n' => $this->get_js_translations()
             ]);
         }
@@ -594,7 +595,8 @@ abstract class FeatureBase
             if (method_exists($this, 'validate_settings')) {
                 $settings = $this->validate_settings($settings);
             }
-
+//  print_r($settings) in error log
+error_log(print_r($settings, true));
             // Update the settings
             $updated = update_option(
                 'cobra_ai_' . $this->get_feature_id() . '_options',

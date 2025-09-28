@@ -277,7 +277,7 @@ $this->display_settings_errors();
                         <td>
                             <input type="datetime-local"
                                 name="settings[maintenance][start_date]"
-                                value="<?php echo esc_attr($settings['maintenance']['start_date']); ?>"
+                                value="<?php echo isset($settings['maintenance']['start_date']) ? esc_attr($settings['maintenance']['start_date']) : ''; ?>"
                                 class="regular-text">
                         </td>
                     </tr>
@@ -289,7 +289,7 @@ $this->display_settings_errors();
                         <td>
                             <input type="datetime-local"
                                 name="settings[maintenance][end_date]"
-                                value="<?php echo esc_attr($settings['maintenance']['end_date']); ?>"
+                                value="<?php echo isset($settings['maintenance']['end_date']) ? esc_attr($settings['maintenance']['end_date']) : ''; ?>"
                                 class="regular-text">
                         </td>
                     </tr>

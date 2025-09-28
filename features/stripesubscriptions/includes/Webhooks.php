@@ -17,118 +17,15 @@ class Webhooks
         $this->feature = $feature;
     }
 
-    /**
-     * Handle webhook request
-     */
-    public function handle_webhook(\WP_REST_Request $request): \WP_REST_Response
-    {
-        try {
-            $settings = $this->feature->get_settings();
-            $webhook_secret = $settings['webhook_secret'];
-
-            if (empty($webhook_secret)) {
-                throw new \Exception('Webhook secret not configured');
-            }
-
-            // Get payload and signature
-            $payload = $request->get_body();
-            $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
-
-            // Verify signature
-            $event = Webhook::constructEvent(
-                $payload,
-                $sig_header,
-                $webhook_secret
-            );
-
-            // Log event
-            $this->log_event($event);
-
-            // Process event
-            $this->process_event($event);
-
-            return new \WP_REST_Response(['success' => true], 200);
-        } catch (SignatureVerificationException $e) {
-            return new \WP_REST_Response([
-                'error' => 'Invalid signature',
-                'message' => $e->getMessage()
-            ], 400);
-        } catch (\Exception $e) {
-            $this->log_error('Webhook processing failed', [
-                'error' => $e->getMessage()
-            ]);
-
-            return new \WP_REST_Response([
-                'error' => 'Processing failed',
-                'message' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Process webhook event
-     */
-    private function process_event(Event $event): void
-    {
-        switch ($event->type) {
-                // Subscription events
-            case 'customer.subscription.created':
-                $this->handle_subscription_created($event->data->object);
-                break;
-
-            case 'customer.subscription.updated':
-                $this->handle_subscription_updated($event->data->object);
-                break;
-
-            case 'customer.subscription.deleted':
-                $this->handle_subscription_deleted($event->data->object);
-                break;
-
-            case 'customer.subscription.trial_will_end':
-                $this->handle_trial_ending($event->data->object);
-                break;
-
-                // Payment events
-            case 'invoice.payment_succeeded':
-                $this->handle_invoice_paid($event->data->object);
-                break;
-
-            case 'invoice.payment_failed':
-                $this->handle_invoice_failed($event->data->object);
-                break;
-
-            case 'invoice.upcoming':
-                $this->handle_upcoming_invoice($event->data->object);
-                break;
-
-                // Refund and dispute events
-            case 'charge.refunded':
-                $this->feature->get_payments()->handle_payment_event('charge.refunded', $event->data->object);
-                break;
-
-            case 'charge.dispute.created':
-                $this->feature->get_payments()->handle_payment_event('charge.dispute.created', $event->data->object);
-                break;
-
-            case 'charge.dispute.updated':
-                $this->handle_dispute_updated($event->data->object);
-                break;
-
-            case 'charge.dispute.closed':
-                $this->handle_dispute_closed($event->data->object);
-                break;
-        }
-
-        // Allow additional processing
-        do_action('cobra_ai_stripe_webhook_' . $event->type, $event);
-    }
 
     /**
      * Handle subscription created
      */
-    public function handle_subscription_created(Subscription $subscription): void
+    public function handle_subscription_created($subscription): void
     {
         try {
+            // Get subscription object
+
             // Get user ID from metadata
             $user_id = $this->get_user_id_from_customer($subscription->customer);
             if (!$user_id) {
@@ -139,7 +36,7 @@ class Webhooks
             $subscription_id = $this->store_subscription([
                 'subscription_id' => $subscription->id,
                 'customer_id' => $subscription->customer,
-                'plan_id' => $subscription->plan->id,
+                'plan_id' => $this->get_plan_id_from_price($subscription->items->data[0]->price->id),
                 'user_id' => $user_id,
                 'status' => $subscription->status,
                 'current_period_start' => date('Y-m-d H:i:s', $subscription->current_period_start),
@@ -165,13 +62,17 @@ class Webhooks
     /**
      * Handle subscription updated
      */
-    public function handle_subscription_updated(Subscription $subscription): void
+    public function handle_subscription_updated($subscription): void
     {
         try {
+            // Get subscription object
+
             // Get local subscription
             $local_subscription = $this->get_subscription_by_id($subscription->id);
             if (!$local_subscription) {
-                throw new \Exception('Local subscription not found: ' . $subscription->id);
+                // throw new \Exception('Local subscription not found: ' . $subscription->id);
+                $this->handle_subscription_created($subscription);
+                return;
             }
 
             // Update subscription
@@ -202,9 +103,11 @@ class Webhooks
     /**
      * Handle subscription deleted
      */
-    public function handle_subscription_deleted(Subscription $subscription): void
+    public function handle_subscription_deleted($subscription): void
     {
         try {
+            // Get subscription object
+
             // Get local subscription
             $local_subscription = $this->get_subscription_by_id($subscription->id);
             if (!$local_subscription) {
@@ -236,7 +139,7 @@ class Webhooks
     /**
      * Handle trial ending
      */
-    public function handle_trial_ending(Subscription $subscription): void
+    public function handle_trial_ending($subscription): void
     {
         try {
             // Get local subscription
@@ -263,15 +166,18 @@ class Webhooks
     /**
      * Handle invoice paid
      */
-    public function handle_invoice_paid(Invoice $invoice): void
+    public function handle_invoice_paid($invoice): void
     {
         try {
             if (!$invoice->subscription) {
                 return; // Not a subscription invoice
             }
-
+            $subscription = $this->get_subscription_by_id($invoice->subscription);
+            if (!$subscription) {
+                throw new \Exception('Local subscription not found: ' . $invoice->subscription);
+            }
             // Process payment
-            $this->feature->get_payments()->process_payment($invoice->payment_intent);
+            $this->feature->get_payments()->process_payment($invoice->payment_intent, $subscription->id);
 
             // Update subscription if needed
             if ($invoice->billing_reason === 'subscription_create') {
@@ -293,7 +199,7 @@ class Webhooks
     /**
      * Handle invoice failed
      */
-    public function handle_invoice_failed(Invoice $invoice): void
+    public function handle_invoice_failed($invoice): void
     {
         try {
             if (!$invoice->subscription) {
@@ -324,7 +230,7 @@ class Webhooks
     /**
      * Handle upcoming invoice
      */
-    private function handle_upcoming_invoice(Invoice $invoice): void
+    public function handle_upcoming_invoice($invoice): void
     {
         try {
             if (!$invoice->subscription) {
@@ -349,7 +255,7 @@ class Webhooks
     /**
      * Handle dispute updated
      */
-    private function handle_dispute_updated($dispute): void
+    public function handle_dispute_updated($dispute): void
     {
         try {
             // Update dispute status
@@ -371,7 +277,7 @@ class Webhooks
     /**
      * Handle dispute closed
      */
-    private function handle_dispute_closed($dispute): void
+    public function handle_dispute_closed($dispute): void
     {
         try {
             // Update dispute status
@@ -401,42 +307,33 @@ class Webhooks
         }
     }
 
-    /**
-     * Store webhook event
-     */
-    private function log_event(Event $event): void
-    {
-        global $wpdb;
-
-        $table = $this->feature->get_table('stripe_logs');
-
-        $wpdb->insert(
-            $table,
-            [
-                'event_type' => $event->type,
-                'event_id' => $event->id,
-                'data' => json_encode($event->data),
-                'created_at' => current_time('mysql')
-            ]
-        );
-    }
 
     /**
      * Get user ID from customer
      */
     private function get_user_id_from_customer(string $customer_id): ?int
     {
+        // get user id from wp_usermeta where _stripe_customer_id = $customer_id
         global $wpdb;
 
-        $table = $this->feature->get_table('stripe_subscriptions');
-
         return $wpdb->get_var($wpdb->prepare(
-            "SELECT user_id FROM {$table} 
-             WHERE customer_id = %s 
-             ORDER BY created_at DESC 
+            "SELECT user_id FROM {$wpdb->usermeta} 
+             WHERE meta_key = '_stripe_customer_id' 
+             AND meta_value = %s 
              LIMIT 1",
             $customer_id
         ));
+        // global $wpdb;
+
+        // $table = $this->feature->get_table('stripe_subscriptions');
+
+        // return $wpdb->get_var($wpdb->prepare(
+        //     "SELECT user_id FROM {$table['name']} 
+        //      WHERE customer_id = %s 
+        //      ORDER BY created_at DESC 
+        //      LIMIT 1",
+        //     $customer_id
+        // ));
     }
 
     /**
@@ -448,7 +345,19 @@ class Webhooks
 
         $table = $this->feature->get_table('stripe_subscriptions');
 
-        $wpdb->insert($table, $data);
+        // check if  subscription_id already exists
+        $existing_subscription = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$table['name']} WHERE subscription_id = %s",
+            $data['subscription_id']
+        ));
+        if ($existing_subscription) {
+            // Update existing subscription
+            $this->update_subscription(array_merge($data, ['id' => $existing_subscription->id]));
+            return $existing_subscription->id;
+        } else {
+            $wpdb->insert($table['name'], $data);
+        }
+
         return $wpdb->insert_id;
     }
 
@@ -462,7 +371,7 @@ class Webhooks
         $table = $this->feature->get_table('stripe_subscriptions');
 
         return $wpdb->update(
-            $table,
+            $table['name'],
             $data,
             ['id' => $data['id']]
         ) !== false;
@@ -478,7 +387,7 @@ class Webhooks
         $table = $this->feature->get_table('stripe_subscriptions');
 
         return $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$table} WHERE subscription_id = %s",
+            "SELECT * FROM {$table['name']} WHERE subscription_id = %s",
             $subscription_id
         ));
     }
@@ -596,7 +505,7 @@ class Webhooks
         $table = $this->feature->get_table('stripe_subscriptions');
 
         return $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$table} WHERE id = %d",
+            "SELECT * FROM {$table['name']} WHERE id = %d",
             $subscription_id
         ));
     }
@@ -611,7 +520,7 @@ class Webhooks
         $table = $this->feature->get_table('stripe_payments');
 
         return $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$table} WHERE charge_id = %s",
+            "SELECT * FROM {$table['name']} WHERE charge_id = %s",
             $charge_id
         ));
     }
@@ -626,7 +535,7 @@ class Webhooks
         $table = $this->feature->get_table('stripe_disputes');
 
         return $wpdb->update(
-            $table,
+            $table['name'],
             ['status' => $status],
             ['dispute_id' => $dispute_id]
         ) !== false;
@@ -714,6 +623,19 @@ class Webhooks
      */
     private function log_error(string $message, array $context = []): void
     {
-        $this->feature->log('error', $message, $context);
+        // $this->feature->log('error', $message, $context);
+        error_log('Cobra AI Stripe Webhook Error: ' . $message . ' - ' . json_encode($context));
+    }
+    private function get_plan_id_from_price(string $price_id): ?int
+    {
+        global $wpdb;
+
+        return $wpdb->get_var($wpdb->prepare(
+            "SELECT post_id FROM {$wpdb->postmeta} 
+         WHERE meta_key = '_stripe_price_id' 
+         AND meta_value = %s 
+         LIMIT 1",
+            $price_id
+        ));
     }
 }

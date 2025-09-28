@@ -10,7 +10,7 @@ $plans = $this->get_plans()->get_plans(['status' => true, 'public' => true]);
 
 
 // Get current subscription if user is logged in
-$current_subscription = is_user_logged_in() ? $this->get_user_subscription(get_current_user_id()) : null;
+$current_subscription = is_user_logged_in() ? $this->get_subscriptions()->get_user_subscription(get_current_user_id()) : null;
 ?>
 
 

@@ -28,7 +28,7 @@ class AIAdmin
             throw new \Exception('AI Feature not initialized');
         }
 
-        // $this->init_hooks();
+        $this->init_hooks();
     }
 
     /**
@@ -269,7 +269,7 @@ class AIAdmin
      */
     public function ajax_get_tracking_details(): void
     {
-        check_ajax_referer('cobra_ai_admin' , 'nonce' , false);
+        check_ajax_referer('cobra_ai_admin', 'nonce', false);
 
         if (!current_user_can($this->capability)) {
             wp_send_json_error(__('Permission denied', 'cobra-ai'));
@@ -281,12 +281,33 @@ class AIAdmin
         if (!$tracking) {
             wp_send_json_error(__('Tracking not found', 'cobra-ai'));
         }
+        $prompt = "";
+        $response = "";
+        if ($this->is_json($tracking->prompt)) {
+            $decoded_prompt = json_decode($tracking->prompt, true);
+            $fields = ['image', 'user', 'system'];
+            $prompt_parts = [];
 
+            foreach ($fields as $field) {
+                if (isset($decoded_prompt[$field])) {
+                    if ($field === 'image') {
+                        $prompt_parts[] = sprintf(' <img src="%s" alt="Image" style="max-width: 400px; max-height: 300px;" />', esc_url($decoded_prompt[$field]));
+                    } else if ($field === 'user') {
+                        // For other fields, just display the text
+                        $prompt_parts[] = sprintf(' %s',  esc_html($decoded_prompt[$field]));
+                    }
+                }
+            }
+
+            $prompt = implode('<br>', $prompt_parts);
+        } else {
+            $prompt = $tracking->prompt ?? '';
+        }
         // Format tracking data
         $data = [
             'id' => $tracking->id,
             'user' => get_userdata($tracking->user_id),
-            'prompt' => $tracking->prompt,
+            'prompt' => $prompt ?? '',
             'response' => $tracking->response,
             'created_at' => get_date_from_gmt($tracking->created_at),
             'ai_provider' => $tracking->ai_provider,
@@ -298,13 +319,17 @@ class AIAdmin
 
         wp_send_json_success($data);
     }
-
+    private function is_json($string): bool
+    {
+        json_decode($string);
+        return (json_last_error() === JSON_ERROR_NONE);
+    }
     /**
      * AJAX: Delete tracking
      */
     public function ajax_delete_tracking(): void
     {
-        check_ajax_referer('cobra_ai_admin' , 'nonce' , false);
+        check_ajax_referer('cobra_ai_admin', 'nonce', false);
 
         if (!current_user_can($this->capability)) {
             wp_send_json_error(__('Permission denied', 'cobra-ai'));
@@ -379,19 +404,20 @@ class AIAdmin
     /**
      * Handle test connection AJAX request
      */
-    public function handle_test_connection(): void {
+    public function handle_test_connection(): void
+    {
         try {
-        
-     
-            // Verify nonce
-          check_ajax_referer('cobra_ai_test_connection', 'nonce' , false);
 
-     
+
+            // Verify nonce
+            check_ajax_referer('cobra_ai_test_connection', 'nonce', false);
+
+
             // Check permissions
             if (!current_user_can('manage_options')) {
                 throw new \Exception(__('Permission denied', 'cobra-ai'));
             }
-     
+
             // Get request data
             $provider = isset($_POST['provider']) ? sanitize_text_field($_POST['provider']) : '';
             $api_key = isset($_POST['api_key']) ? sanitize_text_field($_POST['api_key']) : '';
@@ -399,16 +425,15 @@ class AIAdmin
             if (empty($provider) || empty($api_key)) {
                 throw new \Exception(__('Missing required parameters', 'cobra-ai'));
             }
-        
+
             // Test connection based on provider
             $result = $this->test_provider_connection($provider, $api_key);
-      
+
             if ($result['success']) {
                 wp_send_json_success($result['message']);
             } else {
                 throw new \Exception($result['message']);
             }
-
         } catch (\Exception $e) {
             wp_send_json_error($e->getMessage());
         }
@@ -417,7 +442,8 @@ class AIAdmin
     /**
      * Test provider connection
      */
-    private function test_provider_connection(string $provider, string $api_key): array {
+    private function test_provider_connection(string $provider, string $api_key): array
+    {
         switch ($provider) {
             case 'openai':
                 return $this->test_openai_connection($api_key);
@@ -438,7 +464,8 @@ class AIAdmin
     /**
      * Test OpenAI connection
      */
-    private function test_openai_connection(string $api_key): array {
+    private function test_openai_connection(string $api_key): array
+    {
         try {
             $response = wp_remote_get('https://api.openai.com/v1/models', [
                 'headers' => [
@@ -447,7 +474,7 @@ class AIAdmin
                 ],
                 'timeout' => 15
             ]);
-            
+
             if (is_wp_error($response)) {
                 throw new \Exception($response->get_error_message());
             }
@@ -464,7 +491,6 @@ class AIAdmin
                 'success' => true,
                 'message' => __('Successfully connected to OpenAI API', 'cobra-ai')
             ];
-
         } catch (\Exception $e) {
             return [
                 'success' => false,
@@ -476,7 +502,8 @@ class AIAdmin
     /**
      * Test Claude connection
      */
-    private function test_claude_connection(string $api_key): array {
+    private function test_claude_connection(string $api_key): array
+    {
         try {
             $response = wp_remote_get('https://api.anthropic.com/v1/messages', [
                 'headers' => [
@@ -492,7 +519,7 @@ class AIAdmin
             }
 
             $status = wp_remote_retrieve_response_code($response);
-            
+
             // Claude API returns 404 on this endpoint but that's okay for key validation
             if ($status === 401) {
                 throw new \Exception(__('Invalid API key', 'cobra-ai'));
@@ -502,7 +529,6 @@ class AIAdmin
                 'success' => true,
                 'message' => __('Successfully connected to Claude API', 'cobra-ai')
             ];
-
         } catch (\Exception $e) {
             return [
                 'success' => false,
@@ -514,7 +540,8 @@ class AIAdmin
     /**
      * Test Gemini connection
      */
-    private function test_gemini_connection(string $api_key): array {
+    private function test_gemini_connection(string $api_key): array
+    {
         try {
             $url = add_query_arg([
                 'key' => $api_key
@@ -543,7 +570,6 @@ class AIAdmin
                 'success' => true,
                 'message' => __('Successfully connected to Gemini API', 'cobra-ai')
             ];
-
         } catch (\Exception $e) {
             return [
                 'success' => false,
@@ -555,7 +581,8 @@ class AIAdmin
     /**
      * Test Perplexity connection
      */
-    private function test_perplexity_connection(string $api_key): array {
+    private function test_perplexity_connection(string $api_key): array
+    {
         try {
             $response = wp_remote_get('https://api.perplexity.ai/models', [
                 'headers' => [
@@ -581,7 +608,6 @@ class AIAdmin
                 'success' => true,
                 'message' => __('Successfully connected to Perplexity API', 'cobra-ai')
             ];
-
         } catch (\Exception $e) {
             return [
                 'success' => false,

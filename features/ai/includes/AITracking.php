@@ -338,6 +338,9 @@ class AITracking {
 
         if (!empty($args['period'])) {
             switch ($args['period']) {
+                case 'hour':
+                    $where[] = 'created_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)';
+                    break;
                 case 'today':
                     $where[] = 'DATE(created_at) = CURDATE()';
                     break;

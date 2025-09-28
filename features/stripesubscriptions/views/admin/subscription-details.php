@@ -200,7 +200,7 @@ defined('ABSPATH') || exit;
                                     ); ?>
                                 </td>
                                 <td>
-                                    <?php echo esc_html($this->format_currency($payment->amount)); ?>
+                                    <?php echo esc_html($this->feature->format_price($payment->amount, $payment->currency)); ?>
                                 </td>
                                 <td>
                                     <span class="payment-status status-<?php echo esc_attr($payment->status); ?>">

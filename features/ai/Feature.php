@@ -69,7 +69,7 @@ class Feature extends FeatureBase {
         require_once $this->path . 'includes/Class_Tracking_List_Table.php';
 
         // Load providers
-        foreach (glob($this->path . 'includes/providers/*.php') as $provider_file) {
+        foreach (glob($this->path . 'includes/Providers/*.php') as $provider_file) {
             require_once $provider_file;
         }
     }
@@ -281,7 +281,7 @@ class Feature extends FeatureBase {
     /**
      * Process AI request
      */
-    public function process_request(string $provider, string $prompt, array $options = []) {
+    public function process_request(string $provider, string|array $prompt, array $options = []) {
         return $this->manager->process_request($provider, $prompt, $options);
     }
 

@@ -70,7 +70,7 @@ class AIManager
      * @return array Response data
      * @throws \Exception
      */
-    public function process_request(string $provider, string $prompt, array $options = []): array
+    public function process_request(string $provider, string|array  $prompt, array $options = []): array
     {
         try {
             // Check if provider exists and is active
@@ -100,7 +100,7 @@ class AIManager
             // Prepare tracking data
             $tracking_data = [
                 'user_id' => $user_id,
-                'prompt' => $prompt,
+                'prompt' => is_array($prompt) ? json_encode($prompt) : $prompt,
                 'ai_provider' => $provider,
                 'ip' => $this->get_client_ip(),
                 'meta_data' => [

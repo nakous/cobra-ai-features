@@ -3,6 +3,7 @@
     "description": "Modular AI-powered features for WordPress",
     "type": "wordpress-plugin",
     "license": "GPL-2.0-or-later",
+    "version": "1.0.0",
     "authors": [
         {
             "name": "Nakous Mustapha",

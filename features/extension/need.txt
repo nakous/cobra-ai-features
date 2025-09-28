@@ -1,0 +1,39 @@
+Extention api /V1 is provider all  endpoint for browser extension chrome and firefox and Edge
+
+for all call send :
+    browserName : string
+    browserVersion : string
+    extensionVersion : string
+    device : string
+    os : string
+    extensionLang : string
+api /V1
+user auth
+-login > return user data
+-register > return user data
+-logout > return true
+-verify > return user data
+-reset password
+
+-getAnswer
+input  : 
+prompt , 
+image  
+screenshot{ image , h, w , x , y , devicePixelRatio},
+lang ,  
+user_id
+request type : image, screen, text , mcq, form, 
+
+output
+{
+    answer : string
+    confidence : float
+    status : string
+    error : string
+
+}
+
+Settings
+
+-for all getAnser how much point can incrise 
+

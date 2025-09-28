@@ -257,7 +257,7 @@ class Feature extends FeatureBase
         $code = $request->get_param('code');
         $state = $request->get_param('state');
         $error = $request->get_param('error');
-
+  
         // Verify state to prevent CSRF
         if (!wp_verify_nonce($state, 'google-login-state')) {
             return new \WP_Error(

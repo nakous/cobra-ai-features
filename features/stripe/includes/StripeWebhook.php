@@ -119,7 +119,7 @@ class StripeWebhook
         }
 
         return $wpdb->get_results(
-            "SELECT * FROM {$webhooks_table} WHERE status = 'active'",
+            "SELECT * FROM {$webhooks_table['name']} WHERE status = 'active'",
             ARRAY_A
         );
     }
@@ -137,7 +137,7 @@ class StripeWebhook
         }
 
         return $wpdb->insert(
-            $webhooks_table,
+            $webhooks_table['name'],
             [
                 'webhook_id' => $webhook_id,
                 'secret' => $secret,
@@ -162,7 +162,7 @@ class StripeWebhook
         }
 
         return $wpdb->update(
-            $webhooks_table,
+            $webhooks_table['name'],
             ['status' => 'inactive'],
             ['webhook_id' => $webhook_id],
             ['%s'],
