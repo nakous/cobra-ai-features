@@ -280,8 +280,13 @@ class Feature extends FeatureBase {
 
     /**
      * Process AI request
+     * 
+     * @param string $provider The AI provider to use
+     * @param string|array $prompt The prompt to process (string or array)
+     * @param array $options Additional options
+     * @return mixed
      */
-    public function process_request(string $provider, string|array $prompt, array $options = []) {
+    public function process_request(string $provider, $prompt, array $options = []) {
         return $this->manager->process_request($provider, $prompt, $options);
     }
 

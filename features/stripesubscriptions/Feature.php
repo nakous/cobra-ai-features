@@ -1063,14 +1063,13 @@ class Feature extends FeatureBase
 
             if ($cancel_immediately) {
                 // Cancel immediately
-                $subscription = \Stripe\Subscription::update($subscription_id, [
-                    'cancel_at_period_end' => false,
+                $subscription = \Stripe\Subscription::retrieve($subscription_id);
+                $subscription->cancel([
                     'metadata' => [
                         'cancelled_by' => 'user',
                         'cancel_reason' => $cancel_reason
                     ]
                 ]);
-                \Stripe\Subscription::cancel($subscription_id);
                 
                 $message = __('Your subscription has been cancelled immediately.', 'cobra-ai');
             } else {

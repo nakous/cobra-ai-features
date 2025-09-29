@@ -53,6 +53,12 @@ class Feature extends FeatureBase
     {
         parent::init_hooks();
         
+        // DEBUG: Log hook registration
+        error_log('COBRA DEBUG: Contact feature init_hooks called');
+        
+        // Register shortcodes
+        $this->register_shortcodes();
+        
         // Admin hooks
         add_action('admin_menu', [$this, 'add_admin_menu']);
         
@@ -70,6 +76,17 @@ class Feature extends FeatureBase
         
         // Handle form notification emails
         add_action('cobra_contact_form_submitted', [$this, 'send_notification_email'], 10, 2);
+        
+        // Profile tab integration
+        add_action('cobra_register_profile_tab', [$this, 'contact_account_custom_tab']);
+        add_action('cobra_register_profile_tab_content', [$this, 'contact_account_custom_tab_content'], 10, 2);
+        
+        error_log('COBRA DEBUG: Profile tab hooks registered');
+        
+        // AJAX handlers for user messages
+        add_action('wp_ajax_cobra_contact_get_user_messages', [$this, 'get_user_messages']);
+        add_action('wp_ajax_cobra_contact_get_conversation', [$this, 'get_conversation']);
+        add_action('wp_ajax_cobra_contact_send_user_reply', [$this, 'send_user_reply']);
     }
 
     protected function register_shortcodes(): void
@@ -693,6 +710,690 @@ class Feature extends FeatureBase
                     </div>
                 </body>
                 </html>';
+    }
+
+    /**
+     * Add contact messages tab to user profile
+     */
+    public function contact_account_custom_tab()
+    {
+        // DEBUG: Toujours afficher l'onglet pour tester
+        error_log('COBRA DEBUG: contact_account_custom_tab called');
+        
+        // Check if the user is logged in
+        if (!is_user_logged_in()) {
+            error_log('COBRA DEBUG: User not logged in');
+            return;
+        }
+
+        error_log('COBRA DEBUG: User is logged in, showing tab');
+
+        // Count user messages
+        $user_id = get_current_user_id();
+        global $wpdb;
+        $table_name = $this->tables['submissions']['name'];
+        
+        $message_count = 0;
+        
+        // Check if table exists before querying
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table_name'") === $table_name) {
+            $message_count = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM $table_name WHERE user_id = %d",
+                $user_id
+            ));
+        }
+
+        ?>
+        <li>
+            <a href="#contact-messages" data-tab="contact-messages">
+                <?php _e('Mes Messages', 'cobra-ai'); ?>
+                <?php if ($message_count > 0): ?>
+                    <span class="cobra-tab-count">(<?php echo $message_count; ?>)</span>
+                <?php endif; ?>
+            </a>
+        </li>
+        <?php
+        
+        error_log('COBRA DEBUG: Tab HTML generated');
+    }
+
+    /**
+     * Display contact messages tab content
+     */
+    public function contact_account_custom_tab_content()
+    {
+        // DEBUG
+        error_log('COBRA DEBUG: contact_account_custom_tab_content called');
+        
+        // Check if the user is logged in
+        if (!is_user_logged_in()) {
+            error_log('COBRA DEBUG: User not logged in in content');
+            return;
+        }
+
+        error_log('COBRA DEBUG: Generating tab content');
+
+        ?>
+        <div class="cobra-tab-content" id="contact-messages-content">
+            <div class="contact-messages-header">
+                <h3><?php _e('Mes Messages de Contact', 'cobra-ai'); ?></h3>
+                <p><?php _e('Consultez vos messages de contact et les réponses reçues.', 'cobra-ai'); ?></p>
+            </div>
+            
+            <div class="contact-messages-list" id="contact-messages-list">
+                <!-- Les messages seront chargés via AJAX -->
+                <div class="loading-messages">
+                    <p><?php _e('Chargement des messages...', 'cobra-ai'); ?></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal pour afficher la conversation -->
+        <div id="contact-conversation-modal" class="cobra-modal" style="display: none;">
+            <div class="cobra-modal-content">
+                <div class="cobra-modal-header">
+                    <h4><?php _e('Conversation', 'cobra-ai'); ?></h4>
+                    <span class="cobra-modal-close">&times;</span>
+                </div>
+                <div class="cobra-modal-body">
+                    <div id="conversation-content">
+                        <!-- Le contenu de la conversation sera chargé ici -->
+                    </div>
+                    
+                    <div class="reply-section" style="display: none;">
+                        <h5><?php _e('Répondre', 'cobra-ai'); ?></h5>
+                        <textarea id="user-reply-message" placeholder="<?php esc_attr_e('Votre réponse...', 'cobra-ai'); ?>" rows="4"></textarea>
+                        <div class="reply-actions">
+                            <button type="button" class="button send-reply-btn"><?php _e('Envoyer la Réponse', 'cobra-ai'); ?></button>
+                            <button type="button" class="button cancel-reply-btn"><?php _e('Annuler', 'cobra-ai'); ?></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <style>
+        .contact-messages-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e1e1e1;
+        }
+
+        .contact-message-item {
+            background: #fff;
+            border: 1px solid #e1e1e1;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+
+        .contact-message-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .contact-message-item.unread {
+            border-left: 4px solid #0073aa;
+            background: #f8f9fa;
+        }
+
+        .contact-message-item.replied {
+            border-left: 4px solid #46b450;
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .message-subject {
+            font-weight: 600;
+            font-size: 16px;
+            color: #333;
+            margin: 0;
+        }
+
+        .message-date {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .message-status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .message-status.unread {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .message-status.read {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .message-status.replied {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .message-preview {
+            color: #555;
+            margin: 8px 0;
+            line-height: 1.4;
+        }
+
+        .message-meta {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            font-size: 12px;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .cobra-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cobra-modal-content {
+            background: #fff;
+            border-radius: 8px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .cobra-modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #e1e1e1;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+
+        .cobra-modal-header h4 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .cobra-modal-close {
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .cobra-modal-close:hover {
+            color: #333;
+        }
+
+        .cobra-modal-body {
+            padding: 20px;
+        }
+
+        .conversation-message {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #0073aa;
+        }
+
+        .conversation-reply {
+            background: #e8f5e8;
+            border-left-color: #46b450;
+        }
+
+        .conversation-user-reply {
+            background: #fff3e0;
+            border-left-color: #f57c00;
+        }
+
+        .conversation-meta {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .conversation-content {
+            line-height: 1.6;
+        }
+
+        .reply-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e1e1e1;
+        }
+
+        .reply-section textarea {
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: inherit;
+            resize: vertical;
+        }
+
+        .reply-actions {
+            margin-top: 10px;
+        }
+
+        .reply-actions .button {
+            margin-right: 10px;
+        }
+
+        .cobra-tab-count {
+            background: #0073aa;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 11px;
+            margin-left: 5px;
+        }
+
+        .loading-messages {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .no-messages {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        </style>
+
+        <script>
+        jQuery(document).ready(function($) {
+            // Définir ajaxurl pour le frontend
+            if (typeof ajaxurl === 'undefined') {
+                var ajaxurl = '<?php echo admin_url('admin-ajax.php'); ?>';
+            }
+            
+            // Charger les messages au chargement de l'onglet
+            if ($('#contact-messages-content').length) {
+                loadUserMessages();
+            }
+            
+            // Gérer le clic sur un message
+            $(document).on('click', '.contact-message-item', function() {
+                const messageId = $(this).data('message-id');
+                openConversation(messageId);
+            });
+            
+            // Fermer la modal
+            $(document).on('click', '.cobra-modal-close, .cobra-modal', function(e) {
+                if (e.target === this) {
+                    $('#contact-conversation-modal').hide();
+                }
+            });
+            
+            // Empêcher la fermeture en cliquant sur le contenu
+            $(document).on('click', '.cobra-modal-content', function(e) {
+                e.stopPropagation();
+            });
+            
+            // Gérer l'envoi de réponse
+            $(document).on('click', '.send-reply-btn', function() {
+                sendUserReply();
+            });
+            
+            // Annuler la réponse
+            $(document).on('click', '.cancel-reply-btn', function() {
+                $('.reply-section').hide();
+                $('#user-reply-message').val('');
+            });
+            
+            function loadUserMessages() {
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: {
+                        action: 'cobra_contact_get_user_messages',
+                        nonce: '<?php echo wp_create_nonce("cobra_contact_user_nonce"); ?>'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#contact-messages-list').html(response.data.html);
+                        } else {
+                            $('#contact-messages-list').html('<div class="no-messages"><p>' + response.data.message + '</p></div>');
+                        }
+                    },
+                    error: function() {
+                        $('#contact-messages-list').html('<div class="no-messages"><p><?php echo esc_js(__('Erreur lors du chargement des messages.', 'cobra-ai')); ?></p></div>');
+                    }
+                });
+            }
+            
+            function openConversation(messageId) {
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: {
+                        action: 'cobra_contact_get_conversation',
+                        message_id: messageId,
+                        nonce: '<?php echo wp_create_nonce("cobra_contact_user_nonce"); ?>'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#conversation-content').html(response.data.html);
+                            $('#contact-conversation-modal').data('message-id', messageId).show();
+                            
+                            // Montrer la section de réponse si l'admin a déjà répondu
+                            if (response.data.can_reply) {
+                                $('.reply-section').show();
+                            }
+                        } else {
+                            alert(response.data.message);
+                        }
+                    },
+                    error: function() {
+                        alert('<?php echo esc_js(__('Erreur lors du chargement de la conversation.', 'cobra-ai')); ?>');
+                    }
+                });
+            }
+            
+            function sendUserReply() {
+                const messageId = $('#contact-conversation-modal').data('message-id');
+                const replyText = $('#user-reply-message').val().trim();
+                
+                if (!replyText) {
+                    alert('<?php echo esc_js(__('Veuillez saisir votre réponse.', 'cobra-ai')); ?>');
+                    return;
+                }
+                
+                $('.send-reply-btn').prop('disabled', true).text('<?php echo esc_js(__('Envoi...', 'cobra-ai')); ?>');
+                
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: {
+                        action: 'cobra_contact_send_user_reply',
+                        message_id: messageId,
+                        reply: replyText,
+                        nonce: '<?php echo wp_create_nonce("cobra_contact_user_nonce"); ?>'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            // Recharger la conversation
+                            openConversation(messageId);
+                            $('#user-reply-message').val('');
+                            
+                            // Recharger la liste des messages
+                            loadUserMessages();
+                        } else {
+                            alert(response.data.message);
+                        }
+                    },
+                    error: function() {
+                        alert('<?php echo esc_js(__('Erreur lors de l envoi de la réponse.', 'cobra-ai')); ?>');
+                    },
+                    complete: function() {
+                        $('.send-reply-btn').prop('disabled', false).text('<?php echo esc_js(__('Envoyer la Réponse', 'cobra-ai')); ?>');
+                    }
+                });
+            }
+        });
+        </script>
+        <?php
+    }
+
+    /**
+     * Get user messages via AJAX
+     */
+    public function get_user_messages()
+    {
+        // Verify nonce and user authentication
+        if (!check_ajax_referer('cobra_contact_user_nonce', 'nonce', false) || !is_user_logged_in()) {
+            wp_send_json_error(['message' => __('Accès refusé.', 'cobra-ai')]);
+        }
+        
+        $user_id = get_current_user_id();
+        global $wpdb;
+        $table_name = $this->tables['submissions']['name'];
+        
+        $messages = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM $table_name WHERE user_id = %d ORDER BY created_at DESC",
+            $user_id
+        ));
+        
+        if (empty($messages)) {
+            wp_send_json_error(['message' => __('Aucun message trouvé.', 'cobra-ai')]);
+        }
+        
+        ob_start();
+        foreach ($messages as $message) {
+            $status_class = $message->status;
+            $status_text = $this->get_status_text($message->status);
+            $has_response = !empty($message->response);
+            
+            ?>
+            <div class="contact-message-item <?php echo esc_attr($status_class); ?>" data-message-id="<?php echo esc_attr($message->id); ?>">
+                <div class="message-header">
+                    <h4 class="message-subject"><?php echo esc_html($message->subject); ?></h4>
+                    <div class="message-meta-right">
+                        <span class="message-status <?php echo esc_attr($status_class); ?>"><?php echo esc_html($status_text); ?></span>
+                        <span class="message-date"><?php echo esc_html(mysql2date('d/m/Y H:i', $message->created_at)); ?></span>
+                    </div>
+                </div>
+                
+                <div class="message-preview">
+                    <?php echo esc_html(wp_trim_words($message->message, 20)); ?>
+                </div>
+                
+                <div class="message-meta">
+                    <span><?php _e('Envoyé le', 'cobra-ai'); ?> <?php echo esc_html(mysql2date('d/m/Y à H:i', $message->created_at)); ?></span>
+                    <?php if ($has_response): ?>
+                        <span class="has-response"><?php _e('✓ Réponse reçue', 'cobra-ai'); ?></span>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php
+        }
+        
+        $html = ob_get_clean();
+        wp_send_json_success(['html' => $html]);
+    }
+
+    /**
+     * Get conversation details via AJAX
+     */
+    public function get_conversation()
+    {
+        // Verify nonce and user authentication
+        if (!check_ajax_referer('cobra_contact_user_nonce', 'nonce', false) || !is_user_logged_in()) {
+            wp_send_json_error(['message' => __('Accès refusé.', 'cobra-ai')]);
+        }
+        
+        $message_id = isset($_POST['message_id']) ? absint($_POST['message_id']) : 0;
+        $user_id = get_current_user_id();
+        
+        if ($message_id <= 0) {
+            wp_send_json_error(['message' => __('ID de message invalide.', 'cobra-ai')]);
+        }
+        
+        global $wpdb;
+        $table_name = $this->tables['submissions']['name'];
+        
+        // Get the message and verify it belongs to the user
+        $message = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM $table_name WHERE id = %d AND user_id = %d",
+            $message_id,
+            $user_id
+        ));
+        
+        if (!$message) {
+            wp_send_json_error(['message' => __('Message non trouvé.', 'cobra-ai')]);
+        }
+        
+        // Mark as read if unread
+        if ($message->status === 'unread') {
+            $wpdb->update(
+                $table_name,
+                ['status' => 'read'],
+                ['id' => $message_id],
+                ['%s'],
+                ['%d']
+            );
+        }
+        
+        ob_start();
+        ?>
+        <div class="conversation-message">
+            <div class="conversation-meta">
+                <strong><?php _e('Votre message', 'cobra-ai'); ?></strong> - 
+                <?php echo esc_html(mysql2date('d/m/Y à H:i', $message->created_at)); ?>
+            </div>
+            <div class="conversation-content">
+                <h5><?php echo esc_html($message->subject); ?></h5>
+                <p><?php echo nl2br(esc_html($message->message)); ?></p>
+            </div>
+        </div>
+        
+        <?php if (!empty($message->response)): ?>
+            <div class="conversation-message conversation-reply">
+                <div class="conversation-meta">
+                    <strong><?php _e('Réponse de l\'équipe', 'cobra-ai'); ?></strong> - 
+                    <?php echo esc_html(mysql2date('d/m/Y à H:i', $message->response_date)); ?>
+                </div>
+                <div class="conversation-content">
+                    <?php echo wpautop(esc_html($message->response)); ?>
+                </div>
+            </div>
+        <?php endif; ?>
+        
+        <?php
+        $html = ob_get_clean();
+        $can_reply = !empty($message->response); // User can only reply if admin responded first
+        
+        wp_send_json_success([
+            'html' => $html,
+            'can_reply' => $can_reply
+        ]);
+    }
+
+    /**
+     * Send user reply via AJAX
+     */
+    public function send_user_reply()
+    {
+        // Verify nonce and user authentication
+        if (!check_ajax_referer('cobra_contact_user_nonce', 'nonce', false) || !is_user_logged_in()) {
+            wp_send_json_error(['message' => __('Accès refusé.', 'cobra-ai')]);
+        }
+        
+        $message_id = isset($_POST['message_id']) ? absint($_POST['message_id']) : 0;
+        $reply = isset($_POST['reply']) ? wp_kses_post($_POST['reply']) : '';
+        $user_id = get_current_user_id();
+        
+        if ($message_id <= 0 || empty($reply)) {
+            wp_send_json_error(['message' => __('Données invalides.', 'cobra-ai')]);
+        }
+        
+        global $wpdb;
+        $table_name = $this->tables['submissions']['name'];
+        
+        // Verify message belongs to user and has an admin response
+        $message = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM $table_name WHERE id = %d AND user_id = %d",
+            $message_id,
+            $user_id
+        ));
+        
+        if (!$message || empty($message->response)) {
+            wp_send_json_error(['message' => __('Impossible de répondre à ce message.', 'cobra-ai')]);
+        }
+        
+        // Create a new submission as user reply
+        $user = get_userdata($user_id);
+        $result = $wpdb->insert(
+            $table_name,
+            [
+                'name' => $user->display_name,
+                'email' => $user->user_email,
+                'subject' => 'Re: ' . $message->subject,
+                'message' => $reply,
+                'status' => 'unread',
+                'user_id' => $user_id,
+                'user_ip' => $_SERVER['REMOTE_ADDR'] ?? '',
+                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
+                'created_at' => current_time('mysql')
+            ],
+            [
+                '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s'
+            ]
+        );
+        
+        if ($result === false) {
+            wp_send_json_error(['message' => __('Erreur lors de l\'envoi de la réponse.', 'cobra-ai')]);
+        }
+        
+        // Send notification email to admin about user reply
+        $this->send_user_reply_notification($user, $message, $reply);
+        
+        wp_send_json_success(['message' => __('Votre réponse a été envoyée avec succès.', 'cobra-ai')]);
+    }
+
+    /**
+     * Send notification email when user replies
+     */
+    private function send_user_reply_notification($user, $original_message, $reply)
+    {
+        $notifications = $this->get_settings('notifications');
+        if (!$notifications['enabled']) {
+            return;
+        }
+        
+        $to = $notifications['recipients'];
+        $subject = sprintf(__('[%s] Nouvelle réponse utilisateur: %s', 'cobra-ai'), 
+                          get_bloginfo('name'), 
+                          $original_message->subject);
+        
+        $message = sprintf(
+            __("L'utilisateur %s a répondu au message #%d:\n\nMessage original: %s\n\nRéponse:\n%s\n\nVoir dans l'admin: %s", 'cobra-ai'),
+            $user->display_name . ' (' . $user->user_email . ')',
+            $original_message->id,
+            wp_trim_words($original_message->message, 20),
+            $reply,
+            admin_url('admin.php?page=cobra-contact-submissions')
+        );
+        
+        wp_mail($to, $subject, $message);
+    }
+
+    /**
+     * Get status text for display
+     */
+    private function get_status_text($status)
+    {
+        switch ($status) {
+            case 'unread':
+                return __('Non lu', 'cobra-ai');
+            case 'read':
+                return __('Lu', 'cobra-ai');
+            case 'replied':
+                return __('Répondu', 'cobra-ai');
+            default:
+                return $status;
+        }
     }
 
     protected function get_feature_default_options(): array
