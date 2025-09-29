@@ -1,4 +1,407 @@
- /* Help Button */
+/* Cobra AI Settings Styles */
+.cobra-ai-settings {
+    background: #f1f1f1;
+    margin: 0 0 0 -20px;
+    padding: 0;
+}
+
+.cobra-ai-settings .wp-heading-inline {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin: 20px 20px 0 20px;
+    padding: 20px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.cobra-ai-version {
+    background: #2271b1;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: normal;
+}
+
+/* Navigation Tabs */
+.cobra-ai-settings-nav {
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+    margin: 0 20px;
+}
+
+.cobra-ai-settings-nav .nav-tabs {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    gap: 0;
+}
+
+.cobra-ai-settings-nav .nav-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 15px 20px;
+    text-decoration: none;
+    color: #646970;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.cobra-ai-settings-nav .nav-tab:hover {
+    color: #2271b1;
+    background: #f9f9f9;
+}
+
+.cobra-ai-settings-nav .nav-tab.nav-tab-active {
+    color: #2271b1;
+    border-bottom-color: #2271b1;
+    background: #fff;
+}
+
+.cobra-ai-settings-nav .nav-tab .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+/* Settings Content */
+.cobra-ai-settings-content {
+    margin: 0 20px;
+    padding: 0;
+}
+
+.settings-tab {
+    display: none;
+    padding: 30px 0;
+}
+
+.settings-tab.active {
+    display: block !important;
+}
+
+.settings-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    padding: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.settings-card h2 {
+    margin: 0;
+    padding: 20px 25px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    color: #23282d;
+}
+
+.settings-card h2 .dashicons {
+    color: #2271b1;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+.settings-card h3 {
+    margin: 30px 25px 20px 25px;
+    padding: 0 0 10px 0;
+    border-bottom: 1px solid #eee;
+    color: #23282d;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.settings-card .description {
+    padding: 0 25px 20px 25px;
+    margin: 0;
+    color: #646970;
+    font-style: italic;
+}
+
+.settings-card .form-table {
+    margin: 0;
+    padding: 0 25px 25px 25px;
+}
+
+.settings-card .form-table th {
+    width: 200px;
+    padding: 15px 10px 15px 0;
+    vertical-align: top;
+    font-weight: 600;
+}
+
+.settings-card .form-table td {
+    padding: 15px 0;
+}
+
+.settings-card .form-table fieldset label {
+    display: block;
+    margin-bottom: 8px;
+}
+
+.settings-card .form-table input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+.settings-card .form-table input[type="number"].small-text {
+    width: 80px;
+}
+
+.settings-card .form-table .regular-text {
+    width: 300px;
+}
+
+.settings-card .form-table .large-text {
+    width: 100%;
+    max-width: 500px;
+}
+
+/* System Info Styles */
+.system-info-table td.label {
+    font-weight: 600;
+    width: 25%;
+    padding: 12px 15px;
+}
+
+.system-info-table td.value {
+    width: 60%;
+    padding: 12px 15px;
+    font-family: monospace;
+}
+
+.system-info-table td.status {
+    width: 15%;
+    text-align: center;
+    padding: 12px 15px;
+}
+
+.status-good { color: #46b450; font-size: 16px; }
+.status-warning { color: #ffb900; font-size: 16px; }
+.status-error { color: #dc3232; font-size: 16px; }
+.status-info { color: #72aee6; font-size: 16px; }
+
+.system-section {
+    margin-bottom: 30px;
+}
+
+/* Backup Styles */
+.backup-info, .backup-settings, .backup-actions, .backup-history {
+    padding: 0 25px 25px 25px;
+}
+
+.backup-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.backup-buttons .button {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.backup-buttons .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+.restore-upload {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 20px;
+}
+
+.restore-upload h4 {
+    margin: 0 0 15px 0;
+    color: #23282d;
+}
+
+.backup-history table {
+    margin-top: 15px;
+}
+
+.no-backups {
+    text-align: center;
+    color: #646970;
+    font-style: italic;
+    padding: 20px;
+}
+
+/* Action Buttons */
+.system-actions, .action-buttons {
+    padding: 20px 25px;
+    border-top: 1px solid #eee;
+    background: #f9f9f9;
+}
+
+.system-actions h3 {
+    margin: 0 0 15px 0;
+    padding: 0;
+    border: none;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.action-buttons .button {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Footer */
+.cobra-ai-settings-footer {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin: 0 20px 20px 20px;
+    padding: 20px 25px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.cobra-ai-settings-footer .submit {
+    margin: 0;
+    padding: 0;
+}
+
+/* Loading Overlay */
+.cobra-ai-loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.loading-content {
+    background: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.loading-content .spinner {
+    margin: 0 auto 15px auto;
+}
+
+.loading-content p {
+    margin: 0;
+    font-weight: 500;
+    color: #23282d;
+}
+
+/* Diagnostic Results */
+.diagnostic-results {
+    margin-top: 30px;
+    padding: 20px 25px;
+    background: #f9f9f9;
+    border-top: 1px solid #eee;
+}
+
+.diagnostic-content {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    font-family: monospace;
+    font-size: 12px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .cobra-ai-settings {
+        margin: 0 -20px 0 -20px;
+    }
+    
+    .cobra-ai-settings .wp-heading-inline {
+        margin: 20px 10px 0 10px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .cobra-ai-settings-nav,
+    .cobra-ai-settings-content,
+    .cobra-ai-settings-footer {
+        margin: 0 10px;
+    }
+    
+    .cobra-ai-settings-nav .nav-tabs {
+        flex-direction: column;
+    }
+    
+    .cobra-ai-settings-nav .nav-tab {
+        border-bottom: 1px solid #ddd;
+        border-right: 3px solid transparent;
+    }
+    
+    .cobra-ai-settings-nav .nav-tab.nav-tab-active {
+        border-right-color: #2271b1;
+        border-bottom-color: #ddd;
+    }
+    
+    .backup-buttons,
+    .action-buttons {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .backup-buttons .button,
+    .action-buttons .button {
+        justify-content: center;
+    }
+    
+    .settings-card .form-table th {
+        width: 100%;
+        display: block;
+        padding-bottom: 5px;
+    }
+    
+    .settings-card .form-table td {
+        display: block;
+        padding-top: 0;
+    }
+    
+    .system-info-table td.label,
+    .system-info-table td.value,
+    .system-info-table td.status {
+        display: block;
+        width: 100%;
+        padding: 8px 15px 4px 15px;
+    }
+    
+    .system-info-table td.status {
+        text-align: left;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #eee;
+    }
+}
+
+/* Help Button */
  .help-button {
      background: none;
      border: none;
