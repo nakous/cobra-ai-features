@@ -167,6 +167,8 @@ class Feature extends FeatureBase
         parent::init_hooks();
         add_filter('manage_users_columns', [$this, 'add_user_columns']);
         add_filter('manage_users_custom_column', [$this, 'manage_user_columns'], 10, 3);
+        add_filter('manage_users_sortable_columns', [$this, 'sort_user_table_by_created_at']);
+        add_action('pre_get_users', [$this, 'default_sort_pre_get_users']);
         add_action('show_user_profile', [$this, 'add_custom_user_fields']);
         add_action('edit_user_profile', [$this, 'add_custom_user_fields']);
         add_action('personal_options_update', [$this, 'save_custom_user_fields']);
@@ -208,6 +210,8 @@ class Feature extends FeatureBase
     public function add_user_columns($columns): array
     {
         $columns['verified'] = __('Email Verified', 'cobra-ai');
+        // created_at
+        $columns['created_at'] = __('Created At', 'cobra-ai');
         // $columns['status'] = __('Status', 'cobra-ai');
         return $columns;
     }
@@ -221,12 +225,48 @@ class Feature extends FeatureBase
             case 'verified':
                 return get_user_meta($user_id, '_email_verified', true) ? '✅' : '❌';
 
-            // case 'status':
-            //     $user = get_user_by('id', $user_id);
-            //     return !empty($user->roles) ? ucfirst($user->roles[0]) : 'None';
+                // case 'status':
+                //     $user = get_user_by('id', $user_id);
+                //     return !empty($user->roles) ? ucfirst($user->roles[0]) : 'None';
+            case 'created_at':
+                $user = get_user_by('id', $user_id);
+                return !empty($user->user_registered) ?  $user->user_registered : 'None';
 
             default:
                 return $value;
+        }
+    }
+    public function sort_user_table_by_created_at($sortable): array
+    {
+        // Add custom column to sortable array
+        $sortable['created_at'] = 'user_registered';
+        return $sortable;
+    }
+
+    public function default_sort_pre_get_users(   $q ): void {
+
+        // Only touch the Users screen in wp‑admin (not frontend queries).
+        if ( ! is_admin() ) {
+            return;
+        }
+        $screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+        if ( ! $screen || 'users' !== $screen->id ) {
+            return;
+        }
+    
+        $orderby = $q->get( 'orderby' );
+    
+        // If the user clicked our column header, $_GET['orderby']=user_registered
+        // already (see 1️⃣); nothing to translate.
+        // But "old" URLs bookmarked with orderby=created_at will still work:
+        if ( empty( $_REQUEST['orderby'] ) ) {
+            $q->set( 'orderby', 'user_registered' ); // newest ...
+            $q->set( 'order',   'DESC' );            // ... first
+        }
+    
+        /* Back‑compat for bookmarked links that still use ?orderby=created_at */
+        if ( 'created_at' === $q->get( 'orderby' ) ) {
+            $q->set( 'orderby', 'user_registered' );
         }
     }
 
@@ -559,6 +599,7 @@ class Feature extends FeatureBase
             'passwordNeedsLower' => __('Add lowercase letter', 'cobra-ai'),
             'passwordNeedsNumber' => __('Add number', 'cobra-ai'),
             'passwordNeedsSpecial' => __('Add special character', 'cobra-ai'),
+            'passwordTooLong' => __('Password must be less than 60 characters', 'cobra-ai'),
             'veryWeak' => __('Very Weak', 'cobra-ai'),
             'weak' => __('Weak', 'cobra-ai'),
             'medium' => __('Medium', 'cobra-ai'),

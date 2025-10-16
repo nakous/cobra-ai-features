@@ -6,7 +6,8 @@ if (!class_exists('WP_List_Table')) {
     require_once(ABSPATH . 'wp-admin/includes/class-wp-list-table.php');
 }
 
-class Class_Tracking_List_Table extends \WP_List_Table {
+class Class_Tracking_List_Table extends \WP_List_Table
+{
     /**
      * Feature instance
      */
@@ -20,7 +21,8 @@ class Class_Tracking_List_Table extends \WP_List_Table {
     /**
      * Constructor
      */
-    public function __construct($args = []) {
+    public function __construct($args = [])
+    {
         global $cobra_ai;
         $this->feature = $cobra_ai->get_feature('ai');
         // $this->feature = $feature;
@@ -36,7 +38,8 @@ class Class_Tracking_List_Table extends \WP_List_Table {
     /**
      * Get table columns
      */
-    public function get_columns(): array {
+    public function get_columns(): array
+    {
         return [
             'cb'           => '<input type="checkbox" />',
             'id'           => __('ID', 'cobra-ai'),
@@ -54,7 +57,8 @@ class Class_Tracking_List_Table extends \WP_List_Table {
     /**
      * Get sortable columns
      */
-    protected function get_sortable_columns(): array {
+    protected function get_sortable_columns(): array
+    {
         return [
             'id'          => ['id', true],
             'user'        => ['user_id', false],
@@ -68,7 +72,8 @@ class Class_Tracking_List_Table extends \WP_List_Table {
     /**
      * Get bulk actions
      */
-    protected function get_bulk_actions(): array {
+    protected function get_bulk_actions(): array
+    {
         return [
             'delete' => __('Delete', 'cobra-ai')
         ];
@@ -77,10 +82,11 @@ class Class_Tracking_List_Table extends \WP_List_Table {
     /**
      * Process bulk actions
      */
-    public function process_bulk_action(): void {
+    public function process_bulk_action(): void
+    {
         if ('delete' === $this->current_action()) {
             $tracking_ids = isset($_POST['tracking']) ? array_map('intval', $_POST['tracking']) : [];
-            
+
             if (!empty($tracking_ids)) {
                 foreach ($tracking_ids as $tracking_id) {
                     $this->feature->tracking->delete_tracking($tracking_id);
@@ -92,7 +98,8 @@ class Class_Tracking_List_Table extends \WP_List_Table {
     /**
      * Prepare items for display
      */
-    public function prepare_items(): void {
+    public function prepare_items(): void
+    {
         $per_page = 20;
         $current_page = $this->get_pagenum();
 
@@ -140,7 +147,8 @@ class Class_Tracking_List_Table extends \WP_List_Table {
     /**
      * Get total items count
      */
-    private function get_total_items_count(array $args): int {
+    public function get_total_items_count(array $args): int
+    {
         $user_id = isset($args['user_id']) ? $args['user_id'] : 0;
         return $this->feature->tracking->get_user_tracking_count($user_id, $args);
     }
@@ -148,7 +156,8 @@ class Class_Tracking_List_Table extends \WP_List_Table {
     /**
      * Get trackings from database
      */
-    private function get_trackings(array $args): array {
+    private function get_trackings(array $args): array
+    {
         $user_id = isset($args['user_id']) ? $args['user_id'] : 0;
         return $this->feature->tracking->get_user_trackings($user_id, $args);
     }
@@ -156,7 +165,8 @@ class Class_Tracking_List_Table extends \WP_List_Table {
     /**
      * Column default
      */
-    public function column_default($item, $column_name) {
+    public function column_default($item, $column_name)
+    {
         switch ($column_name) {
             case 'id':
                 return '#' . $item->id;
@@ -187,7 +197,8 @@ class Class_Tracking_List_Table extends \WP_List_Table {
     /**
      * Column user
      */
-    public function column_user($item): string {
+    public function column_user($item): string
+    {
         $user = get_userdata($item->user_id);
         if (!$user) {
             return __('Unknown User', 'cobra-ai');
@@ -218,7 +229,8 @@ class Class_Tracking_List_Table extends \WP_List_Table {
     /**
      * Column actions
      */
-    public function column_actions($item): string {
+    public function column_actions($item): string
+    {
         $actions = [
             'view' => sprintf(
                 '<a href="%s" class="button button-small">%s</a>',
@@ -245,13 +257,37 @@ class Class_Tracking_List_Table extends \WP_List_Table {
 
         return implode(' ', $actions);
     }
-
+    private function is_json($string): bool
+    {
+        json_decode($string);
+        return (json_last_error() === JSON_ERROR_NONE);
+    }
     /**
      * Get prompt column content
      */
-    private function get_prompt_column($item): string {
-        $prompt = wp_trim_words($item->prompt, 10);
-        
+    private function get_prompt_column($item): string
+    {
+        if ($this->is_json($item->prompt)) {
+            $decoded_prompt = json_decode($item->prompt, true);
+            $fields = ['image', 'user', 'system'];
+            $prompt_parts = [];
+
+            foreach ($fields as $field) {
+                if (isset($decoded_prompt[$field])) {
+                    if ($field === 'image') {
+                        $prompt_parts[] = sprintf('<strong>%s:</strong> <img src="%s" alt="Image" style="max-width: 100px; max-height: 100px;" />', ucfirst($field), esc_url($decoded_prompt[$field]));
+                    } else if ($field === 'user') {
+                        // For other fields, just display the text
+                        $prompt_parts[] = sprintf('<strong>%s:</strong> %s', ucfirst($field), esc_html($decoded_prompt[$field]));
+                    }
+                }  
+            }
+
+            $prompt = implode('<br>', $prompt_parts);
+        } else {
+            $prompt = wp_trim_words($item->prompt, 10);
+        }
+
         // Add view action
         $actions = [
             'view' => sprintf(
@@ -267,7 +303,8 @@ class Class_Tracking_List_Table extends \WP_List_Table {
     /**
      * Get provider column content
      */
-    private function get_provider_column($item): string {
+    private function get_provider_column($item): string
+    {
         $providers = [
             'openai' => 'OpenAI',
             'claude' => 'Claude',
@@ -281,7 +318,8 @@ class Class_Tracking_List_Table extends \WP_List_Table {
     /**
      * Get status column content
      */
-    private function get_status_column($item): string {
+    private function get_status_column($item): string
+    {
         $statuses = [
             'pending' => [
                 'label' => __('Pending', 'cobra-ai'),
@@ -312,7 +350,8 @@ class Class_Tracking_List_Table extends \WP_List_Table {
     /**
      * Column checkbox
      */
-    public function column_cb($item): string {
+    public function column_cb($item): string
+    {
         return sprintf(
             '<input type="checkbox" name="tracking[]" value="%d" />',
             $item->id
@@ -322,7 +361,8 @@ class Class_Tracking_List_Table extends \WP_List_Table {
     /**
      * Get views
      */
-    protected function get_views(): array {
+    protected function get_views(): array
+    {
         global $wpdb;
         $table = $this->feature->get_table_name('trackings');
         $user_id = isset($this->query_args['user_id']) ? $this->query_args['user_id'] : 0;
@@ -373,7 +413,8 @@ class Class_Tracking_List_Table extends \WP_List_Table {
     /**
      * Extra tablenav
      */
-    protected function extra_tablenav($which): void {
+    protected function extra_tablenav($which): void
+    {
         if ($which !== 'top') {
             return;
         }
@@ -396,7 +437,7 @@ class Class_Tracking_List_Table extends \WP_List_Table {
         // Get current filters
         $current_provider = isset($_GET['ai_provider']) ? sanitize_text_field($_GET['ai_provider']) : '';
         $current_type = isset($_GET['response_type']) ? sanitize_text_field($_GET['response_type']) : '';
-        ?>
+?>
         <div class="alignleft actions">
             <select name="ai_provider">
                 <option value=""><?php _e('All providers', 'cobra-ai'); ?></option>
@@ -418,13 +459,14 @@ class Class_Tracking_List_Table extends \WP_List_Table {
 
             <?php submit_button(__('Filter', 'cobra-ai'), '', 'filter_action', false); ?>
         </div>
-        <?php
+<?php
     }
 
     /**
      * Display no items message
      */
-    public function no_items(): void {
+    public function no_items(): void
+    {
         _e('No trackings found.', 'cobra-ai');
     }
 }

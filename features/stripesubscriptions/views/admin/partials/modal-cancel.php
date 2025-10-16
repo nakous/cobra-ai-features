@@ -37,3 +37,60 @@ defined('ABSPATH') || exit;
                 </button>
             </div>
         </div>
+    </div>
+</div>
+
+<script>
+function initCancellationModal() {
+    jQuery(function($) {
+        const $modal = $('#cancel-subscription-modal');
+        let currentSubscriptionId = null;
+        let currentNonce = null;
+
+        // Show modal when cancel button is clicked
+        $('.cancel-subscription').on('click', function(e) {
+            e.preventDefault();
+            currentSubscriptionId = $(this).data('id');
+            currentNonce = $(this).data('nonce');
+            $modal.show();
+        });
+
+        // Close modal
+        $('.close-modal').on('click', function() {
+            $modal.hide();
+        });
+
+        // Confirm cancellation
+        $('#confirm-cancel').on('click', function() {
+            const $button = $(this);
+            const immediately = $('input[name="cancel_type"]:checked').val() === 'immediately';
+            
+            $button.prop('disabled', true).text('<?php echo esc_js(__('Processing...', 'cobra-ai')); ?>');
+
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'cobra_subscription_cancel',
+                    subscription_id: currentSubscriptionId,
+                    immediately: immediately ? 1 : 0,
+                    _ajax_nonce: currentNonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        alert('<?php echo esc_js(__('Subscription cancelled successfully', 'cobra-ai')); ?>');
+                        location.reload();
+                    } else {
+                        alert(response.data.error || '<?php echo esc_js(__('Failed to cancel subscription', 'cobra-ai')); ?>');
+                        $button.prop('disabled', false).text('<?php echo esc_js(__('Confirm Cancellation', 'cobra-ai')); ?>');
+                    }
+                },
+                error: function() {
+                    alert('<?php echo esc_js(__('An error occurred', 'cobra-ai')); ?>');
+                    $button.prop('disabled', false).text('<?php echo esc_js(__('Confirm Cancellation', 'cobra-ai')); ?>');
+                }
+            });
+        });
+    });
+}
+</script>

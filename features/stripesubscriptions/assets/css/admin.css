@@ -301,3 +301,357 @@
     align-items: center;
     gap: 0.5rem;
 }
+
+/* Subscription Details Page Styles */
+.cobra-subscription-details {
+    margin: 20px;
+}
+
+.cobra-subscription-details .wp-heading-inline {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+/* Overview Grid */
+.cobra-overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin: 25px 0;
+}
+
+.overview-card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-left: 4px solid #e0e0e0;
+    transition: all 0.3s ease;
+}
+
+.overview-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+.overview-card h3 {
+    margin: 0 0 12px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.overview-card .subscription-status {
+    font-size: 20px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 6px;
+    display: inline-block;
+}
+
+.overview-card .amount {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.overview-card .period,
+.overview-card .date {
+    font-size: 15px;
+    color: #475569;
+    line-height: 1.6;
+}
+
+/* Status specific colors */
+.status-card {
+    border-left-color: #3b82f6;
+}
+
+.revenue-card {
+    border-left-color: #10b981;
+}
+
+.period-card {
+    border-left-color: #f59e0b;
+}
+
+.created-card {
+    border-left-color: #8b5cf6;
+}
+
+.subscription-status {
+    text-transform: capitalize;
+}
+
+.subscription-status.status-active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.subscription-status.status-trialing {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.subscription-status.status-past_due {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.subscription-status.status-canceled,
+.subscription-status.status-cancelled {
+    background: #f3f4f6;
+    color: #4b5563;
+}
+
+.subscription-status .canceling {
+    display: block;
+    font-size: 12px;
+    margin-top: 5px;
+    color: #ef4444;
+}
+
+/* Tabs */
+.cobra-tabs {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 25px;
+}
+
+.cobra-tabs .nav-tab-wrapper {
+    margin: 0;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+    padding: 0 20px;
+}
+
+.cobra-tabs .nav-tab {
+    border: none;
+    background: transparent;
+    margin: 0;
+    padding: 15px 20px;
+    font-weight: 500;
+    color: #6b7280;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.cobra-tabs .nav-tab:hover {
+    color: #3b82f6;
+}
+
+.cobra-tabs .nav-tab.nav-tab-active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+    background: #fff;
+}
+
+.cobra-tabs .tab-content {
+    display: none;
+    padding: 25px;
+}
+
+.cobra-tabs .tab-content.active {
+    display: block;
+}
+
+/* Details Grid */
+.cobra-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 25px;
+    margin-bottom: 25px;
+}
+
+.details-card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.details-card h3 {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 10px;
+}
+
+.details-card .form-table {
+    margin: 0;
+    background: transparent;
+}
+
+.details-card .form-table th {
+    width: 35%;
+    padding: 12px 0;
+    font-weight: 600;
+    color: #4b5563;
+}
+
+.details-card .form-table td {
+    padding: 12px 0;
+    color: #1f2937;
+}
+
+.details-card .description {
+    color: #6b7280;
+    font-style: italic;
+}
+
+/* Subscription Actions */
+.subscription-actions {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.subscription-actions .button {
+    padding: 10px 20px;
+    font-size: 14px;
+}
+
+.subscription-actions .cancel-subscription {
+    background: #ef4444;
+    color: #fff;
+    border-color: #dc2626;
+}
+
+.subscription-actions .cancel-subscription:hover {
+    background: #dc2626;
+    border-color: #b91c1c;
+}
+
+/* Payments Table */
+.cobra-tabs .wp-list-table {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.cobra-tabs .wp-list-table thead th {
+    background: #f9fafb;
+    border-bottom: 2px solid #e5e7eb;
+    font-weight: 600;
+    color: #374151;
+}
+
+.cobra-tabs .wp-list-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.cobra-tabs .wp-list-table tbody tr:hover {
+    background: #f9fafb;
+}
+
+.cobra-tabs .wp-list-table .payment-status {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.cobra-tabs .wp-list-table .status-succeeded {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.cobra-tabs .wp-list-table .status-failed {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.cobra-tabs .wp-list-table .refunded {
+    color: #7c3aed;
+    font-weight: 500;
+}
+
+.cobra-tabs .wp-list-table .view-invoice {
+    color: #3b82f6;
+    text-decoration: none;
+}
+
+.cobra-tabs .wp-list-table .view-invoice:hover {
+    text-decoration: underline;
+}
+
+.cobra-tabs .wp-list-table .refund-payment {
+    font-size: 12px;
+    padding: 6px 12px;
+}
+
+/* Customer Details */
+.customer-details {
+    max-width: 600px;
+}
+
+.customer-details h3 {
+    margin: 0 0 20px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 10px;
+}
+
+.customer-details .form-table {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.customer-details .form-table th {
+    background: #f9fafb;
+    width: 30%;
+    padding: 15px;
+    font-weight: 600;
+    color: #4b5563;
+}
+
+.customer-details .form-table td {
+    padding: 15px;
+    color: #1f2937;
+}
+
+.customer-details .form-table a {
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.customer-details .form-table a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .cobra-overview-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .cobra-details-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .cobra-tabs .nav-tab-wrapper {
+        padding: 0 10px;
+    }
+
+    .cobra-tabs .nav-tab {
+        padding: 12px 15px;
+        font-size: 13px;
+    }
+
+    .cobra-tabs .tab-content {
+        padding: 15px;
+    }
+}

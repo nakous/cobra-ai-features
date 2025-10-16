@@ -22,7 +22,7 @@ class Payments
     /**
      * Process a payment
      */
-    public function process_payment(string $payment_intent_id): array
+    public function process_payment(string $payment_intent_id, $subscription_id=null ): array
     {
         try {
             $payment_intent = PaymentIntent::retrieve($payment_intent_id);
@@ -30,7 +30,7 @@ class Payments
             // Store payment record
             $payment_id = $this->store_payment([
                 'payment_id' => $payment_intent->id,
-                'subscription_id' => $payment_intent->metadata['subscription_id'] ?? null,
+                'subscription_id' => $subscription_id ?? null,
                 'invoice_id' => $payment_intent->invoice ?? null,
                 'amount' => $payment_intent->amount / 100,
                 'currency' => $payment_intent->currency,
@@ -141,7 +141,7 @@ class Payments
     {
         switch ($event_type) {
             case 'payment_intent.succeeded':
-                $this->process_payment($data['id']);
+                $this->process_payment($data['id'], $data['metadata']['subscription_id'] ?? null);
                 break;
 
             case 'payment_intent.payment_failed':
@@ -228,7 +228,7 @@ class Payments
     /**
      * Handle refund event
      */
-    private function handle_refund_event(array $data): void
+    public function handle_refund_event(array $data): void
     {
         $payment = $this->get_payment_by_intent($data['payment_intent']);
         if (!$payment) {

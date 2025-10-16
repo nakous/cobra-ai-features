@@ -7,7 +7,8 @@
         hasUpperCase: /[A-Z]/,
         hasLowerCase: /[a-z]/,
         hasNumbers: /[0-9]/,
-        hasSpecialChar: /[^A-Za-z0-9]/
+        hasSpecialChar: /[^A-Za-z0-9]/,
+        maxLength: 60
     };
 
     class RegistrationForm {
@@ -38,7 +39,7 @@
             this.$email.on('blur', () => this.checkEmailAvailability());
 
             // Password visibility toggle
-            $('.toggle-password').on('click', (e) => this.togglePasswordVisibility(e));
+            // $('.toggle-password').on('click', (e) => this.togglePasswordVisibility(e));
 
             // Form submission
             this.$form.on('submit', (e) => this.handleSubmit(e));
@@ -62,6 +63,11 @@
                 score++;
             } else {
                 feedback.push(cobraAIRegister.i18n.passwordTooShort);
+            }
+            if (password.length < PASSWORD_CRITERIA.maxLength) {
+                score++;
+            } else {
+                feedback.push(cobraAIRegister.i18n.passwordTooLong);
             }
 
             // Check uppercase
@@ -174,7 +180,7 @@
 
         checkAvailability(type, value, $field) {
             $.ajax({
-                url: cobraAIRegister.ajaxUrl,
+                url: cobraAIRegister.ajax_url,
                 type: 'POST',
                 data: {
                     action: 'cobra_check_availability',
@@ -228,21 +234,21 @@
             }
         }
 
-        togglePasswordVisibility(event) {
-            const $button = $(event.currentTarget);
-            const $input = $button.siblings('input');
-            const $icon = $button.find('.dashicons');
+        // togglePasswordVisibility(event) {
+        //     const $button = $(event.currentTarget);
+        //     const $input = $button.siblings('input');
+        //     const $icon = $button.find('.dashicons');
             
-            if ($input.attr('type') === 'password') {
-                $input.attr('type', 'text');
-                $icon.removeClass('dashicons-visibility').addClass('dashicons-hidden');
-                $button.attr('aria-label', cobraAIRegister.i18n.hidePassword);
-            } else {
-                $input.attr('type', 'password');
-                $icon.removeClass('dashicons-hidden').addClass('dashicons-visibility');
-                $button.attr('aria-label', cobraAIRegister.i18n.showPassword);
-            }
-        }
+        //     if ($input.attr('type') === 'password') {
+        //         $input.attr('type', 'text');
+        //         $icon.removeClass('dashicons-visibility').addClass('dashicons-hidden');
+        //         $button.attr('aria-label', cobraAIRegister.i18n.hidePassword);
+        //     } else {
+        //         $input.attr('type', 'password');
+        //         $icon.removeClass('dashicons-hidden').addClass('dashicons-visibility');
+        //         $button.attr('aria-label', cobraAIRegister.i18n.showPassword);
+        //     }
+        // }
 
         handleSubmit(event) {
             if (!this.validateForm()) {
@@ -309,7 +315,8 @@
 
      
     });
-    // $('.toggle-password').on('click', function() {
+   
+    //   $('.toggle-password').on('click', function() {
     //     const $button = $(this);
     //     const $input = $button.siblings('input');
     //     const $icon = $button.find('.dashicons');
@@ -317,18 +324,15 @@
     //     if ($input.attr('type') === 'password') {
     //         $input.attr('type', 'text');
     //         $icon.removeClass('dashicons-visibility').addClass('dashicons-hidden');
-    //         $button.attr('aria-label', '<?php echo esc_js(__('Hide password', 'cobra-ai')); ?>');
+    //         $button.attr('aria-label', 'Hide password');
     //     } else {
     //         $input.attr('type', 'password');
     //         $icon.removeClass('dashicons-hidden').addClass('dashicons-visibility');
-    //         $button.attr('aria-label', '<?php echo esc_js(__('Show password', 'cobra-ai')); ?>');
+    //         $button.attr('aria-label', 'Show password');
     //     }
     // });
-    
 })(jQuery);
 jQuery(document).ready(function($) {
- 
-    
     $('.toggle-password').on('click', function() {
         const $button = $(this);
         const $input = $button.parent().find('input');

@@ -1,10 +1,13 @@
 <?php
 
 namespace CobraAI\Features\AI;
+
 use function CobraAI\{
     cobra_ai_db
 };
-abstract class AIProvider {
+
+abstract class AIProvider
+{
     /**
      * Provider configuration
      */
@@ -42,7 +45,8 @@ abstract class AIProvider {
     /**
      * Constructor
      */
-    public function __construct(array $config = []) {
+    public function __construct(array $config = [])
+    {
         $this->config = wp_parse_args($config, $this->get_default_config());
         $this->validate_config();
     }
@@ -76,7 +80,8 @@ abstract class AIProvider {
      * 
      * @throws \Exception if configuration is invalid
      */
-    protected function validate_config(): void {
+    protected function validate_config(): void
+    {
         if (empty($this->config['api_key'])) {
             throw new \Exception(__('API key is required', 'cobra-ai'));
         }
@@ -85,21 +90,24 @@ abstract class AIProvider {
     /**
      * Get provider capabilities
      */
-    public function get_capabilities(): array {
+    public function get_capabilities(): array
+    {
         return $this->capabilities;
     }
 
     /**
      * Check if provider has capability
      */
-    public function has_capability(string $capability): bool {
+    public function has_capability(string $capability): bool
+    {
         return !empty($this->capabilities[$capability]);
     }
 
     /**
      * Validate request options
      */
-    public function validate_options(array $options): array {
+    public function validate_options(array $options): array
+    {
         // Validate max tokens
         if (isset($options['max_tokens'])) {
             $options['max_tokens'] = min(
@@ -140,7 +148,8 @@ abstract class AIProvider {
     /**
      * Make HTTP request
      */
-    protected function make_request(string $url, array $data = [], string $method = 'POST'): array {
+    protected function make_request(string $url, array $data = [], string $method = 'POST'): array
+    {
         $args = [
             'method' => $method,
             'headers' => $this->get_request_headers(),
@@ -183,7 +192,8 @@ abstract class AIProvider {
     /**
      * Get request headers
      */
-    protected function get_request_headers(): array {
+    protected function get_request_headers(): array
+    {
         return [
             'Authorization' => 'Bearer ' . $this->config['api_key'],
             'Content-Type' => 'application/json',
@@ -194,20 +204,22 @@ abstract class AIProvider {
     /**
      * Check if error is retryable
      */
-    protected function is_retryable_error(int $status_code): bool {
+    protected function is_retryable_error(int $status_code): bool
+    {
         return in_array($status_code, [408, 429, 500, 502, 503, 504]);
     }
 
     /**
      * Handle error response
      */
-    protected function handle_error_response($response): void {
+    protected function handle_error_response($response): void
+    {
         $body = wp_remote_retrieve_body($response);
         $status = wp_remote_retrieve_response_code($response);
         $data = json_decode($body, true);
 
-        $error_message = isset($data['error']['message']) 
-            ? $data['error']['message'] 
+        $error_message = isset($data['error']['message'])
+            ? $data['error']['message']
             : __('Unknown error occurred', 'cobra-ai');
 
         cobra_ai_db()->log('error', 'API request failed', [
@@ -222,7 +234,8 @@ abstract class AIProvider {
     /**
      * Count tokens in text
      */
-    public function count_tokens(string $text): int {
+    public function count_tokens(string $text): int
+    {
         // Basic token counting - override in provider classes for accurate counting
         return (int)(str_word_count($text) * 1.3);
     }
@@ -230,14 +243,19 @@ abstract class AIProvider {
     /**
      * Format prompt
      */
-    protected function format_prompt(string $prompt): string {
+    protected function format_prompt($prompt): string|array
+    {
+        if (is_array($prompt)) {
+            return $prompt;
+        }
         return trim($prompt);
     }
 
     /**
      * Format response
      */
-    protected function format_response(array $response): array {
+    protected function format_response(array $response): array
+    {
         return [
             'content' => $response['content'] ?? '',
             'tokens' => $response['usage']['total_tokens'] ?? 0,
@@ -252,7 +270,8 @@ abstract class AIProvider {
     /**
      * Get rate limits
      */
-    public function get_rate_limits(): array {
+    public function get_rate_limits(): array
+    {
         return [
             'requests_per_minute' => 60,
             'tokens_per_minute' => 40000,
@@ -263,28 +282,32 @@ abstract class AIProvider {
     /**
      * Get supported models
      */
-    public function get_supported_models(): array {
+    public function get_supported_models(): array
+    {
         return [];
     }
 
     /**
      * Get model information
      */
-    public function get_model_info(string $model): ?array {
+    public function get_model_info(string $model): ?array
+    {
         return null;
     }
 
     /**
      * Check if model is supported
      */
-    public function is_model_supported(string $model): bool {
+    public function is_model_supported(string $model): bool
+    {
         return in_array($model, array_keys($this->get_supported_models()));
     }
 
     /**
      * Get provider endpoint URL
      */
-    protected function get_endpoint_url(string $endpoint): string {
+    protected function get_endpoint_url(string $endpoint): string
+    {
         $base_url = rtrim($this->config['endpoint'] ?? '', '/');
         return $base_url . '/' . ltrim($endpoint, '/');
     }
@@ -292,22 +315,25 @@ abstract class AIProvider {
     /**
      * Get config value
      */
-    protected function get_config(string $key, $default = null) {
+    protected function get_config(string $key, $default = null)
+    {
         return $this->config[$key] ?? $default;
     }
 
     /**
      * Set config value
      */
-    protected function set_config(string $key, $value): void {
+    protected function set_config(string $key, $value): void
+    {
         $this->config[$key] = $value;
     }
 
     /**
      * Check if streaming is supported and enabled
      */
-    protected function can_stream(): bool {
-        return $this->has_capability('stream') && 
-               !empty($this->config['enable_streaming']);
+    protected function can_stream(): bool
+    {
+        return $this->has_capability('stream') &&
+            !empty($this->config['enable_streaming']);
     }
 }

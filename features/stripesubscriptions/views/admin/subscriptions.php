@@ -181,7 +181,7 @@ $status_counts = $this->get_subscription_status_counts();
                 <?php foreach ($subscriptions as $subscription):
                     $user = get_user_by('id', $subscription->user_id);
                     $plan = $this->feature->get_plans()->get_plan($subscription->plan_id);
-                    print_r($plan);
+                    // print_r($plan);
                 ?>
                     <tr>
                         <td>

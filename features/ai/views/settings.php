@@ -124,6 +124,8 @@ $this->display_settings_errors();
                                                     switch ($provider_id) {
                                                         case 'openai':
                                                             $models = [
+                                                                'gpt-5-2025-08-07' => 'GPT-5',
+                                                                'gpt-5-mini-2025-08-07' => 'GPT-5 Mini',
                                                                 'gpt-4o-mini' => 'GPT-4o Mini',
                                                                 'gpt-4o' => 'GPT-4o',
                                                                 'gpt-4' => 'GPT-4',
@@ -277,7 +279,7 @@ $this->display_settings_errors();
                         <td>
                             <input type="datetime-local"
                                 name="settings[maintenance][start_date]"
-                                value="<?php echo esc_attr($settings['maintenance']['start_date']); ?>"
+                                value="<?php echo isset($settings['maintenance']['start_date']) ? esc_attr($settings['maintenance']['start_date']) : ''; ?>"
                                 class="regular-text">
                         </td>
                     </tr>
@@ -289,7 +291,7 @@ $this->display_settings_errors();
                         <td>
                             <input type="datetime-local"
                                 name="settings[maintenance][end_date]"
-                                value="<?php echo esc_attr($settings['maintenance']['end_date']); ?>"
+                                value="<?php echo isset($settings['maintenance']['end_date']) ? esc_attr($settings['maintenance']['end_date']) : ''; ?>"
                                 class="regular-text">
                         </td>
                     </tr>

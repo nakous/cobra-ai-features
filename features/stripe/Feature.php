@@ -65,12 +65,6 @@ class Feature extends FeatureBase
      */
     protected function setup(): void
     {
- 
-
-        // Define feature tables
-       
-
-        // Initialize components
         require_once __DIR__ . '/includes/StripeAPI.php';
         require_once __DIR__ . '/includes/StripeWebhook.php';
         require_once __DIR__ . '/includes/StripeEvents.php';
@@ -78,12 +72,34 @@ class Feature extends FeatureBase
         $this->api = new StripeAPI($this);
         $this->webhook = new StripeWebhook($this);
         $this->events = new StripeEvents($this);
+    }
+
+    protected function init_hooks(): void
+    {
+        parent::init_hooks();
 
         // Register actions and filters
         add_action('init', [$this, 'init_stripe']);
         add_action('rest_api_init', [$this, 'register_endpoints']);
+
+        // add col to users table of stripe_user_id
+        add_filter('manage_users_columns', [$this, 'add_user_table_columns_stripe_user_id']);
+        add_filter('manage_users_custom_column', [$this, 'add_user_table_column_data_stripe_user_id'], 10, 3);
+    }
+    public function add_user_table_columns_stripe_user_id($columns)
+    {
+        $columns['stripe_user_id'] = 'Stripe ID';
+        return $columns;
     }
 
+    public function add_user_table_column_data_stripe_user_id($value, $column_name, $user_id): string
+    {
+        $stripe_user_id = get_user_meta($user_id, '_stripe_customer_id', true);
+        if ( $column_name == 'stripe_user_id') {
+            return $stripe_user_id ? $stripe_user_id : 'N/A';
+        }
+        return $value;
+    }
     /**
      * Initialize Stripe with API keys
      */
@@ -115,13 +131,15 @@ class Feature extends FeatureBase
      */
     public function register_endpoints(): void
     {
+
         register_rest_route('cobra-ai/v1', '/stripe/webhook', [
             'methods' => 'POST',
             'callback' => [$this->webhook, 'handle_webhook'],
             'permission_callback' => '__return_true'
         ]);
     }
- 
+
+
     /**
      * Get default settings
      */
@@ -244,7 +262,7 @@ class Feature extends FeatureBase
                     $settings[$key] = null;
                 }
             }
-           
+
 
             // Validate API keys only if they are set and not empty
             if ($settings['mode'] === 'live') {

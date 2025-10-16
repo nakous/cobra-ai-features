@@ -42,13 +42,14 @@ class Plans
 
     public function get_plan(int $plan_id)
     {
+        if (empty($plan_id)) return null;
         $post = get_post($plan_id);
         if (!$post) return null;
 
         return [
             'id' => $post->ID,
             'title' => $post->post_title,
-            'description' => $post->post_content,
+            'description' => $post->post_content ?? '',
             'price_id' => get_post_meta($post->ID, '_stripe_price_id', true),
             'product_id' => get_post_meta($post->ID, '_stripe_product_id', true),
             'amount' => get_post_meta($post->ID, '_price_amount', true),

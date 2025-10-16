@@ -279,7 +279,7 @@ class API
         global $wpdb;
 
         $wpdb->update(
-            $this->feature->get_table('stripe_subscriptions'),
+            $this->feature->get_table('stripe_subscriptions')['name'],
             [
                 'status' => $subscription->status,
                 'current_period_end' => date('Y-m-d H:i:s', $subscription->current_period_end),

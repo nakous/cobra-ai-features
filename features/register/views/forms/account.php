@@ -1,4 +1,5 @@
 <?php
+//'views/forms/account.php'
 // Prevent direct access
 defined('ABSPATH') || exit;
 
@@ -23,8 +24,8 @@ $current_user = wp_get_current_user();
         <div class="cobra-message error">
             <p><?php _e('Your account is not verified. Please check your email for verification link.', 'cobra-ai'); ?></p>
             <!-- resend new verification link  -->
-             <p><?php _e('If you did not receive the email, click the button below to resend the verification email.', 'cobra-ai'); ?></p>
-            <button type="button" class="button send-verification-email"
+            <p><?php _e('If you did not receive the email, click the button below to resend the verification email.', 'cobra-ai'); ?></p>
+            <button type="button" class="cobra-button send-verification-email"
                 data-user-id="<?php echo esc_attr($user->ID); ?>">
                 <?php _e('Resend Verification Email', 'cobra-ai'); ?>
             </button>
@@ -39,11 +40,17 @@ $current_user = wp_get_current_user();
     <!-- Account Navigation -->
     <div class="cobra-account-nav">
         <ul class="cobra-tabs">
+            <!-- add a hook for a dynanamic tabs, other feature can use this hook to display tabs -->
+
             <li>
                 <a href="#profile" class="active" data-tab="profile">
                     <?php _e('Profile', 'cobra-ai'); ?>
                 </a>
             </li>
+            <?php
+            // Display dynamic tabs added by other plugins
+            do_action('cobra_register_profile_tab');
+            ?>
             <li>
                 <a href="#password" data-tab="password">
                     <?php _e('Change Password', 'cobra-ai'); ?>
@@ -68,7 +75,7 @@ $current_user = wp_get_current_user();
     <div class="cobra-tab-content active" id="profile-content">
         <form method="post" class="cobra-form" id="profile-form">
             <?php wp_nonce_field('cobra_update_profile', '_profile_nonce'); ?>
-            <input type="hidden" name="cobra_action" value="update_profile">
+            <input type="hidden" name="cobra_update_account" value="update_profile">
 
             <?php
             // Display enabled fields
@@ -82,9 +89,17 @@ $current_user = wp_get_current_user();
                     continue;
                 }
 
-                $field_value = $field_key === 'email'
-                    ? $current_user->user_email
-                    : get_user_meta($current_user->ID, $field_key, true);
+                // $field_value = $field_key === 'email'
+                //     ? $current_user->user_email
+                //     : get_user_meta($current_user->ID, $field_key, true);
+                // if $field_key === username, get the username from the user object
+                if ($field_key === 'username') {
+                    $field_value = $current_user->user_login;
+                } elseif ($field_key === 'email') {
+                    $field_value = $current_user->user_email;
+                } else {
+                    $field_value = get_user_meta($current_user->ID, $field_key, true);
+                }
             ?>
                 <div class="cobra-form-row">
                     <label for="<?php echo esc_attr($field_key); ?>">
@@ -122,7 +137,7 @@ $current_user = wp_get_current_user();
                             id="<?php echo esc_attr($field_key); ?>"
                             value="<?php echo esc_attr($field_value); ?>"
                             <?php echo !empty($field_config['required']) ? 'required' : ''; ?>
-                            <?php echo $field_key === 'email' ? 'readonly' : ''; ?>>
+                            <?php echo $field_key === 'email' || $field_key === 'username' ? 'readonly' : ''; ?>>
                     <?php endif; ?>
                 </div>
             <?php endforeach; ?>
@@ -144,7 +159,7 @@ $current_user = wp_get_current_user();
     <div class="cobra-tab-content" id="password-content">
         <form method="post" class="cobra-form" id="password-form">
             <?php wp_nonce_field('cobra_change_password', '_password_nonce'); ?>
-            <input type="hidden" name="cobra_action" value="change_password">
+            <input type="hidden" name="cobra_change_password" value="change_password">
 
             <div class="cobra-form-row">
                 <label for="current_password">
@@ -189,7 +204,7 @@ $current_user = wp_get_current_user();
             </div>
         </form>
     </div>
-
+    <!-- add a hook for a dynanamic content tabs, other feature can use this hook to display tabs -->
     <!-- Avatar Tab -->
     <?php if (!empty($settings['fields']['avatar']['enabled'])): ?>
         <div class="cobra-tab-content" id="avatar-content">
@@ -305,6 +320,11 @@ $current_user = wp_get_current_user();
             </div>
         </div>
     </div>
+    <?php
+
+    do_action('cobra_register_profile_tab_content');
+    ?>
+
 </div>
 
 <style>
@@ -318,12 +338,12 @@ $current_user = wp_get_current_user();
         display: flex;
         list-style: none;
         padding: 0;
-        margin: 0 0 20px;
+        margin: 0 !important;
         border-bottom: 1px solid #ddd;
     }
 
     .cobra-tabs li {
-        margin: 0;
+        margin: 0 !important;
     }
 
     .cobra-tabs a {
@@ -523,7 +543,7 @@ $current_user = wp_get_current_user();
         $('.export-data').on('click', function() {
             if (confirm('<?php echo esc_js(__('Download a copy of your personal data?', 'cobra-ai')); ?>')) {
                 $.ajax({
-                    url:    cobraAIRegister.ajax_url,
+                    url: cobraAIRegister.ajax_url,
                     type: 'POST',
                     data: {
                         action: 'cobra_export_data',

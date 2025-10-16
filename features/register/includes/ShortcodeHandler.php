@@ -29,7 +29,9 @@ class ShortcodeHandler
         add_action('admin_post_nopriv_cobra_login_action', [$this, 'handle_login_submission']);
         add_action('admin_post_cobra_login_action', [$this, 'handle_login_submission']);
 
-
+        //cobra_check_availability_action
+        add_action('wp_ajax_cobra_check_availability', [$this, 'handle_check_availability_submission']);
+        add_action('wp_ajax_nopriv_cobra_check_availability', [$this, 'handle_check_availability_submission']);
 
         add_action('admin_post_nopriv_cobra_register_action', [$this, 'handle_registration_submission']);
         add_action('admin_post_cobra_register_action', [$this, 'handle_registration_submission']);
@@ -55,6 +57,87 @@ class ShortcodeHandler
         }
     }
     /**
+     * Check availability mail or username
+     * type : email or username
+     * value: value to check
+     * @return json wp
+     */
+    public function handle_check_availability_submission(): void
+    {
+        // Verify nonce
+        if (!check_ajax_referer('cobra-ai-register', 'nonce', false)) {
+            wp_send_json_error([
+                'message' => __('Invalid request.', 'cobra-ai')
+            ]);
+            return;
+        }
+
+        // Get type and value
+        $type = isset($_POST['type']) ? sanitize_text_field($_POST['type']) : '';
+        $value = isset($_POST['value']) ? sanitize_text_field($_POST['value']) : '';
+
+        // Validate inputs
+        if (empty($type) || empty($value)) {
+            wp_send_json_error([
+                'message' => __('Missing required parameters.', 'cobra-ai')
+            ]);
+            return;
+        }
+
+        // Check availability based on type
+        switch ($type) {
+            case 'email':
+                // Validate email format
+                if (!is_email($value)) {
+                    wp_send_json_error([
+                        'message' => __('Invalid email format.', 'cobra-ai')
+                    ]);
+                    return;
+                }
+
+                // Check if email exists
+                if (email_exists($value)) {
+                    wp_send_json_error([
+                        'message' => __('This email is already registered.', 'cobra-ai')
+                    ]);
+                    return;
+                }
+
+                wp_send_json_success([
+                    'message' => __('Email is available.', 'cobra-ai')
+                ]);
+                break;
+
+            case 'username':
+                // Validate username format
+                if (!validate_username($value)) {
+                    wp_send_json_error([
+                        'message' => __('Invalid username format.', 'cobra-ai')
+                    ]);
+                    return;
+                }
+
+                // Check if username exists
+                if (username_exists($value)) {
+                    wp_send_json_error([
+                        'message' => __('This username is already taken.', 'cobra-ai')
+                    ]);
+                    return;
+                }
+
+                wp_send_json_success([
+                    'message' => __('Username is available.', 'cobra-ai')
+                ]);
+                break;
+
+            default:
+                wp_send_json_error([
+                    'message' => __('Invalid check type.', 'cobra-ai')
+                ]);
+                break;
+        }
+    }
+    /**
      * Handle login form submission
      */
     public function handle_login_submission(): void
@@ -73,13 +156,31 @@ class ShortcodeHandler
                 $this->redirect_back();
             }
         }
+        $user_login = sanitize_text_field($_POST['username']);
 
+        // Determine if input is an email
+        $is_email = is_email($user_login);
+
+        // If it's an email, we need to get the username associated with that email
+        if ($is_email) {
+            $user = get_user_by('email', $user_login);
+            if ($user) {
+                // If we found a user with that email, use their username for login
+                $user_login = $user->user_login;
+            }
+        }
         // Process login
         $credentials = [
-            'user_login'    => sanitize_user($_POST['username']),
+            'user_login'    => $user_login,
             'user_password' => $_POST['password'],
             'remember'      => isset($_POST['remember'])
         ];
+        // Process login
+        // $credentials = [
+        //     'user_login'    => sanitize_user($_POST['username']),
+        //     'user_password' => $_POST['password'],
+        //     'remember'      => isset($_POST['remember'])
+        // ];
 
         // $user = wp_signon($credentials, is_ssl());
         $user = wp_signon($credentials);
@@ -110,7 +211,7 @@ class ShortcodeHandler
         }
 
         ob_start();
-
+        $is_feature_authGoogle_enabled = $this->feature->is_feature_active('authgoogle');
         // Include the form template with action URL
         $form_action = admin_url('admin-post.php');
         include $this->feature->get_path() . 'views/forms/login.php';
@@ -211,7 +312,7 @@ class ShortcodeHandler
 
         // Get enabled fields
         $fields = $this->get_form_fields();
-
+        $is_feature_authGoogle_enabled = $this->feature->is_feature_active('authgoogle');
         // Load and return the form template
         ob_start();
         $form_action = admin_url('admin-post.php');
@@ -305,6 +406,29 @@ class ShortcodeHandler
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cobra_update_account'])) {
             list($errors, $success) = $this->process_account_update($user->ID);
+        }
+
+        // change_password
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
+            $current_password = $_POST['current_password'] ?? '';
+
+            $user = wp_get_current_user();
+            $user_id = $user->ID;
+            $user = get_user_by('id', $user_id);
+            if (!$user || !wp_check_password($current_password, $user->user_pass, $user_id)) {
+                $errors->add('invalid_password', __('Current password is incorrect.', 'cobra-ai'));
+            }
+            $new_password = $_POST['new_password'] ?? '';
+            $confirm_password = $_POST['confirm_password'] ?? '';
+
+            if (empty($new_password)) {
+                $errors->add('empty_password', __('Please enter your new password.', 'cobra-ai'));
+            } elseif ($new_password !== $confirm_password) {
+                $errors->add('password_mismatch', __('Passwords do not match.', 'cobra-ai'));
+            } else {
+                wp_set_password($new_password, $user->ID);
+                $success = true;
+            }
         }
 
         // Get enabled fields
@@ -461,7 +585,7 @@ class ShortcodeHandler
         $errors = new \WP_Error();
 
         // Verify nonce
-        if (!check_ajax_referer('cobra_update_account', '_wpnonce', false)) {
+        if (!check_ajax_referer('cobra_update_profile', '_profile_nonce', false)) {
             $errors->add('invalid_nonce', __('Invalid request.', 'cobra-ai'));
             return [$errors, false];
         }

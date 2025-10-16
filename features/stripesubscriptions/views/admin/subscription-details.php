@@ -1,9 +1,6 @@
 <?php
- 
-
 // Prevent direct access
 defined('ABSPATH') || exit;
- 
 ?>
  
 <div class="wrap cobra-subscription-details">
@@ -168,7 +165,7 @@ defined('ABSPATH') || exit;
                     <button type="button" 
                             class="button cancel-subscription"
                             data-id="<?php echo esc_attr($subscription->subscription_id); ?>"
-                            data-nonce="<?php echo wp_create_nonce('cancel_subscription_' . $subscription->id); ?>">
+                            data-nonce="<?php echo wp_create_nonce('cobra_subscription_admin'); ?>">
                         <?php echo esc_html__('Cancel Subscription', 'cobra-ai'); ?>
                     </button>
                 <?php endif; ?>
@@ -200,7 +197,7 @@ defined('ABSPATH') || exit;
                                     ); ?>
                                 </td>
                                 <td>
-                                    <?php echo esc_html($this->format_currency($payment->amount)); ?>
+                                    <?php echo esc_html($this->feature->format_price($payment->amount, $payment->currency)); ?>
                                 </td>
                                 <td>
                                     <span class="payment-status status-<?php echo esc_attr($payment->status); ?>">
@@ -220,7 +217,7 @@ defined('ABSPATH') || exit;
                                                 class="button-secondary refund-payment"
                                                 data-id="<?php echo esc_attr($payment->payment_id); ?>"
                                                 data-amount="<?php echo esc_attr($payment->amount); ?>"
-                                                data-nonce="<?php echo wp_create_nonce('refund_payment_' . $payment->id); ?>">
+                                                data-nonce="<?php echo wp_create_nonce('cobra_subscription_admin'); ?>">
                                             <?php echo esc_html__('Refund', 'cobra-ai'); ?>
                                         </button>
                                     <?php elseif ($payment->refunded): ?>
@@ -307,6 +304,16 @@ jQuery(document).ready(function($) {
     // Initialize modals and actions
     initCancellationModal();
     initRefundModal();
+    
+    // Invoice viewer (if needed)
+    function initInvoiceViewer() {
+        $('.view-invoice').on('click', function(e) {
+            e.preventDefault();
+            const invoiceId = $(this).data('id');
+            // TODO: Implement invoice viewing
+            alert('Invoice viewer coming soon. Invoice ID: ' + invoiceId);
+        });
+    }
     initInvoiceViewer();
 });
 </script>

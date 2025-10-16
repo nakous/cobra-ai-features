@@ -69,7 +69,7 @@ class Feature extends FeatureBase {
         require_once $this->path . 'includes/Class_Tracking_List_Table.php';
 
         // Load providers
-        foreach (glob($this->path . 'includes/providers/*.php') as $provider_file) {
+        foreach (glob($this->path . 'includes/Providers/*.php') as $provider_file) {
             require_once $provider_file;
         }
     }
@@ -170,29 +170,38 @@ class Feature extends FeatureBase {
      * Validate settings
      */
     protected function validate_settings(array $settings): array {
+        // Prevent infinite loops by checking if we're already validating
+        static $validating = false;
+        if ($validating) {
+            return $settings;
+        }
+        
+        $validating = true;
         $errors = [];
 
         // Validate providers
-        if (empty($settings['providers'])) {
+        if (empty($settings['providers']) || !is_array($settings['providers'])) {
             $errors[] = __('At least one provider must be configured', 'cobra-ai');
-        }
-
-        foreach ($settings['providers'] as $provider => $config) {
-            if (!empty($config['active']) && empty($config['config']['api_key'])) {
-                $errors[] = sprintf(
-                    __('API key is required for %s provider', 'cobra-ai'),
-                    $config['name']
-                );
+        } else {
+            foreach ($settings['providers'] as $provider => $config) {
+                if (!empty($config['active']) && empty($config['config']['api_key'])) {
+                    $errors[] = sprintf(
+                        __('API key is required for %s provider', 'cobra-ai'),
+                        $config['name'] ?? $provider
+                    );
+                }
             }
         }
 
         // Validate limits
-        if ($settings['limits']['requests_per_day'] < 1) {
-            $errors[] = __('Daily request limit must be greater than 0', 'cobra-ai');
+        if (isset($settings['limits']) && is_array($settings['limits'])) {
+            if (isset($settings['limits']['requests_per_day']) && $settings['limits']['requests_per_day'] < 1) {
+                $errors[] = __('Daily request limit must be greater than 0', 'cobra-ai');
+            }
         }
 
         // Validate maintenance
-        if (!empty($settings['maintenance']['active'])) {
+        if (isset($settings['maintenance']) && is_array($settings['maintenance']) && !empty($settings['maintenance']['active'])) {
             if (empty($settings['maintenance']['message'])) {
                 $errors[] = __('Maintenance message is required when maintenance is active', 'cobra-ai');
             }
@@ -207,19 +216,24 @@ class Feature extends FeatureBase {
         // Store validation errors if any
         if (!empty($errors)) {
             update_option('cobra_ai_' . $this->get_feature_id() . '_validation_errors', $errors);
-            return $this->get_settings(); // Return current settings
+            // DON'T call get_option or wp_parse_args here - just return the input settings
+            $validating = false;
+            return $settings;
         }
 
         delete_option('cobra_ai_' . $this->get_feature_id() . '_validation_errors');
-        return $settings;
+        $validating = false;
+        return $settings; // Return validated settings
     }
 
     /**
      * Register REST API routes
      */
     public function register_rest_routes(): void {
-        // Get settings
-        $settings = $this->get_settings();
+        // Get settings directly from database to prevent validation loops
+        $saved_settings = get_option('cobra_ai_' . $this->get_feature_id() . '_options', []);
+        $settings = wp_parse_args($saved_settings, $this->get_feature_default_options());
+        
         if (empty($settings['display']['enable_rest_api'])) {
             return;
         }
@@ -281,7 +295,7 @@ class Feature extends FeatureBase {
     /**
      * Process AI request
      */
-    public function process_request(string $provider, string $prompt, array $options = []) {
+    public function process_request(string $provider, string|array $prompt, array $options = []) {
         return $this->manager->process_request($provider, $prompt, $options);
     }
 
@@ -298,8 +312,33 @@ class Feature extends FeatureBase {
     public function can_make_request(int $user_id, string $provider): bool {
         return $this->manager->can_make_request($user_id, $provider);
     }
+    /**
+     * Get manager
+     */
     public function get_manager(): AIManager {
         return $this->manager;
+    }
+
+    /**
+     * Get default options (public method for external access)
+     */
+    public function get_default_options(): array {
+        return $this->get_feature_default_options();
+    }
+
+    /**
+     * Override render_settings to prevent infinite loop
+     */
+    public function render_settings(): void {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        // Get settings directly from database to prevent validation loops
+        $saved_settings = get_option('cobra_ai_' . $this->get_feature_id() . '_options', []);
+        $settings = wp_parse_args($saved_settings, $this->get_feature_default_options());
+
+        include $this->path . 'views/settings.php';
     }
 
     

@@ -15,7 +15,7 @@ class Feature extends FeatureBase
     protected $has_admin = true;
     public function __construct()
     {
-        error_log('Loading feature class: ' . __CLASS__);
+
         parent::__construct();
     }
     /**

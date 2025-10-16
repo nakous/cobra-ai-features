@@ -35,7 +35,7 @@ class Subscriptions
                 'subscription_data' => $subscription_data,
                 'error' => $wpdb->last_error
             ]);
-        }else{
+        } else {
             do_action('cobra_ai_subscription_created', $subscription_data['subscription_id'], $subscription_data);
         }
 
@@ -63,7 +63,7 @@ class Subscriptions
                 'data' => $data,
                 'error' => $wpdb->last_error
             ]);
-        }else{
+        } else {
             do_action('cobra_ai_subscription_updated', $subscription_id, $data);
         }
 
@@ -76,7 +76,7 @@ class Subscriptions
         global $wpdb;
 
         try {
-            $this->table_name = $this->feature->get_table('stripe_subscriptions')['name']  ;
+            $this->table_name = $this->feature->get_table('stripe_subscriptions')['name'];
             // Get subscription data
             $subscription = $wpdb->get_row($wpdb->prepare(
                 "SELECT * FROM {$this->table_name} WHERE id = %d",
@@ -97,7 +97,7 @@ class Subscriptions
 
         try {
             // Get table name for subscriptions
-            $this->table_name = $this->feature->get_table('stripe_subscriptions')['name']  ;
+            $this->table_name = $this->feature->get_table('stripe_subscriptions')['name'];
 
             // Get subscription data
             $subscription = $wpdb->get_row($wpdb->prepare(
@@ -114,7 +114,7 @@ class Subscriptions
         }
     }
 
-      /**
+    /**
      * Get subscriber count
      */
     public function get_subscriber_count(int $plan_id, string $status = 'active'): int
@@ -122,7 +122,7 @@ class Subscriptions
         global $wpdb;
 
         // $table = $this->feature->get_table('stripe_subscriptions');
-        $this->table_name = $this->feature->get_table('stripe_subscriptions')['name']  ;
+        $this->table_name = $this->feature->get_table('stripe_subscriptions')['name'];
         return (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM {$this->table_name} 
              WHERE plan_id = %d AND status = %s",
@@ -137,7 +137,7 @@ class Subscriptions
     {
         global $wpdb;
 
-        $this->table_name = $this->feature->get_table('stripe_subscriptions')['name']  ;
+        $this->table_name = $this->feature->get_table('stripe_subscriptions')['name'];
         // Get all subscriptions for user
         return $wpdb->get_results($wpdb->prepare(
             "SELECT * FROM {$this->table_name} 
@@ -155,12 +155,15 @@ class Subscriptions
         global $wpdb;
 
 
-        $this->table_name = $this->feature->get_table('stripe_subscriptions')['name']  ;
-        // Get active subscription for user
+        $this->table_name = $this->feature->get_table('stripe_subscriptions')['name'];
+        // Get active subscription for user (including canceled subscriptions that are still active until period end)
         $subscription = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$this->table_name} 
          WHERE user_id = %d 
-         AND status IN ('active', 'trialing') 
+         AND (
+             status IN ('active', 'trialing')
+             OR (status = 'canceled' AND current_period_end > NOW())
+         )
          ORDER BY created_at DESC 
          LIMIT 1",
             $user_id
@@ -177,13 +180,15 @@ class Subscriptions
 
         // Get table name
         $table = $this->table_name;
-
         // Check for active subscription
         $count = $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) 
-         FROM {$$this->table_name} 
+         FROM {$this->table_name} 
          WHERE user_id = %d 
-         AND status IN ('active', 'trialing')",
+         AND  (
+             status IN ('active', 'trialing')
+             OR (status = 'canceled' AND current_period_end > NOW())
+         )",
             $user_id
         ));
 
@@ -212,12 +217,22 @@ class Subscriptions
         );
 
 
-        // // Cancel subscription
-        $result = $wpdb->update(
-            $this->table_name,
-            ['status' => 'canceled'],
-            ['id' => $subscription->id]
-        );
+        // Update subscription - if canceling at period end, keep status as 'active' and just set cancel_at_period_end
+        // If canceling immediately, set status to 'canceled'
+        if ($immediately) {
+            $result = $wpdb->update(
+                $this->table_name,
+                ['status' => 'canceled', 'cancel_at_period_end' => 1],
+                ['id' => $subscription->id]
+            );
+        } else {
+            // Just mark it to cancel at period end, but keep it active
+            $result = $wpdb->update(
+                $this->table_name,
+                ['cancel_at_period_end' => 1],
+                ['id' => $subscription->id]
+            );
+        }
 
         return $result !== false;
     }
@@ -231,7 +246,7 @@ class Subscriptions
         global $wpdb;
 
         try {
-          
+
 
             // Get subscription data
             $subscription = $wpdb->get_row($wpdb->prepare(
@@ -306,7 +321,7 @@ class Subscriptions
         }
     }
 
- 
+
     /**
      * Get subscriptions with pagination
      */
@@ -390,7 +405,7 @@ class Subscriptions
 
         return $wpdb->get_results($query);
     }
-        /**
+    /**
      * Get pagination arguments
      */
     public function get_pagination_args(): array
@@ -404,20 +419,20 @@ class Subscriptions
             'total_pages' => $total_pages
         ];
     }
-        /**
+    /**
      * Get subscription by ID
      */
-    
-     public function get_items_per_page(string $option, int $default = 20): int
-     {
-         $per_page = (int) get_user_option($option);
-         if (empty($per_page) || $per_page < 1) {
-             $per_page = $default;
-         }
-         return $per_page;
-     }
 
-       /**
+    public function get_items_per_page(string $option, int $default = 20): int
+    {
+        $per_page = (int) get_user_option($option);
+        if (empty($per_page) || $per_page < 1) {
+            $per_page = $default;
+        }
+        return $per_page;
+    }
+
+    /**
      * Get current page number
      */
     public function get_pagenum(): int

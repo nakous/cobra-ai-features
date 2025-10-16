@@ -2,7 +2,10 @@
 // Prevent direct access
 defined('ABSPATH') || exit;
 ?>
-
+<?php if ($is_feature_authGoogle_enabled): ?> 
+    <?php echo do_shortcode('[cobra_google_login]'); ?>
+<?php endif; ?>
+ 
 <div class="cobra-login-wrapper">
     <?php
     // Show message if account just verified
