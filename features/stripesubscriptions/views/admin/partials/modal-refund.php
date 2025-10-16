@@ -76,88 +76,90 @@ defined('ABSPATH') || exit;
 
 <script>
 function initRefundModal() {
-    const $modal = $('#refund-payment-modal');
-    let currentPaymentId = null;
-    let currentNonce = null;
-    let maxRefundAmount = 0;
+    jQuery(function($) {
+        const $modal = $('#refund-payment-modal');
+        let currentPaymentId = null;
+        let currentNonce = null;
+        let maxRefundAmount = 0;
 
-    // Show modal
-    $('.refund-payment').on('click', function(e) {
-        e.preventDefault();
-        currentPaymentId = $(this).data('id');
-        currentNonce = $(this).data('nonce');
-        maxRefundAmount = parseFloat($(this).data('amount'));
-        
-        // Reset form
-        $('#refund_amount').val('').attr('max', maxRefundAmount);
-        $('#refund_reason').val('requested_by_customer');
-        $('#refund_reason_details').val('');
-        $('.reason-details').hide();
-        
-        $modal.show();
-    });
+        // Show modal
+        $('.refund-payment').on('click', function(e) {
+            e.preventDefault();
+            currentPaymentId = $(this).data('id');
+            currentNonce = $(this).data('nonce');
+            maxRefundAmount = parseFloat($(this).data('amount'));
+            
+            // Reset form
+            $('#refund_amount').val('').attr('max', maxRefundAmount);
+            $('#refund_reason').val('requested_by_customer');
+            $('#refund_reason_details').val('');
+            $('.reason-details').hide();
+            
+            $modal.show();
+        });
 
-    // Handle full amount button
-    $('.refund-full').on('click', function() {
-        $('#refund_amount').val(maxRefundAmount.toFixed(2));
-    });
+        // Handle full amount button
+        $('.refund-full').on('click', function() {
+            $('#refund_amount').val(maxRefundAmount.toFixed(2));
+        });
 
-    // Show/hide reason details
-    $('#refund_reason').on('change', function() {
-        $('.reason-details').toggle($(this).val() === 'other');
-    });
-
-    // Process refund
-    $('#confirm-refund').on('click', function() {
-        const $button = $(this);
-        const amount = parseFloat($('#refund_amount').val());
-        
-        // Validate amount
-        if (!amount || amount <= 0 || amount > maxRefundAmount) {
-            alert('<?php echo esc_js(__('Please enter a valid refund amount', 'cobra-ai')); ?>');
-            return;
-        }
-
-        // Get reason
-        const reason = $('#refund_reason').val();
-        const reasonDetails = $('#refund_reason_details').val();
-
-        // Disable button and show loading
-        $button.prop('disabled', true)
-            .html('<span class="spinner is-active"></span> <?php echo esc_js(__('Processing...', 'cobra-ai')); ?>');
+        // Show/hide reason details
+        $('#refund_reason').on('change', function() {
+            $('.reason-details').toggle($(this).val() === 'other');
+        });
 
         // Process refund
-        $.ajax({
-            url: ajaxurl,
-            type: 'POST',
-            data: {
-                action: 'cobra_subscription_refund',
-                payment_id: currentPaymentId,
-                amount: amount,
-                reason: reason,
-                reason_details: reasonDetails,
-                _ajax_nonce: currentNonce
-            },
-            success: function(response) {
-                if (response.success) {
-                    location.reload();
-                } else {
-                    alert(response.data.message || '<?php echo esc_js(__('Failed to process refund', 'cobra-ai')); ?>');
+        $('#confirm-refund').on('click', function() {
+            const $button = $(this);
+            const amount = parseFloat($('#refund_amount').val());
+            
+            // Validate amount
+            if (!amount || amount <= 0 || amount > maxRefundAmount) {
+                alert('<?php echo esc_js(__('Please enter a valid refund amount', 'cobra-ai')); ?>');
+                return;
+            }
+
+            // Get reason
+            const reason = $('#refund_reason').val();
+            const reasonDetails = $('#refund_reason_details').val();
+
+            // Disable button and show loading
+            $button.prop('disabled', true)
+                .html('<span class="spinner is-active"></span> <?php echo esc_js(__('Processing...', 'cobra-ai')); ?>');
+
+            // Process refund
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'cobra_subscription_refund',
+                    payment_id: currentPaymentId,
+                    amount: amount,
+                    reason: reason,
+                    reason_details: reasonDetails,
+                    _ajax_nonce: currentNonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert(response.data.message || '<?php echo esc_js(__('Failed to process refund', 'cobra-ai')); ?>');
+                        $button.prop('disabled', false)
+                            .text('<?php echo esc_js(__('Process Refund', 'cobra-ai')); ?>');
+                    }
+                },
+                error: function() {
+                    alert('<?php echo esc_js(__('Failed to process request', 'cobra-ai')); ?>');
                     $button.prop('disabled', false)
                         .text('<?php echo esc_js(__('Process Refund', 'cobra-ai')); ?>');
                 }
-            },
-            error: function() {
-                alert('<?php echo esc_js(__('Failed to process request', 'cobra-ai')); ?>');
-                $button.prop('disabled', false)
-                    .text('<?php echo esc_js(__('Process Refund', 'cobra-ai')); ?>');
-            }
+            });
         });
-    });
 
-    // Close modal
-    $('.close-modal').on('click', function() {
-        $modal.hide();
+        // Close modal
+        $('.close-modal').on('click', function() {
+            $modal.hide();
+        });
     });
 }
 </script>

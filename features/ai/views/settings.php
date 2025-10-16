@@ -124,6 +124,8 @@ $this->display_settings_errors();
                                                     switch ($provider_id) {
                                                         case 'openai':
                                                             $models = [
+                                                                'gpt-5-2025-08-07' => 'GPT-5',
+                                                                'gpt-5-mini-2025-08-07' => 'GPT-5 Mini',
                                                                 'gpt-4o-mini' => 'GPT-4o Mini',
                                                                 'gpt-4o' => 'GPT-4o',
                                                                 'gpt-4' => 'GPT-4',

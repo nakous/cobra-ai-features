@@ -101,12 +101,12 @@ $trial_end = $session->subscription->trial_end
 
     <div class="confirmation-notice">
         <span class="notice-icon">📧</span>
-        <p>
+        <div>
             <?php printf(
                 esc_html__('A confirmation email has been sent to %s', 'cobra-ai'),
                 '<strong>' . esc_html(wp_get_current_user()->user_email) . '</strong>'
             ); ?>
-        </p>
+        </div>
     </div>
 </div>
  

@@ -10,13 +10,14 @@ use function CobraAI\{
 
 class Feature extends FeatureBase
 {
+
     protected string $feature_id = 'contact';
     protected string $name = 'Contact Form';
     protected string $description = 'Add a customizable contact form to your website with spam protection and admin reply interface';
     protected string $version = '1.1.0';
     protected string $author = 'Onlevelup.com';
     protected bool $has_settings = true;
-
+  
     protected function setup(): void
     {
         global $wpdb;
@@ -53,12 +54,10 @@ class Feature extends FeatureBase
     {
         parent::init_hooks();
         
-        // DEBUG: Log hook registration
-        error_log('COBRA DEBUG: Contact feature init_hooks called');
-        
+
         // Register shortcodes
         $this->register_shortcodes();
-        
+
         // Admin hooks
         add_action('admin_menu', [$this, 'add_admin_menu']);
         
@@ -76,6 +75,7 @@ class Feature extends FeatureBase
         
         // Handle form notification emails
         add_action('cobra_contact_form_submitted', [$this, 'send_notification_email'], 10, 2);
+
         
         // Profile tab integration
         add_action('cobra_register_profile_tab', [$this, 'contact_account_custom_tab']);
@@ -87,6 +87,7 @@ class Feature extends FeatureBase
         add_action('wp_ajax_cobra_contact_get_user_messages', [$this, 'get_user_messages']);
         add_action('wp_ajax_cobra_contact_get_conversation', [$this, 'get_conversation']);
         add_action('wp_ajax_cobra_contact_send_user_reply', [$this, 'send_user_reply']);
+
     }
 
     protected function register_shortcodes(): void
@@ -711,6 +712,7 @@ class Feature extends FeatureBase
                 </body>
                 </html>';
     }
+
 
     /**
      * Add contact messages tab to user profile
@@ -1395,6 +1397,7 @@ class Feature extends FeatureBase
                 return $status;
         }
     }
+
 
     protected function get_feature_default_options(): array
     {

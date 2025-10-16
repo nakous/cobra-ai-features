@@ -20,7 +20,6 @@ class StripeEvents
     {
         // Generic event hook
         do_action('cobra_ai_stripe_event', $event);
-        error_log('Cobra AI Stripe event dispatched: ' . 'cobra_ai_stripe_' . str_replace('.', '_', $event->type));
         // Specific event hook
         do_action('cobra_ai_stripe_' . str_replace('.', '_', $event->type), $event->data->object);
     }

@@ -28,12 +28,68 @@ class AIManager
     }
 
     /**
+     * Get settings safely without triggering validation loops
+     */
+    private function get_safe_settings(): array
+    {
+        $saved_settings = get_option('cobra_ai_' . $this->feature->get_feature_id() . '_options', []);
+        
+        // Use hardcoded defaults to avoid any method calls that might trigger loops
+        $defaults = [
+            'providers' => [
+                'openai' => [
+                    'active' => true,
+                    'name' => 'OpenAI',
+                    'config' => [
+                        'api_key' => '',
+                        'endpoint' => 'https://api.openai.com/v1',
+                        'model' => 'gpt-4',
+                        'max_tokens' => 2048,
+                        'temperature' => 0.7,
+                        'top_p' => 1
+                    ]
+                ],
+                'claude' => [
+                    'active' => false,
+                    'name' => 'Claude',
+                    'config' => [
+                        'api_key' => '',
+                        'endpoint' => 'https://api.anthropic.com/v1',
+                        'model' => 'claude-3-opus-20240229',
+                        'max_tokens' => 2048,
+                        'temperature' => 0.7,
+                        'top_p' => 1
+                    ]
+                ]
+            ],
+            'limits' => [
+                'requests_per_day' => 100,
+                'limit_message' => 'You have reached your daily request limit.'
+            ],
+            'maintenance' => [
+                'active' => false,
+                'message' => 'System is under maintenance.',
+                'start_date' => null,
+                'end_date' => null,
+                'excluded_roles' => ['administrator']
+            ],
+            'display' => [
+                'show_in_profile' => true,
+                'enable_rest_api' => true
+            ]
+        ];
+        
+        return wp_parse_args($saved_settings, $defaults);
+    }
+
+    /**
      * Initialize providers
      */
     private function init_providers(): void
     {
         try {
-            $settings = $this->feature->get_settings();
+            // Get settings safely to prevent validation loops
+            $settings = $this->get_safe_settings();
 
             // Register core providers
             $core_providers = [
@@ -189,7 +245,7 @@ class AIManager
      */
     public function check_maintenance_mode(int $user_id): bool
     {
-        $settings = $this->feature->get_settings();
+        $settings = $this->get_safe_settings();
 
         if (empty($settings['maintenance']['active'])) {
             return true;
@@ -225,9 +281,9 @@ class AIManager
     /**
      * Get maintenance message
      */
-    private function get_maintenance_message(): string
+    public function get_maintenance_message(): string
     {
-        $settings = $this->feature->get_settings();
+        $settings = $this->get_safe_settings();
         return $settings['maintenance']['message'] ?? __('System is under maintenance.', 'cobra-ai');
     }
 
@@ -236,7 +292,7 @@ class AIManager
      */
     public function can_make_request(int $user_id, string $provider): bool
     {
-        $settings = $this->feature->get_settings();
+        $settings = $this->get_safe_settings();
         $daily_limit = $settings['limits']['requests_per_day'] ?? 0;
 
         if ($daily_limit <= 0) {
@@ -258,7 +314,7 @@ class AIManager
      */
     private function get_limit_message(): string
     {
-        $settings = $this->feature->get_settings();
+        $settings = $this->get_safe_settings();
         return $settings['limits']['limit_message'] ?? __('You have reached your daily request limit.', 'cobra-ai');
     }
 
@@ -301,7 +357,7 @@ class AIManager
      */
     public function get_provider_config(string $provider): array
     {
-        $settings = $this->feature->get_settings();
+        $settings = $this->get_safe_settings();
         return $settings['providers'][$provider]['config'] ?? [];
     }
 
@@ -311,7 +367,7 @@ class AIManager
     public function update_provider_config(string $provider, array $config): bool
     {
         try {
-            $settings = $this->feature->get_settings();
+            $settings = $this->get_safe_settings();
 
             if (!isset($settings['providers'][$provider])) {
                 return false;

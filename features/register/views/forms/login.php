@@ -2,10 +2,12 @@
 // Prevent direct access
 defined('ABSPATH') || exit;
 ?>
+
 <?php
 // Hook for third-party login integrations (e.g., Google Auth)
 do_action('cobra_before_login_form');
 ?>
+
  
 <div class="cobra-login-wrapper">
     <?php

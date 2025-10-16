@@ -233,7 +233,7 @@ function cobra_ai_log(string $message, array $context = []): void
         $formatted .= ' ' . cobra_ai_json_encode($context);
     }
 
-    error_log($formatted);
+   
 }
 
 /**

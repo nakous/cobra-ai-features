@@ -1,3 +1,10 @@
+TODO:
+need to see conntact submission for each user in account page tab message.
+Ajputer tableau de statistique Ai sur dashboard.
+handl the errur sended by openai and not show the same error on the user interface.
+uder after register go to page http://college.localhost/wp-admin/  no user can acces to /wp-admin/ only admin  
+
+
 cobra-ai-features/
 ├── cobra-ai-features.php              # Main plugin file (namespace-based)
 ├── composer.json                      # Composer configuration

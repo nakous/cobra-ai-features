@@ -157,6 +157,16 @@ class OpenAI extends AIProvider
     public function get_supported_models(): array
     {
         return [
+            'gpt-5-2025-08-07' => [
+                'name' => 'GPT-5',
+                'max_tokens' => 16384,
+                'capabilities' => ['text', 'chat', 'vision', 'reasoning']
+            ],
+            'gpt-5-mini-2025-08-07' => [
+                'name' => 'GPT-5 Mini',
+                'max_tokens' => 8192,
+                'capabilities' => ['text', 'chat', 'reasoning']
+            ],
             'gpt-4' => [
                 'name' => 'GPT-4',
                 'max_tokens' => 8192,

@@ -516,11 +516,19 @@ class Admin
                 throw new \Exception(__('Permission denied', 'cobra-ai'));
             }
 
-            $subscription_id = sanitize_text_field($_POST['subscription_id']);
+            $stripe_subscription_id = sanitize_text_field($_POST['subscription_id']);
             $immediately = !empty($_POST['immediately']);
 
+            // Get subscription by Stripe ID to get the DB ID
+            $subscription = $this->feature->get_subscriptions()->get_subscription_by_stripe_id($stripe_subscription_id);
+            
+            if (!$subscription) {
+                throw new \Exception(__('Subscription not found', 'cobra-ai'));
+            }
+
+            // Cancel using the DB ID
             $result = $this->feature->get_subscriptions()->cancel_subscription(
-                $subscription_id,
+                $subscription->id,
                 $immediately
             );
 

@@ -145,26 +145,26 @@ $payments = $this->get_payments()->get_subscription_payments($subscription->id);
             
             <?php if ($subscription->status === 'active'): ?>
                 <?php if (!$subscription->cancel_at_period_end): ?>
-                    <div class="action-group">
-                        <button type="button" class="button button-secondary cancel-subscription"
-                            data-subscription-id="<?php echo esc_attr($subscription->subscription_id); ?>"
-                            data-period-end="<?php echo esc_attr(date_i18n(get_option('date_format'), strtotime($subscription->current_period_end))); ?>">
-                            <?php echo esc_html__('Cancel Subscription', 'cobra-ai'); ?>
-                        </button>
-                        <p class="action-description">
-                            <?php echo esc_html__('You can cancel anytime. Your subscription will remain active until the end of your current billing period.', 'cobra-ai'); ?>
-                        </p>
-                    </div>
+                    <button type="button" class="button button-danger cancel-subscription"
+                        data-id="<?php echo esc_attr($subscription->subscription_id); ?>"
+                        data-nonce="<?php echo wp_create_nonce('cancel_subscription_' . $subscription->id); ?>">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="15" y1="9" x2="9" y2="15"></line>
+                            <line x1="9" y1="9" x2="15" y2="15"></line>
+                        </svg>
+                        <?php echo esc_html__('Cancel Subscription', 'cobra-ai'); ?>
+                    </button>
                 <?php else: ?>
-                    <div class="action-group">
-                        <button type="button" class="button button-primary resume-subscription"
-                            data-subscription-id="<?php echo esc_attr($subscription->subscription_id); ?>">
-                            <?php echo esc_html__('Resume Subscription', 'cobra-ai'); ?>
-                        </button>
-                        <p class="action-description">
-                            <?php echo esc_html__('Resume your subscription to continue enjoying all benefits.', 'cobra-ai'); ?>
-                        </p>
-                    </div>
+                    <button type="button" class="button button-primary resume-subscription"
+                        data-id="<?php echo esc_attr($subscription->subscription_id); ?>"
+                        data-nonce="<?php echo wp_create_nonce('resume_subscription_' . $subscription->id); ?>">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        <?php echo esc_html__('Resume Subscription', 'cobra-ai'); ?>
+                    </button>
                 <?php endif; ?>
                 
                 <div class="action-group">
@@ -257,160 +257,158 @@ $payments = $this->get_payments()->get_subscription_payments($subscription->id);
 
 </div>
 
-<!-- Cancellation Modal -->
+<!-- Cancel Subscription Modal -->
 <div id="cancel-subscription-modal" class="cobra-modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
+    <div class="cobra-modal-overlay"></div>
+    <div class="cobra-modal-content">
+        <div class="cobra-modal-header">
             <h3><?php echo esc_html__('Cancel Subscription', 'cobra-ai'); ?></h3>
             <button type="button" class="close-modal">&times;</button>
         </div>
-        <div class="modal-body">
+        <div class="cobra-modal-body">
             <p><?php echo esc_html__('Are you sure you want to cancel your subscription?', 'cobra-ai'); ?></p>
             
-            <div class="cancel-options">
-                <label class="radio-option">
-                    <input type="radio" name="cancel_type" value="end_period" checked>
-                    <span><?php echo esc_html__('Cancel at the end of billing period', 'cobra-ai'); ?></span>
-                    <small class="period-end-date"></small>
-                </label>
-                <label class="radio-option">
-                    <input type="radio" name="cancel_type" value="immediately">
-                    <span><?php echo esc_html__('Cancel immediately', 'cobra-ai'); ?></span>
-                    <small><?php echo esc_html__('You will lose access right away and no refund will be provided.', 'cobra-ai'); ?></small>
-                </label>
-            </div>
-            
-            <div class="cancel-reason">
-                <label for="cancel_reason"><?php echo esc_html__('Reason for cancellation (optional):', 'cobra-ai'); ?></label>
-                <select id="cancel_reason" name="cancel_reason">
-                    <option value=""><?php echo esc_html__('Select a reason', 'cobra-ai'); ?></option>
-                    <option value="too_expensive"><?php echo esc_html__('Too expensive', 'cobra-ai'); ?></option>
-                    <option value="not_using"><?php echo esc_html__('Not using enough', 'cobra-ai'); ?></option>
-                    <option value="missing_features"><?php echo esc_html__('Missing features', 'cobra-ai'); ?></option>
-                    <option value="technical_issues"><?php echo esc_html__('Technical issues', 'cobra-ai'); ?></option>
-                    <option value="found_alternative"><?php echo esc_html__('Found an alternative', 'cobra-ai'); ?></option>
-                    <option value="other"><?php echo esc_html__('Other', 'cobra-ai'); ?></option>
-                </select>
+            <p class="cancellation-info">
+                <?php echo sprintf(
+                    esc_html__('Your subscription will remain active until the end of the current billing period (%s). You will continue to have access to all features until then.', 'cobra-ai'),
+                    date_i18n(get_option('date_format'), strtotime($subscription->current_period_end))
+                ); ?>
+            </p>
+
+            <div class="modal-actions">
+                <button type="button" class="button button-secondary close-modal">
+                    <?php echo esc_html__('Keep Subscription', 'cobra-ai'); ?>
+                </button>
+                <button type="button" class="button button-danger" id="confirm-cancel">
+                    <?php echo esc_html__('Yes, Cancel Subscription', 'cobra-ai'); ?>
+                </button>
             </div>
         </div>
-        <div class="modal-footer">
-            <button type="button" class="button cancel-modal"><?php echo esc_html__('Keep Subscription', 'cobra-ai'); ?></button>
-            <button type="button" class="button button-primary confirm-cancel"><?php echo esc_html__('Cancel Subscription', 'cobra-ai'); ?></button>
+    </div>
+</div>
+
+<!-- Resume Subscription Modal -->
+<div id="resume-subscription-modal" class="cobra-modal" style="display: none;">
+    <div class="cobra-modal-overlay"></div>
+    <div class="cobra-modal-content">
+        <div class="cobra-modal-header">
+            <h3><?php echo esc_html__('Resume Subscription', 'cobra-ai'); ?></h3>
+            <button type="button" class="close-modal">&times;</button>
+        </div>
+        <div class="cobra-modal-body">
+            <p><?php echo esc_html__('Do you want to resume your subscription?', 'cobra-ai'); ?></p>
+            
+            <p class="resume-info">
+                <?php echo esc_html__('Your subscription will continue and you will be charged at the end of the current billing period.', 'cobra-ai'); ?>
+            </p>
+
+            <div class="modal-actions">
+                <button type="button" class="button button-secondary close-modal">
+                    <?php echo esc_html__('Cancel', 'cobra-ai'); ?>
+                </button>
+                <button type="button" class="button button-primary" id="confirm-resume">
+                    <?php echo esc_html__('Yes, Resume Subscription', 'cobra-ai'); ?>
+                </button>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
 jQuery(document).ready(function($) {
-    // Handle cancel subscription
+    // WordPress AJAX URL
+    const ajaxUrl = '<?php echo esc_url(admin_url('admin-ajax.php')); ?>';
+
+    // Handle subscription cancellation
     $('.cancel-subscription').on('click', function() {
-        const subscriptionId = $(this).data('subscription-id');
-        const periodEnd = $(this).data('period-end');
-        
-        $('#cancel-subscription-modal').data('subscription-id', subscriptionId).show();
-        $('.period-end-date').text('(<?php echo esc_js(__('Access until', 'cobra-ai')); ?> ' + periodEnd + ')');
+        $('#cancel-subscription-modal').fadeIn(200);
     });
 
-    // Handle resume subscription
-    $('.resume-subscription').on('click', function() {
-        const subscriptionId = $(this).data('subscription-id');
-        const button = $(this);
+    // Handle cancellation confirmation
+    $('#confirm-cancel').on('click', async function() {
+        const $button = $(this);
+        const subscriptionId = $('.cancel-subscription').data('id');
+        const nonce = $('.cancel-subscription').data('nonce');
         
-        if (!confirm('<?php echo esc_js(__('Are you sure you want to resume your subscription?', 'cobra-ai')); ?>')) {
-            return;
+        $button.prop('disabled', true)
+            .html('<span class="spinner"></span> <?php echo esc_js(__('Processing...', 'cobra-ai')); ?>');
+
+        try {
+            const response = await $.ajax({
+                url: ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'cobra_user_subscription_cancel',
+                    subscription_id: subscriptionId,
+                    _ajax_nonce: nonce
+                }
+            });
+
+            if (!response.success) {
+                throw new Error(response.data.message || '<?php echo esc_js(__('Failed to cancel subscription', 'cobra-ai')); ?>');
+            }
+
+            // Show success message
+            alert('<?php echo esc_js(__('Subscription cancelled successfully', 'cobra-ai')); ?>');
+            location.reload();
+
+        } catch (error) {
+            alert(error.message);
+            $button.prop('disabled', false)
+                .html('<?php echo esc_js(__('Yes, Cancel Subscription', 'cobra-ai')); ?>');
         }
-        
-        button.prop('disabled', true).text('<?php echo esc_js(__('Processing...', 'cobra-ai')); ?>');
-        
-        $.ajax({
-            url: ajaxurl,
-            type: 'POST',
-            data: {
-                action: 'cobra_resume_subscription',
-                subscription_id: subscriptionId,
-                nonce: '<?php echo wp_create_nonce('cobra-stripe-nonce'); ?>'
-            },
-            success: function(response) {
-                if (response.success) {
-                    location.reload();
-                } else {
-                    alert(response.data.message || '<?php echo esc_js(__('Failed to resume subscription', 'cobra-ai')); ?>');
-                    button.prop('disabled', false).text('<?php echo esc_js(__('Resume Subscription', 'cobra-ai')); ?>');
-                }
-            },
-            error: function() {
-                alert('<?php echo esc_js(__('An error occurred. Please try again.', 'cobra-ai')); ?>');
-                button.prop('disabled', false).text('<?php echo esc_js(__('Resume Subscription', 'cobra-ai')); ?>');
-            }
-        });
     });
 
-    // Handle update payment method
-    $('.update-payment-method').on('click', function() {
-        const button = $(this);
-        button.prop('disabled', true).text('<?php echo esc_js(__('Opening...', 'cobra-ai')); ?>');
-        
-        $.ajax({
-            url: ajaxurl,
-            type: 'POST',
-            data: {
-                action: 'cobra_update_payment_method',
-                nonce: '<?php echo wp_create_nonce('cobra-stripe-nonce'); ?>'
-            },
-            success: function(response) {
-                if (response.success) {
-                    window.open(response.data.portal_url, '_blank');
-                } else {
-                    alert(response.data.message || '<?php echo esc_js(__('Failed to open payment portal', 'cobra-ai')); ?>');
-                }
-                button.prop('disabled', false).text('<?php echo esc_js(__('Update Payment Method', 'cobra-ai')); ?>');
-            },
-            error: function() {
-                alert('<?php echo esc_js(__('An error occurred. Please try again.', 'cobra-ai')); ?>');
-                button.prop('disabled', false).text('<?php echo esc_js(__('Update Payment Method', 'cobra-ai')); ?>');
-            }
-        });
+    // Handle subscription resume
+    $('.resume-subscription').on('click', function() {
+        $('#resume-subscription-modal').fadeIn(200);
     });
 
-    // Modal functionality
-    $('.close-modal, .cancel-modal').on('click', function() {
-        $('#cancel-subscription-modal').hide();
+    // Handle resume confirmation
+    $('#confirm-resume').on('click', async function() {
+        const $button = $(this);
+        const subscriptionId = $('.resume-subscription').data('id');
+        const nonce = $('.resume-subscription').data('nonce');
+        
+        $button.prop('disabled', true)
+            .html('<span class="spinner"></span> <?php echo esc_js(__('Processing...', 'cobra-ai')); ?>');
+
+        try {
+            const response = await $.ajax({
+                url: ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'cobra_user_subscription_resume',
+                    subscription_id: subscriptionId,
+                    _ajax_nonce: nonce
+                }
+            });
+
+            if (!response.success) {
+                throw new Error(response.data.message || '<?php echo esc_js(__('Failed to resume subscription', 'cobra-ai')); ?>');
+            }
+
+            // Show success message
+            alert('<?php echo esc_js(__('Subscription resumed successfully', 'cobra-ai')); ?>');
+            location.reload();
+
+        } catch (error) {
+            alert(error.message);
+            $button.prop('disabled', false)
+                .html('<?php echo esc_js(__('Yes, Resume Subscription', 'cobra-ai')); ?>');
+        }
     });
 
-    // Handle cancel confirmation
-    $('.confirm-cancel').on('click', function() {
-        const modal = $('#cancel-subscription-modal');
-        const subscriptionId = modal.data('subscription-id');
-        const cancelType = $('input[name="cancel_type"]:checked').val();
-        const cancelReason = $('#cancel_reason').val();
-        const button = $(this);
-        
-        button.prop('disabled', true).text('<?php echo esc_js(__('Cancelling...', 'cobra-ai')); ?>');
-        
-        $.ajax({
-            url: ajaxurl,
-            type: 'POST',
-            data: {
-                action: 'cobra_cancel_subscription',
-                subscription_id: subscriptionId,
-                cancel_immediately: cancelType === 'immediately',
-                cancel_reason: cancelReason,
-                nonce: '<?php echo wp_create_nonce('cobra-stripe-nonce'); ?>'
-            },
-            success: function(response) {
-                if (response.success) {
-                    modal.hide();
-                    location.reload();
-                } else {
-                    alert(response.data.message || '<?php echo esc_js(__('Failed to cancel subscription', 'cobra-ai')); ?>');
-                    button.prop('disabled', false).text('<?php echo esc_js(__('Cancel Subscription', 'cobra-ai')); ?>');
-                }
-            },
-            error: function() {
-                alert('<?php echo esc_js(__('An error occurred. Please try again.', 'cobra-ai')); ?>');
-                button.prop('disabled', false).text('<?php echo esc_js(__('Cancel Subscription', 'cobra-ai')); ?>');
-            }
-        });
+    // Close modals
+    $('.close-modal, .cobra-modal-overlay').on('click', function() {
+        $('.cobra-modal').fadeOut(200);
+    });
+
+    // Close on ESC key
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape') {
+            $('.cobra-modal').fadeOut(200);
+        }
     });
 });
 </script>

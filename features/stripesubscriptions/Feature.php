@@ -180,6 +180,10 @@ class Feature extends FeatureBase
         // Page creation AJAX handler
         add_action('wp_ajax_cobra_create_stripe_page', [$this, 'handle_create_page']);
 
+        // User subscription management AJAX handlers (different action names from admin)
+        add_action('wp_ajax_cobra_user_subscription_cancel', [$this, 'handle_user_cancel_subscription']);
+        add_action('wp_ajax_cobra_user_subscription_resume', [$this, 'handle_user_resume_subscription']);
+
         // Webhook events
         add_action('cobra_ai_stripe_customer_subscription_created', [$this->webhook, 'handle_subscription_created']);
         add_action('cobra_ai_stripe_customer_subscription_updated', [$this->webhook, 'handle_subscription_updated']);
@@ -800,6 +804,7 @@ class Feature extends FeatureBase
         if (!$post || get_post_type($post) !== 'stripe_plan') {
             return '<p>' . esc_html__('Invalid subscription plan.', 'cobra-ai') . '</p>';
         }
+
         $stripe_price_id = get_post_meta($post_id, '_stripe_price_id', true);
 
         // Get plan details
@@ -815,91 +820,11 @@ class Feature extends FeatureBase
             $current_plan = $user_subscription && $user_subscription->plan_id === $post_id;
         }
 
-        // Build the output
+        // Start output buffer
         ob_start();
-        ?>
-        <div class="plan-action">
-            <?php if (!$is_logged_in): ?>
-                <a href="<?php echo esc_url(wp_login_url(get_permalink())); ?>" class="button login-to-subscribe">
-                    <?php echo esc_html__('Login to Subscribe', 'cobra-ai'); ?>
-                </a>
-                <p class="login-note">
-                    <?php echo esc_html__('Don\'t have an account?', 'cobra-ai'); ?>
-                    <a href="<?php echo esc_url(wp_registration_url()); ?>">
-                        <?php echo esc_html__('Sign up', 'cobra-ai'); ?>
-                    </a>
-                </p>
-            <?php elseif ($current_plan): ?>
-                <div class="current-plan-notice">
-                    <span class="dashicons dashicons-yes-alt"></span>
-                    <?php echo esc_html__('You\'re currently on this plan', 'cobra-ai'); ?>
-                </div>
-                <a href="<?php echo esc_url(get_permalink(get_option('cobra_ai_account_page'))); ?>" class="button secondary">
-                    <?php echo esc_html__('Manage Subscription', 'cobra-ai'); ?>
-                </a>
-            <?php else: ?>
-                <button class="button subscribe-button"
-                    data-plan-id="<?php echo esc_attr($post_id); ?>"
-                    data-price-id="<?php echo esc_attr($stripe_price_id); ?>">
-                    <?php echo esc_html__('Subscribe Now', 'cobra-ai'); ?>
-                </button>
-                <?php if ($plan_data['trial_enabled']): ?>
-                    <p class="trial-note">
-                        <?php printf(
-                            esc_html__('Start your %d-day free trial today', 'cobra-ai'),
-                            absint($plan_data['trial_days'])
-                        ); ?>
-                    </p>
-                <?php endif; ?>
-            <?php endif; ?>
-        </div>
 
-        <?php if ($is_logged_in && !$current_plan): ?>
-            <script>
-                jQuery(document).ready(function($) {
-                    $('.subscribe-button').on('click', async function() {
-                        const button = $(this);
-                        const planId = button.data('plan-id');
-                        const priceId = button.data('price-id');
-
-                        // Visual feedback
-                        button.prop('disabled', true).addClass('processing')
-                            .html('<span class="spinner"></span> <?php echo esc_js(__('Processing...', 'cobra-ai')); ?>');
-
-                        try {
-                            const response = await $.ajax({
-                                url: CobraSubscription.ajax_url,
-                                type: 'POST',
-                                data: {
-                                    action: 'cobra_create_checkout_session',
-                                    plan_id: planId,
-                                    price_id: priceId,
-                                    nonce: CobraSubscription.nonce
-                                }
-                            });
-
-                            if (!response.success) {
-                                throw new Error(response.data.message || '<?php echo esc_js(__('Checkout failed', 'cobra-ai')); ?>');
-                            }
-
-                            // Redirect to checkout
-                            window.location.href = response.data.checkout_url;
-
-                        } catch (error) {
-                            console.error('Checkout error:', error);
-
-                            // Show error to user
-                            alert(error.message || '<?php echo esc_js(__('Failed to process subscription', 'cobra-ai')); ?>');
-
-                            // Reset button
-                            button.prop('disabled', false).removeClass('processing')
-                                .text('<?php echo esc_js(__('Subscribe Now', 'cobra-ai')); ?>');
-                        }
-                    });
-                });
-            </script>
-        <?php endif; ?>
-<?php
+        // Include the template
+        include $this->path . 'views/public/subscription-action.php';
 
         return ob_get_clean();
     }
@@ -1029,89 +954,62 @@ class Feature extends FeatureBase
     }
 
     /**
-     * Handle subscription cancellation
+     * Handle subscription cancellation for logged-in users
      */
-    public function handle_cancel_subscription(): void
-    {
+    public function handle_user_cancel_subscription(): void
+    {        
         try {
-            // Check if user is logged in
-            if (!is_user_logged_in()) {
-                throw new \Exception(__('You must be logged in to manage subscriptions.', 'cobra-ai'));
+            // Verify user is logged in
+            if (!is_user_logged_in()) {        
+                wp_send_json_error(['message' => __('You must be logged in to cancel a subscription.', 'cobra-ai')]);
+                return;
             }
-
-            // Verify nonce
-            check_ajax_referer('cobra-stripe-nonce', 'nonce');
-
+            $user_id = get_current_user_id();
             // Get subscription ID
-            $subscription_id = sanitize_text_field($_POST['subscription_id'] ?? '');
-            if (empty($subscription_id)) {
-                throw new \Exception(__('Invalid subscription ID.', 'cobra-ai'));
+            if (empty($_POST['subscription_id'])) {
+                wp_send_json_error(['message' => __('Subscription ID is required.', 'cobra-ai')]);
+                return;
             }
 
-            // Get user's subscription from database
-            $user_subscription = $this->get_subscriptions()->get_user_subscription(get_current_user_id());
-            if (!$user_subscription || $user_subscription->subscription_id !== $subscription_id) {
-                throw new \Exception(__('Subscription not found or does not belong to you.', 'cobra-ai'));
+            $subscription_id = sanitize_text_field($_POST['subscription_id']);
+            // Get user's subscription to verify ownership
+            $user_subscription = $this->get_subscriptions()->get_user_subscription($user_id);
+            
+            if (!$user_subscription) {
+                wp_send_json_error(['message' => __('No active subscription found.', 'cobra-ai')]);
+                return;
+            }
+            // Verify the subscription belongs to the current user
+            if ($user_subscription->subscription_id !== $subscription_id) {
+                wp_send_json_error(['message' => __('You do not have permission to cancel this subscription.', 'cobra-ai')]);
+                return;
             }
 
-            // Initialize Stripe
-            $stripe = $this->get_stripe_feature()->get_api();
-
-            // Get cancellation type (immediate or at period end)
-            $cancel_immediately = !empty($_POST['cancel_immediately']);
-            $cancel_reason = sanitize_text_field($_POST['cancel_reason'] ?? '');
-
-            if ($cancel_immediately) {
-                // Cancel immediately
-                $subscription = \Stripe\Subscription::retrieve($subscription_id);
-                $subscription->cancel([
-                    'metadata' => [
-                        'cancelled_by' => 'user',
-                        'cancel_reason' => $cancel_reason
-                    ]
-                ]);
-                
-                $message = __('Your subscription has been cancelled immediately.', 'cobra-ai');
-            } else {
-                // Cancel at period end
-                $subscription = \Stripe\Subscription::update($subscription_id, [
-                    'cancel_at_period_end' => true,
-                    'metadata' => [
-                        'cancelled_by' => 'user',
-                        'cancel_reason' => $cancel_reason
-                    ]
-                ]);
-                
-                $period_end = date_i18n(get_option('date_format'), $subscription->current_period_end);
-                $message = sprintf(
-                    __('Your subscription will be cancelled at the end of the current billing period (%s).', 'cobra-ai'),
-                    $period_end
-                );
+            // Verify nonce for this specific subscription
+            $nonce_action = 'cancel_subscription_' . $user_subscription->id;
+            
+            if (!isset($_POST['_ajax_nonce']) || !wp_verify_nonce($_POST['_ajax_nonce'], $nonce_action)) {
+                wp_send_json_error(['message' => __('Security check failed.', 'cobra-ai')]);
+                return;
             }
+            // Cancel the subscription (at period end by default)
+            // Use the WordPress DB ID, not the Stripe ID
+            $result = $this->get_subscriptions()->cancel_subscription($user_subscription->id, false);
 
-            // Update local database
-            $this->get_subscriptions()->update_subscription($user_subscription->id, [
-                'cancel_at_period_end' => $subscription->cancel_at_period_end,
-                'cancel_reason' => $cancel_reason,
-                'status' => $subscription->status
-            ]);
-
-            // Log the cancellation
-            $this->log('info', 'Subscription cancelled by user', [
-                'user_id' => get_current_user_id(),
+            $this->log('info', 'User cancelled subscription', [
+                'user_id' => $user_id,
                 'subscription_id' => $subscription_id,
-                'cancel_immediately' => $cancel_immediately,
-                'cancel_reason' => $cancel_reason
+                'db_id' => $user_subscription->id
             ]);
-
             wp_send_json_success([
-                'message' => $message,
-                'cancelled' => true,
-                'cancel_at_period_end' => $subscription->cancel_at_period_end
+                'message' => __('Subscription cancelled successfully. You will retain access until the end of your billing period.', 'cobra-ai'),
+                'subscription' => $result
             ]);
 
         } catch (\Exception $e) {
-            $this->log('error', 'Failed to cancel subscription', [
+            error_log('COBRA: Exception caught: ' . $e->getMessage());
+            
+            $this->log('error', 'Failed to cancel user subscription', [
                 'error' => $e->getMessage(),
                 'user_id' => get_current_user_id(),
                 'subscription_id' => $_POST['subscription_id'] ?? null
@@ -1124,63 +1022,78 @@ class Feature extends FeatureBase
     }
 
     /**
-     * Handle subscription resumption
+     * Handle subscription resume for logged-in users
      */
-    public function handle_resume_subscription(): void
+    public function handle_user_resume_subscription(): void
     {
         try {
-            // Check if user is logged in
+            // Verify user is logged in
             if (!is_user_logged_in()) {
-                throw new \Exception(__('You must be logged in to manage subscriptions.', 'cobra-ai'));
+                wp_send_json_error(['message' => __('You must be logged in to resume a subscription.', 'cobra-ai')]);
+                return;
             }
 
-            // Verify nonce
-            check_ajax_referer('cobra-stripe-nonce', 'nonce');
-
+            $user_id = get_current_user_id();
+            
             // Get subscription ID
-            $subscription_id = sanitize_text_field($_POST['subscription_id'] ?? '');
-            if (empty($subscription_id)) {
-                throw new \Exception(__('Invalid subscription ID.', 'cobra-ai'));
+            if (empty($_POST['subscription_id'])) {
+                wp_send_json_error(['message' => __('Subscription ID is required.', 'cobra-ai')]);
+                return;
             }
 
-            // Get user's subscription from database
-            $user_subscription = $this->get_subscriptions()->get_user_subscription(get_current_user_id());
-            if (!$user_subscription || $user_subscription->subscription_id !== $subscription_id) {
-                throw new \Exception(__('Subscription not found or does not belong to you.', 'cobra-ai'));
+            $subscription_id = sanitize_text_field($_POST['subscription_id']);
+            
+            // Get user's subscription to verify ownership
+            $user_subscription = $this->get_subscriptions()->get_user_subscription($user_id);
+            
+            if (!$user_subscription) {
+                wp_send_json_error(['message' => __('No active subscription found.', 'cobra-ai')]);
+                return;
             }
 
-            // Initialize Stripe
-            $stripe = $this->get_stripe_feature()->get_api();
+            // Verify the subscription belongs to the current user
+            if ($user_subscription->subscription_id !== $subscription_id) {
+                wp_send_json_error(['message' => __('You do not have permission to resume this subscription.', 'cobra-ai')]);
+                return;
+            }
 
-            // Resume subscription (remove cancel_at_period_end)
-            $subscription = \Stripe\Subscription::update($subscription_id, [
-                'cancel_at_period_end' => false,
-                'metadata' => [
-                    'resumed_by' => 'user',
-                    'resumed_at' => date('Y-m-d H:i:s')
-                ]
+            // Verify nonce for this specific subscription
+            $nonce_action = 'resume_subscription_' . $user_subscription->id;
+            if (!isset($_POST['_ajax_nonce']) || !wp_verify_nonce($_POST['_ajax_nonce'], $nonce_action)) {
+                wp_send_json_error(['message' => __('Security check failed.', 'cobra-ai')]);
+                return;
+            }
+
+            // Resume the subscription
+            $stripe = new \Stripe\StripeClient($this->get_stripe_feature()->get_api()->get_secret_key());
+            
+            $subscription = $stripe->subscriptions->update($subscription_id, [
+                'cancel_at_period_end' => false
             ]);
 
-            // Update local database
-            $this->get_subscriptions()->update_subscription($user_subscription->id, [
-                'cancel_at_period_end' => false,
-                'cancel_reason' => null,
-                'status' => $subscription->status
-            ]);
+            // Update database
+            global $wpdb;
+            $table_name = $wpdb->prefix . 'cobra_stripe_subscriptions';
+            $wpdb->update(
+                $table_name,
+                ['cancel_at_period_end' => 0],
+                ['subscription_id' => $subscription_id],
+                ['%d'],
+                ['%s']
+            );
 
-            // Log the resumption
-            $this->log('info', 'Subscription resumed by user', [
-                'user_id' => get_current_user_id(),
+            $this->log('info', 'User resumed subscription', [
+                'user_id' => $user_id,
                 'subscription_id' => $subscription_id
             ]);
 
             wp_send_json_success([
-                'message' => __('Your subscription has been resumed successfully.', 'cobra-ai'),
-                'cancelled' => false
+                'message' => __('Subscription resumed successfully. Your subscription will continue as normal.', 'cobra-ai'),
+                'subscription' => $subscription
             ]);
 
         } catch (\Exception $e) {
-            $this->log('error', 'Failed to resume subscription', [
+            $this->log('error', 'Failed to resume user subscription', [
                 'error' => $e->getMessage(),
                 'user_id' => get_current_user_id(),
                 'subscription_id' => $_POST['subscription_id'] ?? null

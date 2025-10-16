@@ -5,12 +5,6 @@ if (!defined('ABSPATH')) exit;
 
 get_header();
 
-// Debug output
-// if (defined('WP_DEBUG') && WP_DEBUG) {
-//     global $wp_query, $post;
-//     error_log('Current query: ' . print_r($wp_query->query, true));
-//     error_log('Current post: ' . print_r($post, true));
-// }
 
 while (have_posts()) : 
     the_post();
