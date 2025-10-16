@@ -10,14 +10,14 @@ use function CobraAI\{
 
 class Feature extends FeatureBase
 {
-    protected $feature_id = 'stripesubscriptions';
-    protected $name = 'Stripe Subscription';
-    protected $description = 'Manage subscriptions and recurring payments with Stripe';
-    protected $version = '1.0.0';
-    protected $author = 'Your Name';
-    protected $has_settings = true;
-    protected $has_admin = true;
-    protected $requires = ['stripe']; // Requires base Stripe feature
+    protected string $feature_id = 'stripesubscriptions';
+    protected string $name = 'Stripe Subscription';
+    protected string $description = 'Manage subscriptions and recurring payments with Stripe';
+    protected string $version = '1.1.0';
+    protected string $author = 'Onlevelup.com';
+    protected bool $has_settings = true;
+    protected bool $has_admin = true;
+    protected array $requires = ['stripe']; // Requires base Stripe feature
 
     private $api;
     private $admin;
@@ -171,6 +171,14 @@ class Feature extends FeatureBase
         // add_action('wp_ajax_cobra_subscription_cancel', [$this->api, 'handle_cancellation']);
         add_action('wp_ajax_cobra_create_checkout_session', [$this, 'handle_create_checkout_session']);
         add_action('wp_ajax_nopriv_cobra_create_checkout_session', [$this, 'handle_logged_out_user']);
+        
+        // Subscription management AJAX handlers
+        add_action('wp_ajax_cobra_cancel_subscription', [$this, 'handle_cancel_subscription']);
+        add_action('wp_ajax_cobra_resume_subscription', [$this, 'handle_resume_subscription']);
+        add_action('wp_ajax_cobra_update_payment_method', [$this, 'handle_update_payment_method']);
+        
+        // Page creation AJAX handler
+        add_action('wp_ajax_cobra_create_stripe_page', [$this, 'handle_create_page']);
 
         // User subscription management AJAX handlers (different action names from admin)
         add_action('wp_ajax_cobra_user_subscription_cancel', [$this, 'handle_user_cancel_subscription']);
@@ -231,7 +239,8 @@ class Feature extends FeatureBase
     }
     protected function register_shortcodes(): void
     {
-        // add_shortcode('stripe_checkout', [$this, 'render_checkout_shortcode']);
+        // Register shortcodes
+        add_shortcode('stripe_checkout', [$this, 'render_checkout_shortcode']);
         add_shortcode('stripe_success', [$this, 'render_success_shortcode']);
         add_shortcode('stripe_cancel', [$this, 'render_cancel_shortcode']);
         add_shortcode('stripe_plans', [$this, 'render_plans_shortcode']);
@@ -239,35 +248,103 @@ class Feature extends FeatureBase
 
         add_shortcode('stripe_action_subscription', [$this, 'shortcode_action_subscription']);
     }
+    /**
+     * Enqueue public assets with optimized loading
+     */
     public function enqueue_assets_stripe_var($hook): void
     {
-        // if (strpos($hook, $this->menu_slug) === false) return;
-
-
         global $post;
         if (!$post) return;
 
         $shortcodes = ['stripe_plans', 'stripe_checkout', 'stripe_success', 'stripe_cancel', 'stripe_subscription_details'];
-        // Check if post contains any of our shortcodes
+        
+        // Check if post contains any of our shortcodes or is a subscription-related page
+        $should_enqueue = false;
         foreach ($shortcodes as $shortcode) {
-
             if (has_shortcode($post->post_content, $shortcode) || get_post_type($post) === 'stripe_plan') {
-
-                // wp_enqueue_script('jquery');
-
-                wp_localize_script('cobra-ai-' . $this->feature_id,   ucfirst('CobraSubscription'), [
-                    'ajax_url' => admin_url('admin-ajax.php'),
-                    'checkout_url' => get_permalink($this->get_settings('checkout_page')),
-                    'success_url' => get_permalink($this->get_settings('success_page')),
-                    'cancel_url' => get_permalink($this->get_settings('cancel_page')),
-                    'account_url' => get_permalink($this->get_settings('account_page')),
-                    'nonce' => wp_create_nonce('cobra-stripe-nonce'),
-                    'is_logged_in' => is_user_logged_in()
-                ]);
+                $should_enqueue = true;
                 break;
             }
         }
+
+        // Also enqueue on account pages or pages with subscription content
+        if (!$should_enqueue && (
+            strpos($post->post_content, 'cobra-subscription') !== false ||
+            is_page('account') ||
+            is_user_logged_in() && strpos($hook, 'account') !== false
+        )) {
+            $should_enqueue = true;
+        }
+
+        if ($should_enqueue) {
+            // Enqueue main public CSS
+            wp_enqueue_style(
+                'cobra-stripe-subscriptions-public',
+                $this->assets_url . 'css/public.css',
+                [],
+                $this->version
+            );
+
+            // Enqueue additional subscription styles
+            wp_enqueue_style(
+                'cobra-stripe-subscriptions-styles',
+                $this->assets_url . 'css/subscription-styles.css',
+                ['cobra-stripe-subscriptions-public'],
+                $this->version
+            );
+
+            // Enqueue public JavaScript
+            wp_enqueue_script(
+                'cobra-stripe-subscriptions-public',
+                $this->assets_url . 'js/public.js',
+                ['jquery'],
+                $this->version,
+                true
+            );
+
+            // Enqueue subscription manager
+            wp_enqueue_script(
+                'cobra-stripe-subscriptions-manager',
+                $this->assets_url . 'js/subscription-manager.js',
+                ['jquery', 'cobra-stripe-subscriptions-public'],
+                $this->version,
+                true
+            );
+
+            // Localize script with all necessary data
+            wp_localize_script('cobra-stripe-subscriptions-manager', 'cobra_vars', [
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'checkout_url' => get_permalink($this->get_settings('checkout_page')),
+                'success_url' => get_permalink($this->get_settings('success_page')),
+                'cancel_url' => get_permalink($this->get_settings('cancel_page')),
+                'account_url' => get_permalink($this->get_settings('account_page')),
+                'nonce' => wp_create_nonce('cobra-stripe-nonce'),
+                'is_logged_in' => is_user_logged_in(),
+                'stripe_key' => $this->get_stripe_feature()?->get_public_key() ?? '',
+                'i18n' => [
+                    'processing' => __('Processing...', 'cobra-ai'),
+                    'confirm_cancel' => __('Are you sure you want to cancel your subscription?', 'cobra-ai'),
+                    'confirm_resume' => __('Are you sure you want to resume your subscription?', 'cobra-ai'),
+                    'cancel_success' => __('Subscription cancelled successfully', 'cobra-ai'),
+                    'resume_success' => __('Subscription resumed successfully', 'cobra-ai'),
+                    'update_success' => __('Payment method updated successfully', 'cobra-ai'),
+                    'error' => __('An error occurred. Please try again.', 'cobra-ai'),
+                ]
+            ]);
+
+            // Also localize for backward compatibility
+            wp_localize_script('cobra-stripe-subscriptions-public', 'CobraSubscription', [
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'checkout_url' => get_permalink($this->get_settings('checkout_page')),
+                'success_url' => get_permalink($this->get_settings('success_page')),
+                'cancel_url' => get_permalink($this->get_settings('cancel_page')),
+                'account_url' => get_permalink($this->get_settings('account_page')),
+                'nonce' => wp_create_nonce('cobra-stripe-nonce'),
+                'is_logged_in' => is_user_logged_in()
+            ]);
+        }
     }
+
     /**
      * Get default settings
      */
@@ -1022,6 +1099,123 @@ class Feature extends FeatureBase
                 'subscription_id' => $_POST['subscription_id'] ?? null
             ]);
 
+            wp_send_json_error([
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Handle payment method update
+     */
+    public function handle_update_payment_method(): void
+    {
+        try {
+            // Check if user is logged in
+            if (!is_user_logged_in()) {
+                throw new \Exception(__('You must be logged in to update payment methods.', 'cobra-ai'));
+            }
+
+            // Verify nonce
+            check_ajax_referer('cobra-stripe-nonce', 'nonce');
+
+            // Get current user
+            $user = wp_get_current_user();
+            
+            // Get Stripe customer ID
+            $stripe_customer_id = get_user_meta($user->ID, '_stripe_customer_id', true);
+            if (!$stripe_customer_id) {
+                throw new \Exception(__('No customer record found.', 'cobra-ai'));
+            }
+
+            // Initialize Stripe
+            $stripe = $this->get_stripe_feature()->get_api();
+
+            // Create billing portal session for payment method update
+            $session = \Stripe\BillingPortal\Session::create([
+                'customer' => $stripe_customer_id,
+                'return_url' => get_permalink($this->get_settings('account_page'))
+            ]);
+
+            wp_send_json_success([
+                'portal_url' => $session->url
+            ]);
+
+        } catch (\Exception $e) {
+            $this->log('error', 'Failed to create billing portal session', [
+                'error' => $e->getMessage(),
+                'user_id' => get_current_user_id()
+            ]);
+
+            wp_send_json_error([
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Handle AJAX page creation
+     */
+    public function handle_create_page(): void
+    {
+        try {
+            // Verify nonce
+            if (!check_ajax_referer('cobra_create_stripe_page', 'nonce', false)) {
+                throw new \Exception(__('Invalid security token.', 'cobra-ai'));
+            }
+
+            // Verify permissions
+            if (!current_user_can('publish_pages')) {
+                throw new \Exception(__('You do not have permission to create pages.', 'cobra-ai'));
+            }
+
+            // Get and validate data
+            $page_type = sanitize_key($_POST['page_type'] ?? '');
+            $page_title = sanitize_text_field($_POST['page_title'] ?? '');
+            $page_content = wp_kses_post($_POST['page_content'] ?? '');
+
+            if (!$page_type || !$page_title || !$page_content) {
+                throw new \Exception(__('Missing required data.', 'cobra-ai'));
+            }
+
+            // Create page
+            $page_id = wp_insert_post([
+                'post_title' => $page_title,
+                'post_content' => $page_content,
+                'post_status' => 'publish',
+                'post_type' => 'page',
+                'post_author' => get_current_user_id(),
+                'meta_input' => [
+                    '_wp_page_template' => 'default'
+                ]
+            ]);
+
+            if (is_wp_error($page_id)) {
+                throw new \Exception($page_id->get_error_message());
+            }
+
+            // Update settings
+            $settings = $this->get_settings();
+            $settings[$page_type] = $page_id;
+            $this->update_settings($settings);
+
+            // Log the page creation
+            $this->log('info', 'Stripe page created automatically', [
+                'page_type' => $page_type,
+                'page_id' => $page_id,
+                'page_title' => $page_title,
+                'user_id' => get_current_user_id()
+            ]);
+
+            wp_send_json_success([
+                'message' => __('Page created successfully.', 'cobra-ai'),
+                'page_id' => $page_id,
+                'page_title' => $page_title,
+                'edit_url' => admin_url('post.php?post=' . $page_id . '&action=edit'),
+                'view_url' => get_permalink($page_id)
+            ]);
+
+        } catch (\Exception $e) {
             wp_send_json_error([
                 'message' => $e->getMessage()
             ]);

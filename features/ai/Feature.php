@@ -9,13 +9,13 @@ class Feature extends FeatureBase {
     /**
      * Feature properties
      */
-    protected $feature_id = 'ai';
-    protected $name = 'AI Integration';
-    protected $description = 'Integrate multiple AI providers with tracking and management';
-    protected $version = '1.0.0';
-    protected $author = 'Cobra AI';
-    protected $has_settings = true;
-    protected $has_admin = true;
+    protected string $feature_id = 'ai';
+    protected string $name = 'AI Integration';
+    protected string $description = 'Integrate multiple AI providers with tracking and management';
+    protected string $version = '1.1.0';
+    protected string $author = 'Onlevelup.com';
+    protected bool $has_settings = true;
+    protected bool $has_admin = true;
 
     /**
      * Feature components
@@ -294,6 +294,11 @@ class Feature extends FeatureBase {
 
     /**
      * Process AI request
+     * 
+     * @param string $provider The AI provider to use
+     * @param string|array $prompt The prompt to process (string or array)
+     * @param array $options Additional options
+     * @return mixed
      */
     public function process_request(string $provider, string|array $prompt, array $options = []) {
         return $this->manager->process_request($provider, $prompt, $options);

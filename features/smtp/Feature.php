@@ -15,13 +15,13 @@ class Feature extends FeatureBase
     /**
      * Feature properties
      */
-    protected $feature_id = 'smtp';
-    protected $name = 'SMTP';
-    protected $description = 'Configure SMTP and POP settings to improve WordPress email deliverability';
-    protected $version = '1.0.0';
-    protected $author = 'Cobra AI';
-    protected $has_settings = true;
-    protected $has_admin = true;
+    protected string $feature_id = 'smtp';
+    protected string $name = 'SMTP';
+    protected string $description = 'Configure SMTP and POP settings to improve WordPress email deliverability';
+    protected string $version = '1.1.0';
+    protected string $author = 'Onlevelup.com';
+    protected bool $has_settings = true;
+    protected bool $has_admin = true;
 
     /**
      * Setup feature

@@ -2,6 +2,8 @@
 
 namespace CobraAI;
 
+use function CobraAI\cobra_ai_get_settings;
+
 defined('ABSPATH') || exit;
 
 /**
@@ -10,27 +12,27 @@ defined('ABSPATH') || exit;
 class Admin
 {
     /**
-     * Instance of this class
+     * Singleton instance
      */
-    private static $instance = null;
+    private static ?Admin $instance = null;
 
     /**
-     * Menu settings
+     * Menu configuration
      */
-    private $menu_slug = 'cobra-ai-dashboard';
-    private $capability = 'manage_options';
-    private $menu_position = 30;
-    private $menu_icon = 'dashicons-randomize';
+    private string $menu_slug = 'cobra-ai-dashboard';
+    private string $capability = 'manage_options';
+    private int $menu_position = 30;
+    private string $menu_icon = 'dashicons-randomize';
 
     /**
-     * Active features
+     * Admin notices queue
      */
-    // private $features = [];
-
+    private array $notices = [];
+    
     /**
-     * Admin notices
+     * Database instance cache
      */
-    private $notices = [];
+    private ?Database $db = null;
 
     /**
      * Get singleton instance
@@ -38,18 +40,17 @@ class Admin
     public static function get_instance(): self
     {
         if (null === self::$instance) {
-            // log instanses
-             
             self::$instance = new self();
         }
         return self::$instance;
     }
 
     /**
-     * Constructor
+     * Constructor - Initialize admin components
      */
     private function __construct()
     {
+        $this->db = Database::get_instance();
         $this->init_hooks();
         $this->cleanup_feature_list();
     }
@@ -72,6 +73,16 @@ class Admin
         add_action('wp_ajax_cobra_ai_verify_api_key', [$this, 'handle_verify_api_key']);
         add_action('wp_ajax_cobra_ai_load_feature_help', [$this, 'handle_load_feature_help']);
         add_action('wp_ajax_cobra_ai_dismiss_notice', [$this, 'handle_dismiss_notice']);
+        
+        // Global settings AJAX handlers
+        add_action('wp_ajax_cobra_ai_clear_cache', [$this, 'handle_clear_cache']);
+        add_action('wp_ajax_cobra_ai_clear_logs', [$this, 'handle_clear_logs']);
+        add_action('wp_ajax_cobra_ai_run_diagnostics', [$this, 'handle_run_diagnostics']);
+        add_action('wp_ajax_cobra_ai_create_backup', [$this, 'handle_create_backup']);
+        add_action('wp_ajax_cobra_ai_cleanup_backups', [$this, 'handle_cleanup_backups']);
+        add_action('wp_ajax_cobra_ai_get_backup_history', [$this, 'handle_get_backup_history']);
+        add_action('wp_ajax_cobra_ai_test_email', [$this, 'handle_test_email']);
+        add_action('wp_ajax_cobra_ai_reset_settings', [$this, 'handle_reset_settings']);
 
         // Notices
         add_action('admin_notices', [$this, 'display_notices']);
@@ -85,6 +96,7 @@ class Admin
         add_filter('sanitize_option_cobra_ai_enabled_features', [$this, 'sanitize_enabled_features']);
         add_filter('sanitize_option_cobra_ai_settings', [$this, 'sanitize_global_settings']);
         add_action('admin_post_cobra_ai_save_feature_settings', [$this, 'handle_save_feature_settings']);
+        add_action('admin_post_cobra_ai_save_settings', [$this, 'handle_save_global_settings']);
     }
 
     /**
@@ -135,6 +147,48 @@ class Admin
         wp_redirect($redirect_url);
         exit;
     }
+
+    /**
+     * Handle saving global settings
+     */
+    public function handle_save_global_settings(): void
+    {
+        // Verify permissions
+        if (!current_user_can($this->capability)) {
+            wp_die(__('You do not have sufficient permissions to access this page.', 'cobra-ai'));
+        }
+
+        // Verify nonce
+        if (!isset($_POST['cobra_ai_nonce']) || !wp_verify_nonce($_POST['cobra_ai_nonce'], 'cobra_ai_settings_nonce')) {
+            wp_die(__('Security check failed.', 'cobra-ai'));
+        }
+
+        // Get and sanitize settings
+        $settings = isset($_POST['settings']) ? (array)$_POST['settings'] : [];
+        $sanitized_settings = $this->sanitize_global_settings($settings);
+
+        // Get current tab to preserve it after redirect
+        $current_tab = isset($_POST['current_tab']) ? sanitize_key($_POST['current_tab']) : 'core';
+
+        // Save settings
+        if (update_option('cobra_ai_settings', $sanitized_settings)) {
+            $redirect_url = add_query_arg([
+                'page' => 'cobra-ai-settings',
+                'settings-updated' => 'true',
+                'tab' => $current_tab
+            ], admin_url('admin.php'));
+        } else {
+            $redirect_url = add_query_arg([
+                'page' => 'cobra-ai-settings',
+                'error' => 'save-failed',
+                'tab' => $current_tab
+            ], admin_url('admin.php'));
+        }
+
+        wp_redirect($redirect_url);
+        exit;
+    }
+
     /**
      * Add admin menu pages
      */
@@ -257,7 +311,7 @@ class Admin
                                     <input type="text"
                                         id="<?php echo esc_attr($key); ?>"
                                         name="settings[<?php echo esc_attr($key); ?>]"
-                                        value="<?php echo esc_attr($value); ?>"
+                                        value="<?php echo esc_attr(is_array($value) ? implode(',', $value) : $value); ?>"
                                         class="regular-text">
                                 <?php endif; ?>
                             </td>
@@ -335,7 +389,23 @@ class Admin
             if (is_array($value)) {
                 $sanitized[$key] = $this->sanitize_settings_recursive($value);
             } else {
-                $sanitized[$key] = sanitize_text_field($value);
+                // Special handling for IP addresses field
+                if ($key === 'allowed_ip_addresses') {
+                    // Convert textarea string to array of IPs
+                    if (is_string($value)) {
+                        $ips = array_filter(
+                            array_map('trim', explode("\n", $value)),
+                            function($ip) {
+                                return !empty($ip) && filter_var($ip, FILTER_VALIDATE_IP);
+                            }
+                        );
+                        $sanitized[$key] = array_values($ips);
+                    } else {
+                        $sanitized[$key] = [];
+                    }
+                } else {
+                    $sanitized[$key] = sanitize_text_field($value);
+                }
             }
         }
 
@@ -577,7 +647,7 @@ class Admin
 
             return true;
         } catch (\Exception $e) {
-            cobra_ai_db()->log('error', sprintf(
+            $this->db->log('error', sprintf(
                 'Failed to activate feature %s: %s',
                 $feature_id,
                 $e->getMessage()
@@ -1057,6 +1127,347 @@ class Admin
     {
         $features = $this->get_available_features();
         return array_keys($features);
+    }
+
+    /**
+     * Handle clear cache AJAX request
+     */
+    public function handle_clear_cache(): void
+    {
+        if (!current_user_can($this->capability)) {
+            wp_die(__('You do not have sufficient permissions.', 'cobra-ai'));
+        }
+
+        check_ajax_referer('cobra_ai_admin_nonce', 'nonce');
+
+        // Clear WordPress object cache
+        if (function_exists('wp_cache_flush')) {
+            wp_cache_flush();
+        }
+
+        // Clear transients
+        global $wpdb;
+        $wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_%'");
+        $wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE '_site_transient_%'");
+
+        wp_send_json_success(['message' => __('Cache cleared successfully.', 'cobra-ai')]);
+    }
+
+    /**
+     * Handle clear logs AJAX request
+     */
+    public function handle_clear_logs(): void
+    {
+        if (!current_user_can($this->capability)) {
+            wp_die(__('You do not have sufficient permissions.', 'cobra-ai'));
+        }
+
+        check_ajax_referer('cobra_ai_admin_nonce', 'nonce');
+
+        // Clear debug log
+        $log_file = WP_CONTENT_DIR . '/debug.log';
+        if (file_exists($log_file)) {
+            file_put_contents($log_file, '');
+        }
+
+        wp_send_json_success(['message' => __('Logs cleared successfully.', 'cobra-ai')]);
+    }
+
+    /**
+     * Handle run diagnostics AJAX request
+     */
+    public function handle_run_diagnostics(): void
+    {
+        if (!current_user_can($this->capability)) {
+            wp_die(__('You do not have sufficient permissions.', 'cobra-ai'));
+        }
+
+        check_ajax_referer('cobra_ai_admin_nonce', 'nonce');
+
+        $diagnostics = [
+            'php_version' => PHP_VERSION,
+            'wp_version' => get_bloginfo('version'),
+            'memory_limit' => ini_get('memory_limit'),
+            'max_execution_time' => ini_get('max_execution_time'),
+            'upload_max_filesize' => ini_get('upload_max_filesize'),
+            'database_connection' => $this->test_database_connection(),
+            'write_permissions' => $this->test_write_permissions(),
+        ];
+
+        wp_send_json_success(['diagnostics' => $diagnostics]);
+    }
+
+    /**
+     * Handle create backup AJAX request
+     */
+    public function handle_create_backup(): void
+    {
+        if (!current_user_can($this->capability)) {
+            wp_die(__('You do not have sufficient permissions.', 'cobra-ai'));
+        }
+
+        check_ajax_referer('cobra_ai_admin_nonce', 'nonce');
+
+        $backup_result = $this->create_database_backup();
+        
+        if ($backup_result['success']) {
+            wp_send_json_success(['message' => __('Backup created successfully.', 'cobra-ai')]);
+        } else {
+            wp_send_json_error(['message' => $backup_result['message']]);
+        }
+    }
+
+    /**
+     * Handle cleanup backups AJAX request
+     */
+    public function handle_cleanup_backups(): void
+    {
+        if (!current_user_can($this->capability)) {
+            wp_die(__('You do not have sufficient permissions.', 'cobra-ai'));
+        }
+
+        check_ajax_referer('cobra_ai_admin_nonce', 'nonce');
+
+        $cleaned = $this->cleanup_old_backups();
+        wp_send_json_success(['message' => sprintf(__('%d old backups cleaned up.', 'cobra-ai'), $cleaned)]);
+    }
+
+    /**
+     * Handle get backup history AJAX request
+     */
+    public function handle_get_backup_history(): void
+    {
+        if (!current_user_can($this->capability)) {
+            wp_die(__('You do not have sufficient permissions.', 'cobra-ai'));
+        }
+
+        check_ajax_referer('cobra_ai_admin_nonce', 'nonce');
+
+        $backups = $this->get_backup_history();
+        $html = $this->render_backup_list($backups);
+
+        wp_send_json_success(['html' => $html]);
+    }
+
+    /**
+     * Handle test email AJAX request
+     */
+    public function handle_test_email(): void
+    {
+        if (!current_user_can($this->capability)) {
+            wp_die(__('You do not have sufficient permissions.', 'cobra-ai'));
+        }
+
+        check_ajax_referer('cobra_ai_admin_nonce', 'nonce');
+
+        $email = sanitize_email($_POST['email'] ?? '');
+        if (!is_email($email)) {
+            wp_send_json_error(['message' => __('Invalid email address.', 'cobra-ai')]);
+            return;
+        }
+
+        $sent = wp_mail(
+            $email,
+            __('Cobra AI Test Email', 'cobra-ai'),
+            __('This is a test email from Cobra AI plugin. If you received this, email configuration is working correctly.', 'cobra-ai')
+        );
+
+        if ($sent) {
+            wp_send_json_success(['message' => __('Test email sent successfully.', 'cobra-ai')]);
+        } else {
+            wp_send_json_error(['message' => __('Failed to send test email.', 'cobra-ai')]);
+        }
+    }
+
+    /**
+     * Handle reset settings AJAX request
+     */
+    public function handle_reset_settings(): void
+    {
+        if (!current_user_can($this->capability)) {
+            wp_die(__('You do not have sufficient permissions.', 'cobra-ai'));
+        }
+
+        check_ajax_referer('cobra_ai_admin_nonce', 'nonce');
+
+        delete_option('cobra_ai_settings');
+        wp_send_json_success(['message' => __('Settings reset successfully.', 'cobra-ai')]);
+    }
+
+    /**
+     * Test database connection
+     */
+    private function test_database_connection(): bool
+    {
+        global $wpdb;
+        return $wpdb->check_connection();
+    }
+
+    /**
+     * Test write permissions
+     */
+    private function test_write_permissions(): array
+    {
+        $upload_dir = wp_upload_dir();
+        return [
+            'uploads' => is_writable($upload_dir['basedir']),
+            'content' => is_writable(WP_CONTENT_DIR),
+        ];
+    }
+
+    /**
+     * Create database backup
+     */
+    private function create_database_backup(): array
+    {
+        global $wpdb;
+        
+        $upload_dir = wp_upload_dir();
+        $backup_dir = $upload_dir['basedir'] . '/cobra-ai-backups';
+        
+        if (!file_exists($backup_dir)) {
+            wp_mkdir_p($backup_dir);
+        }
+
+        $filename = 'cobra-ai-backup-' . date('Y-m-d-H-i-s') . '.sql';
+        $filepath = $backup_dir . '/' . $filename;
+
+        // Get all tables with cobra_ prefix
+        $tables = $wpdb->get_results("SHOW TABLES LIKE '{$wpdb->prefix}cobra_%'", ARRAY_N);
+        
+        if (empty($tables)) {
+            return ['success' => false, 'message' => __('No Cobra AI tables found to backup.', 'cobra-ai')];
+        }
+
+        $backup_content = '';
+        foreach ($tables as $table) {
+            $table_name = $table[0];
+            
+            // Get table structure
+            $create_table = $wpdb->get_row("SHOW CREATE TABLE `{$table_name}`", ARRAY_N);
+            $backup_content .= "\n\n-- Table structure for {$table_name}\n";
+            $backup_content .= "DROP TABLE IF EXISTS `{$table_name}`;\n";
+            $backup_content .= $create_table[1] . ";\n\n";
+            
+            // Get table data
+            $rows = $wpdb->get_results("SELECT * FROM `{$table_name}`", ARRAY_A);
+            if (!empty($rows)) {
+                $backup_content .= "-- Data for {$table_name}\n";
+                foreach ($rows as $row) {
+                    $values = array_map(function($value) use ($wpdb) {
+                        return $value === null ? 'NULL' : "'" . $wpdb->_escape($value) . "'";
+                    }, array_values($row));
+                    $backup_content .= "INSERT INTO `{$table_name}` VALUES (" . implode(', ', $values) . ");\n";
+                }
+            }
+        }
+
+        if (file_put_contents($filepath, $backup_content)) {
+            update_option('cobra_ai_last_backup_date', current_time('mysql'));
+            return ['success' => true, 'message' => __('Backup created successfully.', 'cobra-ai')];
+        } else {
+            return ['success' => false, 'message' => __('Failed to create backup file.', 'cobra-ai')];
+        }
+    }
+
+    /**
+     * Cleanup old backups
+     */
+    private function cleanup_old_backups(): int
+    {
+        $upload_dir = wp_upload_dir();
+        $backup_dir = $upload_dir['basedir'] . '/cobra-ai-backups';
+        
+        if (!file_exists($backup_dir)) {
+            return 0;
+        }
+
+        $files = glob($backup_dir . '/cobra-ai-backup-*.sql');
+        $settings = cobra_ai_get_settings();
+        $retention_days = $settings['backup']['retention_days'] ?? 30;
+        $max_backups = $settings['backup']['max_backups'] ?? 10;
+        
+        $cleaned = 0;
+        $cutoff_time = time() - ($retention_days * 24 * 60 * 60);
+        
+        // Sort files by modification time (newest first)
+        usort($files, function($a, $b) {
+            return filemtime($b) - filemtime($a);
+        });
+        
+        foreach ($files as $index => $file) {
+            $should_delete = false;
+            
+            // Delete if older than retention period
+            if (filemtime($file) < $cutoff_time) {
+                $should_delete = true;
+            }
+            
+            // Delete if exceeds max backup count
+            if ($index >= $max_backups) {
+                $should_delete = true;
+            }
+            
+            if ($should_delete && unlink($file)) {
+                $cleaned++;
+            }
+        }
+        
+        return $cleaned;
+    }
+
+    /**
+     * Get backup history
+     */
+    private function get_backup_history(): array
+    {
+        $upload_dir = wp_upload_dir();
+        $backup_dir = $upload_dir['basedir'] . '/cobra-ai-backups';
+        
+        if (!file_exists($backup_dir)) {
+            return [];
+        }
+
+        $files = glob($backup_dir . '/cobra-ai-backup-*.sql');
+        $backups = [];
+        
+        foreach ($files as $file) {
+            $backups[] = [
+                'filename' => basename($file),
+                'size' => filesize($file),
+                'date' => filemtime($file),
+                'path' => $file
+            ];
+        }
+        
+        // Sort by date (newest first)
+        usort($backups, function($a, $b) {
+            return $b['date'] - $a['date'];
+        });
+        
+        return $backups;
+    }
+
+    /**
+     * Render backup list HTML
+     */
+    private function render_backup_list(array $backups): string
+    {
+        if (empty($backups)) {
+            return '<p>' . __('No backups found.', 'cobra-ai') . '</p>';
+        }
+
+        $html = '<ul class="backup-list">';
+        foreach ($backups as $backup) {
+            $html .= '<li>';
+            $html .= '<span class="backup-name">' . esc_html($backup['filename']) . '</span>';
+            $html .= '<span class="backup-size">(' . size_format($backup['size']) . ')</span>';
+            $html .= '<span class="backup-date">' . date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $backup['date']) . '</span>';
+            $html .= '</li>';
+        }
+        $html .= '</ul>';
+        
+        return $html;
     }
      
 }

@@ -191,7 +191,7 @@ class Subscriptions
          )",
             $user_id
         ));
-
+ 
         return (int)$count > 0;
     }
     /**

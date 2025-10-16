@@ -9,7 +9,56 @@ defined('ABSPATH') || exit;
  */
 function cobra_ai_get_settings(?string $key = null, $default = null)
 {
+    $default_settings = [
+        'core' => [
+            'environment' => 'production',
+            'data_handling' => 'strict',
+            'timezone' => 'wp_default',
+            'auto_cleanup' => true,
+            'cleanup_days' => 90,
+            'features_auto_update' => false,
+            'features_isolation' => true,
+        ],
+        'security' => [
+            'enable_rate_limiting' => true,
+            'rate_limit_requests' => 60,
+            'rate_limit_period' => 3600,
+            'allowed_ip_addresses' => [],
+            'require_authentication' => true,
+            'api_key_authentication' => false,
+        ],
+        'performance' => [
+            'enable_caching' => true,
+            'cache_duration' => 3600,
+            'cache_compression' => true,
+            'minify_output' => true,
+            'lazy_loading' => true,
+            'max_execution_time' => 30,
+            'memory_limit' => 256,
+            'max_concurrent_requests' => 10,
+        ],
+        'logging' => [
+            'enable_logging' => true,
+            'log_level' => 'error',
+            'max_log_age' => 30,
+            'max_log_size' => 10,
+            'log_user_actions' => true,
+            'log_api_requests' => true,
+        ],
+        'backup' => [
+            'auto_backup' => false,
+            'backup_time' => '02:00',
+            'retention_days' => 30,
+            'max_backups' => 10,
+            'include_uploads' => false,
+            'compress_backup' => true,
+            'email_notification' => false,
+            'custom_location' => '',
+        ],
+    ];
+
     $settings = get_option('cobra_ai_settings', []);
+    $settings = array_merge_recursive($default_settings, $settings);
 
     if ($key === null) {
         return $settings;

@@ -3,12 +3,18 @@
     "description": "Modular AI-powered features for WordPress",
     "type": "wordpress-plugin",
     "license": "GPL-2.0-or-later",
+    "version": "1.0.0",
     "authors": [
         {
             "name": "Nakous Mustapha",
             "email": "mustapha.nak@gmail.com"
         }
     ],
+    "scripts": {
+        "copy-plugin": [
+            "cmd /c xcopy \"C:\\Users\\nakrn3\\Desktop\\projet\\cobra-ai-features\" \"C:\\xampp\\htdocs\\wp\\wp-content\\plugins\\cobra-ai-features\" /E /I /Y"
+        ]
+    },
     "require": {
         "php": ">=7.4",
         "composer/installers": "^2.0",

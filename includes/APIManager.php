@@ -10,19 +10,29 @@ defined('ABSPATH') || exit;
 class APIManager
 {
     /**
-     * Instance of this class
+     * Singleton instance
      */
-    private static $instance = null;
+    private static ?APIManager $instance = null;
 
     /**
      * API credentials storage
      */
-    private $credentials = [];
+    private array $credentials = [];
+    
+    /**
+     * Database instance for logging
+     */
+    private ?Database $db = null;
+
+    /**
+     * Request cache
+     */
+    private array $request_cache = [];
 
     /**
      * Default request options
      */
-    private $default_options = [
+    private array $default_options = [
         'timeout' => 30,
         'redirection' => 5,
         'httpversion' => '1.1',
@@ -46,10 +56,11 @@ class APIManager
     }
 
     /**
-     * Constructor
+     * Constructor - Initialize API manager
      */
     private function __construct()
     {
+        $this->db = Database::get_instance();
         $this->verify_dependencies();
     }
 

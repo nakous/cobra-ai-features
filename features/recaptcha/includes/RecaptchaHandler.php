@@ -32,13 +32,9 @@ class RecaptchaHandler {
      * Initialize hooks
      */
     private function init_hooks(): void {
-        // WordPress core forms
-        add_filter('authenticate', [$this, 'verify_login'], 99, 3);
-        add_filter('registration_errors', [$this, 'verify_registration'], 99, 3);
-        add_action('lostpassword_post', [$this, 'verify_lost_password']);
-        add_filter('preprocess_comment', [$this, 'verify_comment']);
-        add_filter('pre_update_option_pwd_protected_pwd', [$this, 'verify_protected_post'], 99, 2);
-
+        // Note: Skip WordPress core hooks as they're handled by the main Feature class
+        // to avoid double registration and performance issues
+        
         // Contact Form 7 integration
         add_filter('wpcf7_validate', [$this, 'verify_contact_form_7'], 99, 2);
 

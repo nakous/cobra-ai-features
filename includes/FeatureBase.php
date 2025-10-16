@@ -12,29 +12,60 @@ abstract class FeatureBase
     /**
      * Feature properties
      */
-    protected $feature_id = '';
-    protected $name = '';
-    protected $description = '';
-    protected $version = '1.0.0';
-    protected $author = '';
-    protected $requires = [];
-    protected $min_wp_version = '5.8';
-    protected $min_php_version = '7.4';
-    protected $has_settings = false;
-    protected $has_admin = false;
+    protected string $feature_id = '';
+    protected string $name = '';
+    protected string $description = '';
+    protected string $version = '1.0.0';
+    protected string $author = '';
+    protected array $requires = [];
+    protected string $min_wp_version = '5.8';
+    protected string $min_php_version = '7.4';
+    protected bool $has_settings = false;
+    protected bool $has_admin = false;
 
     /**
      * Feature paths
      */
-    protected $path;
-    protected $url;
-    protected $assets_url;
-    protected $templates_path;
+    protected string $path = '';
+    protected string $url = '';
+    protected string $assets_url = '';
+    protected string $templates_path = '';
 
     /**
      * Database tables
      */
-    protected $tables = [];
+    protected array $tables = [];
+    
+    /**
+     * Database instance cache
+     */
+    protected ?Database $db = null;
+    
+    /**
+     * Feature settings cache
+     */
+    private ?array $settings_cache = null;
+    
+    /**
+     * Feature status cache
+     */
+    private ?bool $active_status_cache = null;
+    
+    /**
+     * Check if feature is active (cached)
+     */
+    public function is_feature_active(string $feature_id): bool
+    {
+        if ($this->active_status_cache !== null) {
+            return $this->active_status_cache;
+        }
+        
+        $active_features = get_option('cobra_ai_enabled_features', []);
+        $this->active_status_cache = in_array($feature_id, $active_features, true);
+        
+        return $this->active_status_cache;
+    }
+    
     /**
      * Get table
      */
@@ -50,6 +81,7 @@ abstract class FeatureBase
     {
         return $this->tables[$table_name]['name'] ?? null;
     }
+    
     /**
      * Get all tables
      */
@@ -57,11 +89,15 @@ abstract class FeatureBase
     {
         return $this->tables;
     }
+
     /**
-     * Constructor
+     * Constructor - Initialize feature
      */
     public function __construct()
     {
+        // Initialize database connection
+        $this->db = Database::get_instance();
+        
         // Set feature ID if not explicitly defined
         if (empty($this->feature_id)) {
             $this->feature_id = $this->generate_feature_id();
@@ -70,9 +106,7 @@ abstract class FeatureBase
         // Set feature paths
         $this->setup_paths();
 
-        // Initialize feature
-        // setup if this feature is active 
-
+        // Initialize feature if active
         if ($this->is_feature_active($this->feature_id)) {
             $this->setup();
         }
@@ -142,7 +176,7 @@ abstract class FeatureBase
 
             return true;
         } catch (\Exception $e) {
-            cobra_ai_db()->log('error', "Feature initialization failed: {$this->feature_id}", [
+            $this->db->log('error', "Feature initialization failed: {$this->feature_id}", [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -253,11 +287,9 @@ abstract class FeatureBase
 
             return $settings;
         } catch (\Exception $e) {
-            cobra_ai_db()->log('error', sprintf(
-                'Failed to sanitize settings for feature %s: %s',
-                $this->get_feature_id(),
-                $e->getMessage()
-            ));
+            $this->db->log('error', "Failed to sanitize settings for feature: {$this->get_feature_id()}", [
+                'error' => $e->getMessage()
+            ]);
 
             // Return original settings if sanitization fails
             return $settings;
@@ -346,10 +378,10 @@ abstract class FeatureBase
 
             do_action('cobra_ai_feature_activated_' . $this->feature_id, $this);
 
-            cobra_ai_db()->log('info', "Feature activated: {$this->feature_id}");
+            $this->db->log('info', "Feature activated: {$this->feature_id}");
             return true;
         } catch (\Exception $e) {
-            cobra_ai_db()->log('error', "Feature activation failed: {$this->feature_id}", [
+            $this->db->log('error', "Feature activation failed: {$this->feature_id}", [
                 'error' => $e->getMessage()
             ]);
             return false;
@@ -389,10 +421,7 @@ abstract class FeatureBase
 
             if ($success) {
                 // Log successful initialization
-                cobra_ai_db()->log('info', sprintf(
-                    'Default options set for feature: %s',
-                    $this->feature_id
-                ));
+                $this->db->log('info', "Default options set for feature: {$this->feature_id}");
 
                 // Trigger action for other plugins
                 do_action('cobra_ai_feature_options_initialized_' . $this->feature_id, $default_options);
@@ -400,11 +429,9 @@ abstract class FeatureBase
 
             return $success;
         } catch (\Exception $e) {
-            cobra_ai_db()->log('error', sprintf(
-                'Failed to set default options for feature: %s. Error: %s',
-                $this->feature_id,
-                $e->getMessage()
-            ));
+            $this->db->log('error', "Failed to set default options for feature: {$this->feature_id}", [
+                'error' => $e->getMessage()
+            ]);
             return false;
         }
     }
@@ -426,10 +453,10 @@ abstract class FeatureBase
     {
         try {
             do_action('cobra_ai_feature_deactivated_' . $this->feature_id, $this);
-            cobra_ai_db()->log('info', "Feature deactivated: {$this->feature_id}");
+            $this->db->log('info', "Feature deactivated: {$this->feature_id}");
             return true;
         } catch (\Exception $e) {
-            cobra_ai_db()->log('error', "Feature deactivation failed: {$this->feature_id}", [
+            $this->db->log('error', "Feature deactivation failed: {$this->feature_id}", [
                 'error' => $e->getMessage()
             ]);
             return false;
@@ -452,10 +479,10 @@ abstract class FeatureBase
 
             do_action('cobra_ai_feature_uninstalled_' . $this->feature_id, $this);
 
-            cobra_ai_db()->log('info', "Feature uninstalled: {$this->feature_id}");
+            $this->db->log('info', "Feature uninstalled: {$this->feature_id}");
             return true;
         } catch (\Exception $e) {
-            cobra_ai_db()->log('error', "Feature uninstallation failed: {$this->feature_id}", [
+            $this->db->log('error', "Feature uninstallation failed: {$this->feature_id}", [
                 'error' => $e->getMessage()
             ]);
             return false;
@@ -590,7 +617,7 @@ abstract class FeatureBase
 
             // Merge with defaults
             $settings = wp_parse_args($settings, $this->get_feature_default_options());
-            // print_r($settings);
+            
             // Allow features to validate settings
             if (method_exists($this, 'validate_settings')) {
                 $settings = $this->validate_settings($settings);
@@ -608,11 +635,9 @@ abstract class FeatureBase
 
             return $updated;
         } catch (\Exception $e) {
-            cobra_ai_db()->log('error', sprintf(
-                'Failed to update settings for feature %s: %s',
-                $this->get_feature_id(),
-                $e->getMessage()
-            ));
+            $this->db->log('error', "Failed to update settings for feature: {$this->get_feature_id()}", [
+                'error' => $e->getMessage()
+            ]);
             throw $e;
         }
     }
@@ -794,14 +819,7 @@ abstract class FeatureBase
         }
     }
 
-    /**
-     * Check if a feature is active
-     */
-    public function is_feature_active(string $feature_id): bool
-    {
-        $active_features = get_option('cobra_ai_enabled_features', []);
-        return  in_array($feature_id, $active_features);
-    }
+
 
     /**
      * Check if required database tables exist
@@ -908,10 +926,12 @@ abstract class FeatureBase
     {
         return $this->url;
     }
-    // public log 
+    /**
+     * Public logging method
+     */
     public function log(string $level, string $message, array $context = []): void
     {
-        cobra_ai_db()->log($level, $message, $context);
+        $this->db->log($level, $message, $context);
     }
 
 

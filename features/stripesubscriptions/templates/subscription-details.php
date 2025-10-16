@@ -141,6 +141,8 @@ $payments = $this->get_payments()->get_subscription_payments($subscription->id);
 
         <!-- Subscription Actions -->
         <div class="subscription-actions">
+            <h3><?php echo esc_html__('Manage Your Subscription', 'cobra-ai'); ?></h3>
+            
             <?php if ($subscription->status === 'active'): ?>
                 <?php if (!$subscription->cancel_at_period_end): ?>
                     <button type="button" class="button button-danger cancel-subscription"
@@ -164,6 +166,24 @@ $payments = $this->get_payments()->get_subscription_payments($subscription->id);
                         <?php echo esc_html__('Resume Subscription', 'cobra-ai'); ?>
                     </button>
                 <?php endif; ?>
+                
+                <div class="action-group">
+                    <button type="button" class="button update-payment-method">
+                        <?php echo esc_html__('Update Payment Method', 'cobra-ai'); ?>
+                    </button>
+                    <p class="action-description">
+                        <?php echo esc_html__('Update your credit card or payment information.', 'cobra-ai'); ?>
+                    </p>
+                </div>
+            <?php elseif ($subscription->status === 'past_due'): ?>
+                <div class="action-group">
+                    <button type="button" class="button button-primary update-payment-method">
+                        <?php echo esc_html__('Update Payment Method', 'cobra-ai'); ?>
+                    </button>
+                    <p class="action-description" style="color: #d63638;">
+                        <?php echo esc_html__('Your payment failed. Please update your payment method to resume service.', 'cobra-ai'); ?>
+                    </p>
+                </div>
             <?php endif; ?>
         </div>
     </div>
@@ -392,5 +412,137 @@ jQuery(document).ready(function($) {
     });
 });
 </script>
+
+<style>
+.subscription-actions {
+    margin: 20px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.subscription-actions h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+}
+
+.action-group {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.action-group:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.action-description {
+    margin: 8px 0 0 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.cobra-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 9999;
+}
+
+.modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 0;
+    border-radius: 8px;
+    min-width: 400px;
+    max-width: 500px;
+}
+
+.modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.cancel-options {
+    margin: 15px 0;
+}
+
+.radio-option {
+    display: block;
+    margin-bottom: 15px;
+    cursor: pointer;
+}
+
+.radio-option input {
+    margin-right: 8px;
+}
+
+.radio-option small {
+    display: block;
+    margin-left: 20px;
+    color: #666;
+    margin-top: 5px;
+}
+
+.cancel-reason {
+    margin-top: 20px;
+}
+
+.cancel-reason label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.cancel-reason select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.modal-footer {
+    padding: 20px;
+    border-top: 1px solid #e9ecef;
+    text-align: right;
+}
+
+.modal-footer .button {
+    margin-left: 10px;
+}
+</style>
 
 <?php

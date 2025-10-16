@@ -9,13 +9,13 @@ use Stripe\Stripe;
 
 class Feature extends FeatureBase
 {
-    protected $feature_id = 'stripe';
-    protected $name = 'Stripe Integration';
-    protected $description = 'Core Stripe integration with API and webhook management';
-    protected $version = '1.0.0';
-    protected $author = 'Your Name';
-    protected $has_settings = true;
-    protected $has_admin = true;
+    protected string $feature_id = 'stripe';
+    protected string $name = 'Stripe Integration';
+    protected string $description = 'Core Stripe integration with API and webhook management';
+    protected string $version = '1.1.0';
+    protected string $author = 'Onlevelup.com';
+    protected bool $has_settings = true;
+    protected bool $has_admin = true;
 
     private $api;
     private $webhook;

@@ -99,7 +99,8 @@ class OpenAI extends AIProvider
         if (!empty($options['stop_sequences'])) {
             $data['stop'] = $options['stop_sequences'];
         }
-
+        // log $data for debugging php error_log(print_r($data, true));
+        // error_log(print_r($data, true));
         // Make request
         $response = $this->make_request(
             $this->get_endpoint_url('chat/completions'),

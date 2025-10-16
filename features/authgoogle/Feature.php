@@ -10,12 +10,12 @@ use function CobraAI\{
 
 class Feature extends FeatureBase
 {
-    protected $feature_id = 'authgoogle';
-    protected $name = 'Google Authentication';
-    protected $description = 'Allow users to login with their Google accounts and set them as subscribers';
-    protected $version = '1.0.0';
-    protected $author = 'Cobra AI';
-    protected $has_settings = true;
+    protected string $feature_id = 'authgoogle';
+    protected string $name = 'Google Authentication';
+    protected string $description = 'Allow users to login with their Google accounts and set them as subscribers';
+    protected string $version = '1.1.0';
+    protected string $author = 'Onlevelup.com';
+    protected bool $has_settings = true;
     
     protected function setup(): void
     {
@@ -34,6 +34,9 @@ class Feature extends FeatureBase
         add_action('login_form', [$this, 'add_google_login_button']);
         add_action('woocommerce_login_form', [$this, 'add_google_login_button']);
         
+        // Hook into Cobra AI forms based on settings
+        $this->init_cobra_form_hooks();
+        
         // Handle Google OAuth redirect
         add_action('init', [$this, 'handle_google_oauth_redirect']);
         
@@ -43,16 +46,43 @@ class Feature extends FeatureBase
         // Add shortcode for login button
         add_shortcode('cobra_google_login', [$this, 'render_google_login_shortcode']);
         
-        // Add Google login button to registration form if enabled
-        if ($this->get_settings('login.show_on_register', true)) {
-            add_action('register_form', [$this, 'add_google_login_button']);
-        }
-        
         // Disconnect Google account
         add_action('wp_ajax_cobra_google_disconnect', [$this, 'handle_disconnect_account']);
         
         // Filter avatar with Google profile picture
         add_filter('get_avatar', [$this, 'get_google_avatar'], 10, 5);
+    }
+    
+    /**
+     * Initialize hooks for Cobra AI forms based on settings
+     */
+    protected function init_cobra_form_hooks(): void
+    {
+        $settings = $this->get_settings();
+        
+        // Hook into login form if enabled
+        if (!empty($settings['display']['show_on_login'])) {
+            add_action('cobra_before_login_form', [$this, 'render_google_login_for_cobra_forms']);
+        }
+        
+        // Hook into register form if enabled
+        if (!empty($settings['display']['show_on_register'])) {
+            add_action('cobra_before_register_form', [$this, 'render_google_login_for_cobra_forms']);
+        }
+    }
+    
+    /**
+     * Render Google login button for Cobra AI forms
+     */
+    public function render_google_login_for_cobra_forms(): void
+    {
+        if (!$this->is_google_configured()) {
+            return;
+        }
+        
+        echo '<div class="cobra-google-auth-wrapper">';
+        echo do_shortcode('[cobra_google_login]');
+        echo '</div>';
     }
 
     /**
@@ -71,8 +101,23 @@ class Feature extends FeatureBase
                 'auto_register' => true,
                 'button_text' => __('Login with Google', 'cobra-ai'),
                 'user_role' => 'subscriber',
+            ],
+            'display' => [
+                'show_on_login' => true,
+                'show_on_register' => true,
+                'show_on_wordpress_login' => false,
+                'show_on_woocommerce' => false,
             ]
         ];
+    }
+
+    /**
+     * Check if Google authentication is properly configured
+     */
+    public function is_google_configured(): bool
+    {
+        $settings = $this->get_settings();
+        return !empty($settings['google']['client_id']) && !empty($settings['google']['client_secret']);
     }
 
     /**
@@ -108,6 +153,14 @@ class Feature extends FeatureBase
             'cobra-google-login',
             $this->assets_url . 'css/google-login.css',
             [],
+            $this->version
+        );
+        
+        // Enqueue hooks integration CSS
+        wp_enqueue_style(
+            'cobra-google-hooks-integration',
+            $this->assets_url . 'css/hooks-integration.css',
+            ['cobra-google-login'],
             $this->version
         ); 
         $sets= $this->get_settings();

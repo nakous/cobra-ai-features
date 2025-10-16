@@ -1,0 +1,424 @@
+/* =========================
+   COBRA AI BUTTONS SYSTEM
+   ========================= */
+
+/* Base Button Styles */
+.cobra-btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    line-height: 1.4;
+    user-select: none;
+}
+
+.cobra-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 124, 186, 0.25);
+}
+
+.cobra-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Button Variants */
+.cobra-btn-primary {
+    background-color: #007cba;
+    color: white;
+}
+
+.cobra-btn-primary:hover:not(:disabled) {
+    background-color: #005a8b;
+    transform: translateY(-1px);
+}
+
+.cobra-btn-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.cobra-btn-success:hover:not(:disabled) {
+    background-color: #218838;
+    transform: translateY(-1px);
+}
+
+.cobra-btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.cobra-btn-danger:hover:not(:disabled) {
+    background-color: #c82333;
+    transform: translateY(-1px);
+}
+
+.cobra-btn-warning {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.cobra-btn-warning:hover:not(:disabled) {
+    background-color: #e0a800;
+    transform: translateY(-1px);
+}
+
+.cobra-btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.cobra-btn-secondary:hover:not(:disabled) {
+    background-color: #5a6268;
+    transform: translateY(-1px);
+}
+
+/* Button Sizes */
+.cobra-btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+}
+
+.cobra-btn-lg {
+    padding: 1rem 2rem;
+    font-size: 1rem;
+}
+
+.cobra-btn-block {
+    width: 100%;
+    display: block;
+}
+
+/* =========================
+   MODAL SYSTEM
+   ========================= */
+
+.cobra-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 1rem;
+}
+
+.cobra-modal.show {
+    display: flex;
+}
+
+.cobra-modal-content {
+    background-color: white;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.cobra-modal-header {
+    padding: 1.5rem 1.5rem 1rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.cobra-modal-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.cobra-modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 0.5rem;
+    line-height: 1;
+}
+
+.cobra-modal-close:hover {
+    color: #333;
+}
+
+.cobra-modal-body {
+    padding: 1.5rem;
+}
+
+.cobra-modal-footer {
+    padding: 1rem 1.5rem 1.5rem;
+    border-top: 1px solid #e9ecef;
+    text-align: right;
+}
+
+.cobra-modal-footer .cobra-btn {
+    margin-left: 0.5rem;
+}
+
+/* =========================
+   SUBSCRIPTION MANAGEMENT
+   ========================= */
+
+.cobra-subscription-details {
+    background: white;
+    border: 1px solid #e1e8ed;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.cobra-subscription-header {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    padding: 1.5rem;
+    border-bottom: 1px solid #e1e8ed;
+}
+
+.cobra-subscription-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.cobra-status-active {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.cobra-status-canceled {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.cobra-status-past-due {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.cobra-status-trialing {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.cobra-subscription-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.cobra-info-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.cobra-info-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.cobra-info-value {
+    font-weight: 600;
+    color: #333;
+}
+
+.cobra-subscription-actions {
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-top: 1px solid #e1e8ed;
+}
+
+.cobra-actions-title {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.cobra-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+/* Cancellation Modal Specific Styles */
+.cobra-form-group {
+    margin-bottom: 1.5rem;
+}
+
+.cobra-form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.cobra-radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.cobra-radio-option {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    border: 1px solid #e1e8ed;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cobra-radio-option:hover {
+    border-color: #007cba;
+    background-color: #f8f9fa;
+}
+
+.cobra-radio-option input[type="radio"] {
+    margin-right: 0.75rem;
+}
+
+.cobra-radio-option.selected {
+    border-color: #007cba;
+    background-color: #f0f8ff;
+}
+
+.cobra-form-select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e1e8ed;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    background-color: white;
+}
+
+.cobra-form-select:focus {
+    outline: none;
+    border-color: #007cba;
+    box-shadow: 0 0 0 3px rgba(0, 124, 186, 0.25);
+}
+
+/* Loading States */
+.cobra-loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.cobra-loading::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+}
+
+.cobra-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #007cba;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 2;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Messages */
+.cobra-message {
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+}
+
+.cobra-message.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.cobra-message.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.cobra-message.warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.cobra-message.info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .cobra-modal-content {
+        margin: 0.5rem;
+        max-width: none;
+    }
+    
+    .cobra-actions-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .cobra-subscription-info {
+        grid-template-columns: 1fr;
+    }
+    
+    .cobra-plans-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
