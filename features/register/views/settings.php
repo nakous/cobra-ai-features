@@ -652,7 +652,6 @@ $recaptcha_available = $this->is_recaptcha_available();
     jQuery(document).ready(function($) {
         // Handle field dependencies
         $('input[name^="settings[fields]"][name$="[enabled]"]').on('change', function() {
-            console.log('changed');
             var $fieldset = $(this).closest('fieldset');
             var $required = $fieldset.find('input[name$="[required]"]');
             if (this.checked) {

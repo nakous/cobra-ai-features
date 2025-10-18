@@ -393,10 +393,10 @@ class ShortcodeHandler
         // If user is not logged in, show login message
         if (!is_user_logged_in()) {
             return sprintf(
-                '<div class="cobra-message error">%s <a href="%s">%s</a></div>',
-                esc_html__('Please log in to view your account.', 'cobra-ai'),
+                '<div class="cobra-message info">%s <a href="%s" class="cobra-login-link">%s</a></div>',
+                esc_html__('You need to be logged in to access your account dashboard.', 'cobra-ai'),
                 esc_url($this->get_page_url('login')),
-                esc_html__('Login here', 'cobra-ai')
+                esc_html__('Sign in now', 'cobra-ai')
             );
         }
 

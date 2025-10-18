@@ -3,7 +3,6 @@
 namespace CobraAI\Features\Stripe;
 
 use CobraAI\FeatureBase;
-use Stripe\Stripe;
 
 
 
@@ -114,8 +113,8 @@ class Feature extends FeatureBase
                 throw new \Exception('Stripe API key not configured');
             }
 
-            Stripe::setApiKey($api_key);
-            Stripe::setAppInfo(
+            \Stripe\Stripe::setApiKey($api_key);
+            \Stripe\Stripe::setAppInfo(
                 $settings['app_name'] ?? 'CobraAI Stripe',
                 $settings['app_version'] ?? $this->version,
                 $settings['app_url'] ?? 'https://example.com',
@@ -386,5 +385,15 @@ class Feature extends FeatureBase
     public function is_test_mode(): bool
     {
         return $this->get_mode() === 'test';
+    }
+
+    /**
+     * Get the public (publishable) key based on current mode
+     */
+    public function get_public_key(): string
+    {
+        $settings = $this->get_settings();
+        $is_live = $settings['mode'] === 'live';
+        return $is_live ? $settings['live_publishable_key'] : $settings['test_publishable_key'];
     }
 }
