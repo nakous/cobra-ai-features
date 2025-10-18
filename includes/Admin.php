@@ -383,8 +383,8 @@ class Admin
         $sanitized = [];
 
         foreach ($settings as $key => $value) {
-            // Sanitize the key
-            $key = sanitize_key($key);
+            // Sanitize the key (keep underscores, only lowercase letters, numbers and underscores)
+            $key = preg_replace('/[^a-z0-9_]/', '', strtolower($key));
 
             if (is_array($value)) {
                 $sanitized[$key] = $this->sanitize_settings_recursive($value);

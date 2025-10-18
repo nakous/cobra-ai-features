@@ -365,9 +365,9 @@ class Database
                     $this->core_tables['system_logs']['name'],
                     [
                         'level' => $level,
+                        'source' => sanitize_text_field($_SERVER['REQUEST_URI'] ?? 'unknown'),
                         'message' => $message,
                         'context' => !empty($context) ? $context_json : null,
-                        'ip_address' => $this->get_client_ip(),
                         'created_at' => $current_time
                     ],
                     ['%s', '%s', '%s', '%s', '%s']
