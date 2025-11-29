@@ -143,7 +143,7 @@ class Feature extends FeatureBase
             $settings = [];
         }
         // Validate reCAPTCHA version
-        if (!in_array($settings['version'], ['v2', 'v3', 'invisible'])) {
+        if (!in_array($settings['version'] ?? 'v2', ['v2', 'v3', 'invisible'])) {
             $errors['version'] = __('Invalid reCAPTCHA version.', 'cobra-ai');
             $settings['version'] = 'v2';
         }
@@ -165,26 +165,26 @@ class Feature extends FeatureBase
         }
 
         // Validate theme
-        if (!in_array($settings['theme'], ['light', 'dark'])) {
+        if (!in_array($settings['theme'] ?? 'light', ['light', 'dark'])) {
             $errors['theme'] = __('Invalid theme selection.', 'cobra-ai');
             $settings['theme'] = 'light';
         }
 
         // Validate size
-        if (!in_array($settings['size'], ['normal', 'compact'])) {
+        if (!in_array($settings['size'] ?? 'normal', ['normal', 'compact'])) {
             $errors['size'] = __('Invalid size selection.', 'cobra-ai');
             $settings['size'] = 'normal';
         }
 
         // Validate badge position
-        if (!in_array($settings['badge_position'], ['bottomright', 'bottomleft', 'inline'])) {
+        if (!in_array($settings['badge_position'] ?? 'bottomright', ['bottomright', 'bottomleft', 'inline'])) {
             $errors['badge_position'] = __('Invalid badge position.', 'cobra-ai');
             $settings['badge_position'] = 'bottomright';
         }
 
         // Validate score threshold
-        if ($settings['version'] === 'v3') {
-            $settings['score_threshold'] = floatval($settings['score_threshold']);
+        if (($settings['version'] ?? 'v2') === 'v3') {
+            $settings['score_threshold'] = floatval($settings['score_threshold'] ?? 0.5);
             if ($settings['score_threshold'] < 0 || $settings['score_threshold'] > 1) {
                 $errors['score_threshold'] = __('Score threshold must be between 0 and 1.', 'cobra-ai');
                 $settings['score_threshold'] = 0.5;
@@ -218,11 +218,18 @@ class Feature extends FeatureBase
             'testimonials',
             'custom_form'
         ];
+        
+        // Ensure enabled_forms exists and is an array
+        if (!isset($settings['enabled_forms']) || !is_array($settings['enabled_forms'])) {
+            $settings['enabled_forms'] = [];
+        }
+        
         foreach ($settings['enabled_forms'] as $form => $enabled) {
             if (!in_array($form, $valid_forms)) {
                 unset($settings['enabled_forms'][$form]);
+            } else {
+                $settings['enabled_forms'][$form] = (bool) $enabled;
             }
-            $settings['enabled_forms'][$form] = (bool) $enabled;
         }
         // Store validation errors
         if (!empty($errors)) {

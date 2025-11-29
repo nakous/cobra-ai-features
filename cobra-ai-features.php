@@ -3,12 +3,9 @@
 /**
  * Plugin Name: Cobra AI Features
  * Description: Modular AI-powered features for WordPress
- * Version: 1.0.0
+ * Version: 2.0.0
  * Author: Nakous Mustapha
- * Auth            do_action('cobra_ai_features_loaded');
-        } catch (\Exception $e) {
-            $this->log_error('Features initialization failed', $e);
-        }RI: https://onlevelup.com
+ * Author URI: https://onlevelup.com
  * Text Domain: cobra-ai
  * Domain Path: /languages
  * Requires at least: 5.8
@@ -33,7 +30,7 @@ final class CobraAI
     /**
      * Plugin version
      */
-    const VERSION = '1.0.0';
+    const VERSION = '2.0.0';
     
     /**
      * Core components
@@ -245,10 +242,8 @@ final class CobraAI
             $class_info = $this->get_feature_class_info($feature_id);
             
             if (!file_exists($class_info['file'])) {
-                $this->log_error("Feature file not found: {$class_info['file']}", [
-                    'feature_id' => $feature_id,
-                    'expected_path' => $class_info['file']
-                ]);
+                $exception = new \Exception("Feature file not found: {$class_info['file']} (feature_id: {$feature_id})");
+                $this->log_error("Feature file not found", $exception);
                 return null; // Retourner null au lieu de lever une exception
             }
             

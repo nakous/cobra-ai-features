@@ -22,7 +22,7 @@ if (!$subscription || $subscription->user_id !== get_current_user_id()) {
         </a>
     </div>
     <?php
-   exit;
+   return;
 }
 
 

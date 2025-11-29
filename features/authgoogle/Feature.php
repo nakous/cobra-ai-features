@@ -359,11 +359,16 @@ class Feature extends FeatureBase
             }
 
             // Log the user in
-            $this->login_user($user_id);
+            if (!$this->login_user($user_id)) {
+                return new \WP_Error(
+                    'login_failed',
+                    __('Unable to log you in. Please try again.', 'cobra-ai'),
+                    ['status' => 500]
+                );
+            }
 
-            // Redirect to the appropriate page
-            $redirect_to = isset($_GET['redirect_to']) ? $_GET['redirect_to'] : home_url();
-            wp_safe_redirect($redirect_to);
+            // Redirect to the appropriate page (respect Register feature settings)
+            $this->redirect_after_login();
             exit;
 
         } catch (\Exception $e) {
@@ -643,7 +648,7 @@ class Feature extends FeatureBase
     }
 
     /**
-     * Log user in
+     * Log user in (same method as handle_login_submission in Register feature)
      */
     private function login_user(int $user_id): bool
     {
@@ -653,11 +658,52 @@ class Feature extends FeatureBase
             return false;
         }
         
-        wp_set_current_user($user_id);
+        // Use wp_signon to properly log the user in (like in Register feature)
+        // We need to set the authentication cookie manually since we don't have password
+        wp_set_current_user($user_id, $user->user_login);
         wp_set_auth_cookie($user_id, true);
+        
+        // Trigger the wp_login action (important for other plugins)
         do_action('wp_login', $user->user_login, $user);
         
         return true;
+    }
+    
+    /**
+     * Redirect after successful login (respects Register feature settings)
+     */
+    private function redirect_after_login(): void
+    {
+        // Check if redirect_to parameter is set (priority)
+        if (isset($_GET['redirect_to']) && !empty($_GET['redirect_to'])) {
+            wp_safe_redirect($_GET['redirect_to']);
+            exit;
+        }
+        
+        // Try to get redirect URL from Register feature settings
+        $register_feature = $this->get_register_feature();
+        if ($register_feature) {
+            $settings = $register_feature->get_settings();
+            $redirect_url = $settings['redirects']['after_login'] ?? '';
+            
+            if (!empty($redirect_url)) {
+                wp_safe_redirect($redirect_url);
+                exit;
+            }
+        }
+        
+        // Fallback to home URL
+        wp_safe_redirect(home_url());
+        exit;
+    }
+    
+    /**
+     * Get Register feature instance
+     */
+    private function get_register_feature()
+    {
+        global $cobra_ai;
+        return $cobra_ai->get_feature('register');
     }
 
     /**
