@@ -40,7 +40,6 @@
         init: function() {
             this.bindEvents();
             this.setupModals();
-            console.log('âœ… Cobra Subscriptions initialized');
         },
 
         // Bind event handlers
@@ -100,7 +99,7 @@
         // Setup modal functionality
         setupModals: function() {
             // Initialize any modal-specific functionality
-            console.log('ðŸ“± Modals initialized');
+            
         },
 
         // Show cancellation modal
@@ -144,7 +143,7 @@
                     }
                 })
                 .fail(function() {
-                    self.showMessage('error', 'Erreur de connexion. Veuillez rÃ©essayer.');
+                    self.showMessage('error', 'Erreur de connexion. Veuillez réessayer.');
                 })
                 .always(function() {
                     self.setLoadingState(submitBtn, false);
@@ -182,7 +181,7 @@
                 }
             })
             .fail(function() {
-                self.showMessage('error', 'Erreur de connexion. Veuillez rÃ©essayer.');
+                self.showMessage('error', 'Erreur de connexion. Veuillez réessayer.');
             })
             .always(function() {
                 self.setLoadingState(resumeBtn, false);
@@ -219,7 +218,7 @@
                 }
             })
             .fail(function() {
-                self.showMessage('error', 'Erreur de connexion. Veuillez rÃ©essayer.');
+                self.showMessage('error', 'Erreur de connexion. Veuillez réessayer.');
                 self.setLoadingState(updateBtn, false);
             });
         },

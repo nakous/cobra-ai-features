@@ -167,19 +167,19 @@ $payments = $this->get_payments()->get_subscription_payments($subscription->id);
                     </button>
                 <?php endif; ?>
                 
-                <div class="action-group">
+                <!-- <div class="action-group">
                     <button type="button" class="button update-payment-method">
                         <?php echo esc_html__('Update Payment Method', 'cobra-ai'); ?>
                     </button>
                     <p class="action-description">
                         <?php echo esc_html__('Update your credit card or payment information.', 'cobra-ai'); ?>
                     </p>
-                </div>
+                </div> -->
             <?php elseif ($subscription->status === 'past_due'): ?>
                 <div class="action-group">
-                    <button type="button" class="button button-primary update-payment-method">
+                    <!-- <button type="button" class="button button-primary update-payment-method">
                         <?php echo esc_html__('Update Payment Method', 'cobra-ai'); ?>
-                    </button>
+                    </button> -->
                     <p class="action-description" style="color: #d63638;">
                         <?php echo esc_html__('Your payment failed. Please update your payment method to resume service.', 'cobra-ai'); ?>
                     </p>

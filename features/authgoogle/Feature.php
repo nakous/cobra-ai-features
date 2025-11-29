@@ -231,9 +231,7 @@ class Feature extends FeatureBase
                 </div>
                 <span class="cobra-google-login-text"><?php echo esc_html($button_text); ?></span>
             </div>
-            <div class="cobra-google-login-divider">
-                <span><?php _e('OR', 'cobra-ai'); ?></span>
-            </div>
+           
         </div>
         <?php
         return ob_get_clean();
