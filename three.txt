@@ -5,6 +5,10 @@ handl the errur sended by openai and not show the same error on the user interfa
 uder after register go to page http://college.localhost/wp-admin/  no user can acces to /wp-admin/ only admin  
 when click in login go to fis page http://college.localhost/wp-login.php?action=logout&redirect_to=http%3A%2F%2Fcollege.localhost&_wpnonce=a529664733
 
+Ajouter un tableau de statistique Ai sur le tableau de bord.
+handle the error sent by openai and not show the same error on the user interface.
+user after register go to page http://college.localhost/wp-admin/  no user can access to /wp-admin/ only admin
+"No active subscription found." replacee with link to see all plan 
 
 cobra-ai-features/
 ├── cobra-ai-features.php              # Main plugin file (namespace-based)

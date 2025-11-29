@@ -147,7 +147,7 @@ $current_user = wp_get_current_user();
                     <?php _e('Update Profile', 'cobra-ai'); ?>
                 </button>
                 <!-- Logout btn -->
-                <a href="<?php echo esc_url(wp_logout_url()); ?>"
+                <a href="<?php echo esc_url(wp_logout_url(home_url())); ?>"
                     class="cobra-button button-secondary">
                     <?php _e('Logout', 'cobra-ai'); ?>
                 </a>

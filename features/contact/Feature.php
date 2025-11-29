@@ -81,7 +81,7 @@ class Feature extends FeatureBase
         add_action('cobra_register_profile_tab', [$this, 'contact_account_custom_tab']);
         add_action('cobra_register_profile_tab_content', [$this, 'contact_account_custom_tab_content'], 10, 2);
         
-        error_log('COBRA DEBUG: Profile tab hooks registered');
+        // error_log('COBRA DEBUG: Profile tab hooks registered');
         
         // AJAX handlers for user messages
         add_action('wp_ajax_cobra_contact_get_user_messages', [$this, 'get_user_messages']);

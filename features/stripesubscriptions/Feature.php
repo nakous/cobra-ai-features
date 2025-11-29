@@ -310,6 +310,13 @@ class Feature extends FeatureBase
             //     $this->version,
             //     true
             // );
+            // wp_enqueue_script(
+            //     'cobra-stripe-subscriptions-manager',
+            //     $this->assets_url . 'js/subscription-manager.js',
+            //     ['jquery', 'cobra-stripe-subscriptions-public'],
+            //     $this->version,
+            //     true
+            // );
 
             // Localize script with all necessary data
             wp_localize_script('cobra-stripe-subscriptions-manager', 'cobra_vars', [
@@ -320,6 +327,7 @@ class Feature extends FeatureBase
                 'account_url' => get_permalink($this->get_settings('account_page')),
                 'nonce' => wp_create_nonce('cobra-stripe-nonce'),
                 'is_logged_in' => is_user_logged_in(),
+                'stripe_key' => $this->get_stripe_feature_public_key(),
                 'stripe_key' => $this->get_stripe_feature_public_key(),
                 'i18n' => [
                     'processing' => __('Processing...', 'cobra-ai'),
@@ -905,12 +913,22 @@ class Feature extends FeatureBase
             }
 
             // Build success and cancel URLs
+            $success_page_id = $this->get_settings('success_page');
+            $success_page_url = $success_page_id ? get_permalink($success_page_id) : home_url('/subscription-success/');
+            
+            if (!$success_page_url || $success_page_url === false) {
+                throw new \Exception(__('Success page not configured. Please configure subscription pages in settings.', 'cobra-ai'));
+            }
+            
             $success_url = add_query_arg([
                 'session_id' => '{CHECKOUT_SESSION_ID}',
                 'plan_id' => $plan_id
-            ], get_permalink($this->get_settings('success_page')));
+            ], $success_page_url);
 
             $cancel_url = get_permalink($plan_id);
+            if (!$cancel_url || $cancel_url === false) {
+                $cancel_url = home_url('/subscription-plans/');
+            }
 
             // Get trial period settings
             $trial_enabled = get_post_meta($plan_id, '_trial_enabled', true);
