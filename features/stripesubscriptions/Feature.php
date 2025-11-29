@@ -310,6 +310,13 @@ class Feature extends FeatureBase
             //     $this->version,
             //     true
             // );
+            // wp_enqueue_script(
+            //     'cobra-stripe-subscriptions-manager',
+            //     $this->assets_url . 'js/subscription-manager.js',
+            //     ['jquery', 'cobra-stripe-subscriptions-public'],
+            //     $this->version,
+            //     true
+            // );
 
             // Localize script with all necessary data
             wp_localize_script('cobra-stripe-subscriptions-manager', 'cobra_vars', [
@@ -320,6 +327,7 @@ class Feature extends FeatureBase
                 'account_url' => get_permalink($this->get_settings('account_page')),
                 'nonce' => wp_create_nonce('cobra-stripe-nonce'),
                 'is_logged_in' => is_user_logged_in(),
+                'stripe_key' => $this->get_stripe_feature_public_key(),
                 'stripe_key' => $this->get_stripe_feature_public_key(),
                 'i18n' => [
                     'processing' => __('Processing...', 'cobra-ai'),
@@ -436,16 +444,17 @@ class Feature extends FeatureBase
                 return '';
             }
             
+            error_log('COBRA DEBUG: Stripe feature class: ' . get_class($stripe_feature));
             
             if (!method_exists($stripe_feature, 'get_public_key')) {
-                // error_log('COBRA DEBUG: get_public_key method does not exist');
+                error_log('COBRA DEBUG: get_public_key method does not exist');
                 $methods = get_class_methods($stripe_feature);
-                // error_log('COBRA DEBUG: Available methods: ' . implode(', ', $methods));
+                error_log('COBRA DEBUG: Available methods: ' . implode(', ', $methods));
                 return '';
             }
             
             $public_key = $stripe_feature->get_public_key();
-           
+            error_log('COBRA DEBUG: Retrieved public key: ' . ($public_key ?: 'empty'));
             return $public_key;
         } catch (\Exception $e) {
             error_log('COBRA DEBUG: Exception getting public key: ' . $e->getMessage());
