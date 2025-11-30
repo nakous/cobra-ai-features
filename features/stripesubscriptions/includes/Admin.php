@@ -383,6 +383,13 @@ class Admin
             update_post_meta($post_id, '_trial_days', $data['trial_days'] ?? 14);
             update_post_meta($post_id, '_public', !empty($data['public']));
             update_post_meta($post_id, '_features', $data['features'] ?? []);
+            
+            // Save discount ID
+            if (isset($data['discount_id'])) {
+                update_post_meta($post_id, '_discount_id', sanitize_text_field($data['discount_id']));
+            } else {
+                delete_post_meta($post_id, '_discount_id');
+            }
 
 
             // Handle featured image

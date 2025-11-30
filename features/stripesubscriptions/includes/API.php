@@ -423,4 +423,107 @@ class API
         $intent = PaymentIntent::retrieve($payment_intent);
         return $intent;
     }
+
+    /**
+     * Get all Stripe discounts (coupons and promotion codes)
+     * 
+     * @param int $limit Maximum number of discounts to retrieve
+     * @return array Array of discounts with normalized format
+     */
+    public function get_discounts(int $limit = 100): array
+    {
+        try {
+            $discounts = [];
+            
+            // Get coupons
+            $coupons = \Stripe\Coupon::all(['limit' => $limit]);
+            foreach ($coupons->data as $coupon) {
+                if (!$coupon->valid) continue;
+                
+                $discounts[] = [
+                    'id' => $coupon->id,
+                    'code' => $coupon->name ?? $coupon->id,
+                    'type' => 'coupon',
+                    'percent_off' => $coupon->percent_off,
+                    'amount_off' => $coupon->amount_off,
+                    'currency' => $coupon->currency,
+                    'duration' => $coupon->duration,
+                    'duration_months' => $coupon->duration_in_months
+                ];
+            }
+            
+            // Get promotion codes
+            $promotion_codes = \Stripe\PromotionCode::all(['limit' => $limit, 'active' => true]);
+            foreach ($promotion_codes->data as $promo) {
+                $coupon = $promo->coupon;
+                
+                $discounts[] = [
+                    'id' => $promo->id,
+                    'code' => $promo->code,
+                    'type' => 'promotion_code',
+                    'percent_off' => $coupon->percent_off,
+                    'amount_off' => $coupon->amount_off,
+                    'currency' => $coupon->currency,
+                    'duration' => $coupon->duration,
+                    'duration_months' => $coupon->duration_in_months
+                ];
+            }
+            
+            return $discounts;
+        } catch (\Exception $e) {
+            $this->log_error('Failed to fetch Stripe discounts', [
+                'error' => $e->getMessage()
+            ]);
+            return [];
+        }
+    }
+    
+    /**
+     * Get single discount details
+     * 
+     * @param string $discount_id Coupon ID or Promotion Code ID
+     * @return array|null Discount details or null if not found
+     */
+    public function get_discount(string $discount_id): ?array
+    {
+        try {
+            // Try as promotion code first
+            try {
+                $promo = \Stripe\PromotionCode::retrieve($discount_id);
+                $coupon = $promo->coupon;
+                
+                return [
+                    'id' => $promo->id,
+                    'code' => $promo->code,
+                    'type' => 'promotion_code',
+                    'percent_off' => $coupon->percent_off,
+                    'amount_off' => $coupon->amount_off,
+                    'currency' => $coupon->currency,
+                    'duration' => $coupon->duration,
+                    'duration_months' => $coupon->duration_in_months,
+                    'coupon_id' => $coupon->id
+                ];
+            } catch (\Exception $e) {
+                // Try as coupon
+                $coupon = \Stripe\Coupon::retrieve($discount_id);
+                
+                return [
+                    'id' => $coupon->id,
+                    'code' => $coupon->name ?? $coupon->id,
+                    'type' => 'coupon',
+                    'percent_off' => $coupon->percent_off,
+                    'amount_off' => $coupon->amount_off,
+                    'currency' => $coupon->currency,
+                    'duration' => $coupon->duration,
+                    'duration_months' => $coupon->duration_in_months
+                ];
+            }
+        } catch (\Exception $e) {
+            $this->log_error('Failed to retrieve discount', [
+                'discount_id' => $discount_id,
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
 }

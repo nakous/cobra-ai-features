@@ -688,14 +688,57 @@ class Feature extends FeatureBase
             $current_plan = $user_subscription && $user_subscription->plan_id === $post_id;
         }
 
+        // Get discount if available
+        $discount_id = get_post_meta($post_id, '_discount_id', true);
+        $discount = null;
+        $discounted_price = $price_amount;
+        
+        if (!empty($discount_id)) {
+            try {
+                $discount = $this->api->get_discount($discount_id);
+                if ($discount) {
+                    // Calculate discounted price
+                    if (!empty($discount['percent_off'])) {
+                        $discounted_price = $price_amount * (1 - ($discount['percent_off'] / 100));
+                    } elseif (!empty($discount['amount_off'])) {
+                        // Convert amount_off (in cents) to same unit as price
+                        $amount_off = $discount['amount_off'] / 100;
+                        $discounted_price = max(0, $price_amount - $amount_off);
+                    }
+                }
+            } catch (\Exception $e) {
+                error_log('Error retrieving discount: ' . $e->getMessage());
+            }
+        }
+
         // Start building custom content
         ob_start();
     ?>
         <div class="cobra-plan-single">
             <div class="plan-header">
                 <div class="plan-price-box">
-                    <span class="currency"><?php echo esc_html($this->format_currency_symbol($currency)); ?></span>
-                    <span class="amount"><?php echo esc_html(number_format($price_amount, 2)); ?></span>
+                    <?php if ($discount): ?>
+                        <div class="discount-badge">
+                            <?php if (!empty($discount['percent_off'])): ?>
+                                -<?php echo esc_html($discount['percent_off']); ?>%
+                            <?php else: ?>
+                                -<?php echo esc_html($this->format_currency_symbol($currency) . number_format($discount['amount_off'] / 100, 2)); ?>
+                            <?php endif; ?>
+                        </div>
+                        <div class="price-with-discount">
+                            <div class="original-price strikethrough">
+                                <span class="currency"><?php echo esc_html($this->format_currency_symbol($currency)); ?></span>
+                                <span class="amount"><?php echo esc_html(number_format($price_amount, 2)); ?></span>
+                            </div>
+                            <div class="discounted-price">
+                                <span class="currency"><?php echo esc_html($this->format_currency_symbol($currency)); ?></span>
+                                <span class="amount"><?php echo esc_html(number_format($discounted_price, 2)); ?></span>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <span class="currency"><?php echo esc_html($this->format_currency_symbol($currency)); ?></span>
+                        <span class="amount"><?php echo esc_html(number_format($price_amount, 2)); ?></span>
+                    <?php endif; ?>
                     <span class="interval">
                         <?php
                         if ($interval_count > 1) {
@@ -961,6 +1004,33 @@ class Feature extends FeatureBase
             // Add trial period if enabled
             if ($trial_enabled && $trial_days > 0) {
                 $session_params['subscription_data']['trial_period_days'] = $trial_days;
+            }
+
+            // Apply discount if available
+            $discount_id = get_post_meta($plan_id, '_discount_id', true);
+            if (!empty($discount_id)) {
+                try {
+                    $discount = $this->api->get_discount($discount_id);
+                    if ($discount) {
+                        // Determine if this is a coupon or promotion code
+                        if ($discount['type'] === 'promotion_code') {
+                            // For promotion codes, use the promotion code ID directly
+                            $session_params['discounts'] = [[
+                                'promotion_code' => $discount_id
+                            ]];
+                        } else {
+                            // For coupons, use the coupon ID
+                            $session_params['discounts'] = [[
+                                'coupon' => $discount_id
+                            ]];
+                        }
+                    }
+                } catch (\Exception $e) {
+                    $this->log('error', 'Error applying discount to checkout session', [
+                        'discount_id' => $discount_id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
             }
 
             // Create the session
