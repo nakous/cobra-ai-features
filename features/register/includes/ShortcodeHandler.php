@@ -1296,6 +1296,33 @@ class ShortcodeHandler
         }
         return [];
     }
+    
+    /**
+     * Get translated field label
+     */
+    public function get_field_label($field): string
+    {
+        $labels = [
+            'username' => __('Username', 'cobra-ai'),
+            'email' => __('Email', 'cobra-ai'),
+            'password' => __('Password', 'cobra-ai'),
+            'confirm_password' => __('Confirm Password', 'cobra-ai'),
+            'first_name' => __('First Name', 'cobra-ai'),
+            'last_name' => __('Last Name', 'cobra-ai'),
+            'phone' => __('Phone', 'cobra-ai'),
+            'address' => __('Address', 'cobra-ai'),
+            'city' => __('City', 'cobra-ai'),
+            'state' => __('State', 'cobra-ai'),
+            'zip' => __('Zip', 'cobra-ai'),
+            'country' => __('Country', 'cobra-ai'),
+            'company' => __('Company', 'cobra-ai'),
+            'website' => __('Website', 'cobra-ai'),
+            'about' => __('About', 'cobra-ai'),
+            'avatar' => __('Avatar', 'cobra-ai'),
+        ];
+
+        return $labels[$field] ?? '';
+    }
     /**
      * Redirect after successful login
      */

@@ -159,3 +159,423 @@ msgstr "L'e-mail de vérification a été envoyé."
 
 msgid "Failed to resend verification email. Please try again."
 msgstr "Échec de l'envoi de l'e-mail de vérification. Veuillez réessayer."
+
+# Register Feature - Settings
+msgid "Settings"
+msgstr "Paramètres"
+
+msgid "General"
+msgstr "Général"
+
+msgid "Pages"
+msgstr "Pages"
+
+msgid "Emails"
+msgstr "E-mails"
+
+msgid "Fields"
+msgstr "Champs"
+
+msgid "Disable Admin Menu"
+msgstr "Désactiver le menu admin"
+
+msgid "Hide admin menu for non-admin users"
+msgstr "Masquer le menu d'administration pour les utilisateurs non administrateurs"
+
+msgid "Use reCAPTCHA"
+msgstr "Utiliser reCAPTCHA"
+
+msgid "Enable reCAPTCHA on forms"
+msgstr "Activer reCAPTCHA sur les formulaires"
+
+msgid "reCAPTCHA feature is not available or not properly configured."
+msgstr "La fonctionnalité reCAPTCHA n'est pas disponible ou n'est pas correctement configurée."
+
+msgid "Default Role"
+msgstr "Rôle par défaut"
+
+msgid "Login Page"
+msgstr "Page de connexion"
+
+msgid "Page containing the [cobra_login] shortcode."
+msgstr "Page contenant le shortcode [cobra_login]."
+
+msgid "Registration Page"
+msgstr "Page d'inscription"
+
+msgid "Page containing the [cobra_register] shortcode."
+msgstr "Page contenant le shortcode [cobra_register]."
+
+msgid "Forgot Password Page"
+msgstr "Page mot de passe oublié"
+
+msgid "Page containing the [cobra_forgot_password] shortcode."
+msgstr "Page contenant le shortcode [cobra_forgot_password]."
+
+msgid "Reset Password Page"
+msgstr "Page de réinitialisation du mot de passe"
+
+msgid "Page containing the [cobra_reset_password] shortcode."
+msgstr "Page contenant le shortcode [cobra_reset_password]."
+
+msgid "Account Page"
+msgstr "Page de compte"
+
+msgid "Page containing the [cobra_account] shortcode."
+msgstr "Page contenant le shortcode [cobra_account]."
+
+msgid "-- Select Page --"
+msgstr "-- Sélectionner une page --"
+
+msgid "Shortcode: %s"
+msgstr "Shortcode : %s"
+
+msgid "Create Page"
+msgstr "Créer une page"
+
+msgid "Warning:"
+msgstr "Attention :"
+
+msgid "The selected page no longer exists and has been reset."
+msgstr "La page sélectionnée n'existe plus et a été réinitialisée."
+
+msgid "The page does not contain the required shortcode %s"
+msgstr "La page ne contient pas le shortcode requis %s"
+
+msgid "Edit Page"
+msgstr "Modifier la page"
+
+msgid "View Page"
+msgstr "Voir la page"
+
+msgid "Reset page selection"
+msgstr "Réinitialiser la sélection de page"
+
+msgid "Reset"
+msgstr "Réinitialiser"
+
+msgid "Redirects & URLs"
+msgstr "Redirections et URLs"
+
+msgid "Redirect After Login"
+msgstr "Redirection après connexion"
+
+msgid "Where to redirect users after successful login. Leave empty to use the Account page."
+msgstr "Où rediriger les utilisateurs après une connexion réussie. Laisser vide pour utiliser la page Compte."
+
+msgid "Redirect After Logout"
+msgstr "Redirection après déconnexion"
+
+msgid "Where to redirect users after logout. Leave empty to use the Login page."
+msgstr "Où rediriger les utilisateurs après la déconnexion. Laisser vide pour utiliser la page Connexion."
+
+msgid "Privacy Policy Page"
+msgstr "Page de politique de confidentialité"
+
+msgid "Select or specify your privacy policy page."
+msgstr "Sélectionnez ou spécifiez votre page de politique de confidentialité."
+
+msgid "Select a page:"
+msgstr "Sélectionnez une page :"
+
+msgid "Or enter custom URL:"
+msgstr "Ou entrez une URL personnalisée :"
+
+msgid "Creating..."
+msgstr "Création en cours..."
+
+msgid "Failed to create page."
+msgstr "Échec de la création de la page."
+
+msgid "Are you sure you want to reset this page selection?"
+msgstr "Êtes-vous sûr de vouloir réinitialiser cette sélection de page ?"
+
+msgid "Page setting reset successfully."
+msgstr "Paramètre de page réinitialisé avec succès."
+
+msgid "Global Email Template"
+msgstr "Modèle d'e-mail global"
+
+msgid "Available variables: {site_name}, {site_url}, {header}, {content}, {footer}"
+msgstr "Variables disponibles : {site_name}, {site_url}, {header}, {content}, {footer}"
+
+msgid "Verification Email"
+msgstr "E-mail de vérification"
+
+msgid "Available variables: {user_name}, {verification_link}, {expiry_time}"
+msgstr "Variables disponibles : {user_name}, {verification_link}, {expiry_time}"
+
+msgid "Confirmation Email"
+msgstr "E-mail de confirmation"
+
+msgid "Available variables: {user_name}, {login_link}"
+msgstr "Variables disponibles : {user_name}, {login_link}"
+
+msgid "Email footer"
+msgstr "Pied de page des e-mails"
+
+msgid "Username"
+msgstr "Nom d'utilisateur"
+
+msgid "Email"
+msgstr "E-mail"
+
+msgid "Password"
+msgstr "Mot de passe"
+
+msgid "Confirm Password"
+msgstr "Confirmer le mot de passe"
+
+msgid "First Name"
+msgstr "Prénom"
+
+msgid "Last Name"
+msgstr "Nom de famille"
+
+msgid "Phone"
+msgstr "Téléphone"
+
+msgid "Address"
+msgstr "Adresse"
+
+msgid "City"
+msgstr "Ville"
+
+msgid "State"
+msgstr "État/Province"
+
+msgid "ZIP Code"
+msgstr "Code postal"
+
+msgid "Country"
+msgstr "Pays"
+
+msgid "Company"
+msgstr "Entreprise"
+
+msgid "Website"
+msgstr "Site web"
+
+msgid "About"
+msgstr "À propos"
+
+msgid "Avatar"
+msgstr "Avatar"
+
+msgid "Enable"
+msgstr "Activer"
+
+msgid "Required"
+msgstr "Requis"
+
+msgid "This field is mandatory and cannot be disabled."
+msgstr "Ce champ est obligatoire et ne peut pas être désactivé."
+
+# Register Feature - User Fields
+msgid "Additional Information"
+msgstr "Informations supplémentaires"
+
+msgid "Email Verification"
+msgstr "Vérification de l'e-mail"
+
+msgid "Verified"
+msgstr "Vérifié"
+
+msgid "Not Verified"
+msgstr "Non vérifié"
+
+msgid "Registration Date"
+msgstr "Date d'inscription"
+
+msgid "Unknown"
+msgstr "Inconnue"
+
+msgid "User Avatar"
+msgstr "Avatar de l'utilisateur"
+
+msgid "Change Avatar"
+msgstr "Changer l'avatar"
+
+msgid "Upload Avatar"
+msgstr "Télécharger un avatar"
+
+msgid "Remove Avatar"
+msgstr "Supprimer l'avatar"
+
+msgid "Select or Upload Avatar"
+msgstr "Sélectionner ou télécharger un avatar"
+
+msgid "Use as Avatar"
+msgstr "Utiliser comme avatar"
+
+msgid "Verification email sent successfully."
+msgstr "E-mail de vérification envoyé avec succès."
+
+msgid "Failed to send verification email."
+msgstr "Échec de l'envoi de l'e-mail de vérification."
+
+# Register Feature - Forms
+msgid "Your password has been reset successfully."
+msgstr "Votre mot de passe a été réinitialisé avec succès."
+
+# Register Feature - User Registration Handler
+msgid "Invalid user ID."
+msgstr "ID utilisateur invalide."
+
+msgid "Field \"%s\" is required."
+msgstr "Le champ \"%s\" est requis."
+
+msgid "Invalid email address."
+msgstr "Adresse e-mail invalide."
+
+msgid "Email address already registered."
+msgstr "Adresse e-mail déjà enregistrée."
+
+msgid "Username already exists."
+msgstr "Ce nom d'utilisateur existe déjà."
+
+msgid "Passwords do not match."
+msgstr "Les mots de passe ne correspondent pas."
+
+msgid "Invalid or expired verification token."
+msgstr "Jeton de vérification invalide ou expiré."
+
+# Register Feature - Forms
+msgid "Registration successful! Please check your email to verify your account."
+msgstr "Inscription réussie ! Veuillez vérifier votre e-mail pour activer votre compte."
+
+msgid "Username must be at least 3 characters and may only contain letters, numbers, underscores and hyphens"
+msgstr "Le nom d'utilisateur doit contenir au moins 3 caractères et ne peut contenir que des lettres, des chiffres, des underscores et des tirets"
+
+msgid "Toggle password visibility"
+msgstr "Afficher/masquer le mot de passe"
+
+msgid "I have read and agree to the %s"
+msgstr "J'ai lu et j'accepte %s"
+
+msgid "Privacy Policy"
+msgstr "la Politique de confidentialité"
+
+msgid "Register"
+msgstr "S'inscrire"
+
+msgid "Already have an account? %s"
+msgstr "Vous avez déjà un compte ? %s"
+
+msgid "Login here"
+msgstr "Connectez-vous ici"
+
+# Login Form
+msgid "Your email has been verified successfully. You can now login."
+msgstr "Votre e-mail a été vérifié avec succès. Vous pouvez maintenant vous connecter."
+
+msgid "The verification link has expired. Please login to resend the verification email."
+msgstr "Le lien de vérification a expiré. Veuillez vous connecter pour renvoyer l'e-mail de vérification."
+
+msgid "Username or Email"
+msgstr "Nom d'utilisateur ou e-mail"
+
+msgid "Remember me"
+msgstr "Se souvenir de moi"
+
+msgid "Login"
+msgstr "Connexion"
+
+msgid "Create account"
+msgstr "Créer un compte"
+
+msgid "Forgot password?"
+msgstr "Mot de passe oublié ?"
+
+msgid "By logging in, you agree to our %s"
+msgstr "En vous connectant, vous acceptez notre %s"
+
+msgid "An error occurred. Please try again."
+msgstr "Une erreur s'est produite. Veuillez réessayer."
+
+# Forgot Password Form
+msgid "Password reset instructions have been sent to your email address."
+msgstr "Les instructions de réinitialisation du mot de passe ont été envoyées à votre adresse e-mail."
+
+msgid "Return to login"
+msgstr "Retour à la connexion"
+
+msgid "Reset Your Password"
+msgstr "Réinitialiser votre mot de passe"
+
+msgid "Enter your email address or username and we'll send you a link to reset your password."
+msgstr "Entrez votre adresse e-mail ou votre nom d'utilisateur et nous vous enverrons un lien pour réinitialiser votre mot de passe."
+
+msgid "Email or Username"
+msgstr "E-mail ou nom d'utilisateur"
+
+msgid "Enter the email address or username associated with your account."
+msgstr "Entrez l'adresse e-mail ou le nom d'utilisateur associé à votre compte."
+
+msgid "Send Reset Link"
+msgstr "Envoyer le lien de réinitialisation"
+
+# Reset Password Form
+msgid "This password reset link is invalid or has expired."
+msgstr "Ce lien de réinitialisation du mot de passe est invalide ou a expiré."
+
+msgid "Request a new password reset link"
+msgstr "Demander un nouveau lien de réinitialisation"
+
+msgid "Please enter your new password below."
+msgstr "Veuillez entrer votre nouveau mot de passe ci-dessous."
+
+msgid "New Password"
+msgstr "Nouveau mot de passe"
+
+msgid "Password must be at least 8 characters long and include uppercase, lowercase, numbers, and special characters."
+msgstr "Le mot de passe doit contenir au moins 8 caractères et inclure des majuscules, des minuscules, des chiffres et des caractères spéciaux."
+
+msgid "Confirm New Password"
+msgstr "Confirmer le nouveau mot de passe"
+
+msgid "Reset Password"
+msgstr "Réinitialiser le mot de passe"
+
+msgid "Back to login"
+msgstr "Retour à la connexion"
+
+msgid "Password Requirements"
+msgstr "Exigences du mot de passe"
+
+msgid "At least 8 characters long"
+msgstr "Au moins 8 caractères"
+
+msgid "Contains uppercase letter"
+msgstr "Contient une majuscule"
+
+msgid "Contains lowercase letter"
+msgstr "Contient une minuscule"
+
+msgid "Contains number"
+msgstr "Contient un chiffre"
+
+msgid "Contains special character"
+msgstr "Contient un caractère spécial"
+
+# Password validation messages (short form)
+msgid "Password must be at least 8 characters"
+msgstr "min. 8 caractères"
+
+msgid "Add uppercase letter"
+msgstr "1 majuscule"
+
+msgid "Add lowercase letter"
+msgstr "1 minuscule"
+
+msgid "Add number"
+msgstr "1 chiffre"
+
+msgid "Add special character"
+msgstr "1 caractère spécial"
+
+msgid "Password is too weak"
+msgstr "Mot de passe trop faible"
+
+msgid "Log in with your new password"
+msgstr "Connectez-vous avec votre nouveau mot de passe"

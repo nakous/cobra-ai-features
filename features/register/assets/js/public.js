@@ -262,8 +262,9 @@
         validateForm() {
             let isValid = true;
 
-            // Clear previous errors
+            // Clear previous errors AND password match feedback
             $('.cobra-form-error').remove();
+            $('.password-match-feedback').remove();
 
             // Check required fields
             this.$form.find('[required]').each((index, element) => {
@@ -276,7 +277,10 @@
 
             // Check password strength
             if (this.$password.val() && !this.isPasswordStrengthAcceptable()) {
-                this.showFieldError(this.$password, cobraAIRegister.i18n.passwordTooWeak);
+                const message = this.passwordMissing && this.passwordMissing.length > 0
+                    ? cobraAIRegister.i18n.passwordTooWeak + ': ' + this.passwordMissing.join(', ')
+                    : cobraAIRegister.i18n.passwordTooWeak;
+                this.showFieldError(this.$password, message);
                 isValid = false;
             }
 
@@ -291,15 +295,18 @@
 
         isPasswordStrengthAcceptable() {
             const password = this.$password.val();
-            let score = 0;
+            const missing = [];
 
-            if (password.length >= PASSWORD_CRITERIA.minLength) score++;
-            if (PASSWORD_CRITERIA.hasUpperCase.test(password)) score++;
-            if (PASSWORD_CRITERIA.hasLowerCase.test(password)) score++;
-            if (PASSWORD_CRITERIA.hasNumbers.test(password)) score++;
-            if (PASSWORD_CRITERIA.hasSpecialChar.test(password)) score++;
+            // Only check minimum length
+            if (password.length < PASSWORD_CRITERIA.minLength) {
+                missing.push(cobraAIRegister.i18n.passwordTooShort);
+            }
 
-            return score >= 3; // Require at least medium strength
+            // Store missing requirements for error message
+            this.passwordMissing = missing;
+
+            // Password is acceptable if it meets minimum length
+            return password.length >= PASSWORD_CRITERIA.minLength;
         }
 
         showFieldError($field, message) {

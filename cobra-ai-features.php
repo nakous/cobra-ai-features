@@ -166,12 +166,43 @@ final class CobraAI
     public function init_plugin(): void
     {
         try {
+            // Load translations
+            $this->load_translations();
             
-            load_plugin_textdomain('cobra-ai', false, dirname(plugin_basename(__FILE__)) . '/languages');
             do_action('cobra_ai_loaded');
         } catch (\Exception $e) {
             $this->log_error('Plugin initialization failed', $e);
         }
+    }
+    
+    /**
+     * Load plugin translations
+     */
+    private function load_translations(): void
+    {
+        // Force unload to clear cache
+        unload_textdomain('cobra-ai');
+        
+        // Get current locale
+        $locale = get_locale();
+        
+        // Apply filters for custom locale if needed
+        $locale = apply_filters('plugin_locale', $locale, 'cobra-ai');
+        
+        // Build paths to translation files
+        $mofile = COBRA_AI_PATH . 'languages/cobra-ai-' . $locale . '.mo';
+        $mofile_local = COBRA_AI_PATH . 'languages/' . $locale . '.mo';
+        
+        // Try to load translation file (with text domain prefix first)
+        if (file_exists($mofile)) {
+            load_textdomain('cobra-ai', $mofile);
+        } elseif (file_exists($mofile_local)) {
+            // Fallback to file without prefix
+            load_textdomain('cobra-ai', $mofile_local);
+        }
+        
+        // Also use WordPress standard function for global languages directory
+        load_plugin_textdomain('cobra-ai', false, dirname(plugin_basename(__FILE__)) . '/languages');
     }
 
     /**
