@@ -177,6 +177,18 @@ class Feature extends FeatureBase
         add_action('wp_ajax_cobra_reset_page_setting', [$this, 'handle_reset_page_setting']);
         // resend_verification
         add_action('wp_ajax_cobra_resend_verification', [$this->registration, 'handle_resend_verification']);
+        
+        // Add resend verification link to user row actions
+        add_filter('user_row_actions', [$this, 'add_resend_verification_action'], 10, 2);
+        
+        // Handle resend verification action (non-AJAX)
+        add_action('admin_init', [$this, 'handle_resend_verification_action']);
+        
+        // Add admin notices
+        add_action('admin_notices', [$this, 'display_admin_notices']);
+        
+        // Add admin scripts for users page
+        add_action('admin_enqueue_scripts', [$this, 'enqueue_users_admin_scripts']);
         // User management
         add_action('user_register', [$this->registration, 'handle_registration']);
         add_action('wp_logout', [$this->registration, 'handle_logout']);
@@ -269,6 +281,332 @@ class Feature extends FeatureBase
         if ( 'created_at' === $q->get( 'orderby' ) ) {
             $q->set( 'orderby', 'user_registered' );
         }
+    }
+
+    /**
+     * Add resend verification link to user row actions
+     */
+    public function add_resend_verification_action($actions, $user): array
+    {
+        // Only show for users who haven't verified their email
+        $is_verified = get_user_meta($user->ID, '_email_verified', true);
+        
+        if (!$is_verified && current_user_can('edit_users')) {
+            // Resend verification email link
+            $resend_nonce = wp_create_nonce('resend_verification_' . $user->ID);
+            $resend_url = add_query_arg([
+                'action' => 'resend_verification',
+                'user_id' => $user->ID,
+                '_wpnonce' => $resend_nonce
+            ], admin_url('users.php'));
+            
+            $actions['resend_verification'] = sprintf(
+                '<a href="%s" onclick="return confirm(\'%s\');" style="color:#0073aa;">%s</a>',
+                esc_url($resend_url),
+                esc_js(__('Êtes-vous sûr de vouloir renvoyer l\'email de validation ?', 'cobra-ai')),
+                __('Renvoyer email validation', 'cobra-ai')
+            );
+            
+            // Manual confirm email link
+            $confirm_nonce = wp_create_nonce('confirm_email_' . $user->ID);
+            $confirm_url = add_query_arg([
+                'action' => 'confirm_email',
+                'user_id' => $user->ID,
+                '_wpnonce' => $confirm_nonce
+            ], admin_url('users.php'));
+            
+            $actions['confirm_email'] = sprintf(
+                '<a href="%s" onclick="return confirm(\'%s\');" style="color:#46b450;">%s</a>',
+                esc_url($confirm_url),
+                esc_js(__('Êtes-vous sûr de vouloir confirmer manuellement cet email ?', 'cobra-ai')),
+                __('✓ Confirmer email', 'cobra-ai')
+            );
+        }
+        
+        return $actions;
+    }
+
+    /**
+     * Handle resend verification action (non-AJAX)
+     */
+    public function handle_resend_verification_action(): void
+    {
+        // Handle resend verification
+        if (isset($_GET['action']) && $_GET['action'] === 'resend_verification') {
+            $this->process_resend_verification();
+        }
+        
+        // Handle manual confirm email
+        if (isset($_GET['action']) && $_GET['action'] === 'confirm_email') {
+            $this->process_confirm_email();
+        }
+    }
+    
+    /**
+     * Process resend verification
+     */
+    private function process_resend_verification(): void
+    {
+        if (!isset($_GET['user_id']) || !isset($_GET['_wpnonce'])) {
+            return;
+        }
+        
+        $user_id = absint($_GET['user_id']);
+        
+        // Verify nonce
+        if (!wp_verify_nonce($_GET['_wpnonce'], 'resend_verification_' . $user_id)) {
+            wp_die(__('Action non autorisée.', 'cobra-ai'));
+        }
+        
+        // Check permissions
+        if (!current_user_can('edit_users')) {
+            wp_die(__('Vous n\'avez pas la permission d\'effectuer cette action.', 'cobra-ai'));
+        }
+        
+        // Check if user exists
+        $user = get_user_by('id', $user_id);
+        if (!$user) {
+            wp_redirect(add_query_arg('resend_status', 'user_not_found', admin_url('users.php')));
+            exit;
+        }
+        
+        // Check if already verified
+        $is_verified = get_user_meta($user_id, '_email_verified', true);
+        if ($is_verified) {
+            wp_redirect(add_query_arg('resend_status', 'already_verified', admin_url('users.php')));
+            exit;
+        }
+        
+        try {
+            // Generate new verification token
+            global $wpdb;
+            $token = wp_generate_password(32, false);
+            
+            // Delete old tokens for this user
+            $wpdb->delete(
+                $this->get_table_name('verification_tokens'),
+                ['user_id' => $user_id, 'type' => 'email_verify'],
+                ['%d', '%s']
+            );
+            
+            // Save new token
+            $wpdb->insert(
+                $this->get_table_name('verification_tokens'),
+                [
+                    'user_id' => $user_id,
+                    'token' => $token,
+                    'type' => 'email_verify',
+                    'expires_at' => date('Y-m-d H:i:s', strtotime('+24 hours')),
+                ],
+                ['%d', '%s', '%s', '%s']
+            );
+            
+            // Send verification email
+            $result = $this->email->send_verification_email($user_id, $token);
+            
+            if ($result) {
+                wp_redirect(add_query_arg([
+                    'resend_status' => 'success',
+                    'resend_email' => urlencode($user->user_email)
+                ], admin_url('users.php')));
+            } else {
+                wp_redirect(add_query_arg('resend_status', 'email_failed', admin_url('users.php')));
+            }
+        } catch (\Exception $e) {
+            wp_redirect(add_query_arg([
+                'resend_status' => 'error',
+                'resend_message' => urlencode($e->getMessage())
+            ], admin_url('users.php')));
+        }
+        
+        exit;
+    }
+    
+    /**
+     * Process manual email confirmation
+     */
+    private function process_confirm_email(): void
+    {
+        if (!isset($_GET['user_id']) || !isset($_GET['_wpnonce'])) {
+            return;
+        }
+        
+        $user_id = absint($_GET['user_id']);
+        
+        // Verify nonce
+        if (!wp_verify_nonce($_GET['_wpnonce'], 'confirm_email_' . $user_id)) {
+            wp_die(__('Action non autorisée.', 'cobra-ai'));
+        }
+        
+        // Check permissions
+        if (!current_user_can('edit_users')) {
+            wp_die(__('Vous n\'avez pas la permission d\'effectuer cette action.', 'cobra-ai'));
+        }
+        
+        // Check if user exists
+        $user = get_user_by('id', $user_id);
+        if (!$user) {
+            wp_redirect(add_query_arg('confirm_status', 'user_not_found', admin_url('users.php')));
+            exit;
+        }
+        
+        // Check if already verified
+        $is_verified = get_user_meta($user_id, '_email_verified', true);
+        if ($is_verified) {
+            wp_redirect(add_query_arg('confirm_status', 'already_verified', admin_url('users.php')));
+            exit;
+        }
+        
+        try {
+            // Mark email as verified
+            update_user_meta($user_id, '_email_verified', true);
+            
+            // Update user role if pending
+            if (in_array('pending', (array) $user->roles)) {
+                $user->set_role('subscriber');
+            }
+            
+            // Delete any pending verification tokens
+            global $wpdb;
+            $wpdb->delete(
+                $this->get_table_name('verification_tokens'),
+                ['user_id' => $user_id, 'type' => 'email_verify'],
+                ['%d', '%s']
+            );
+            
+            wp_redirect(add_query_arg([
+                'confirm_status' => 'success',
+                'confirm_email' => urlencode($user->user_email)
+            ], admin_url('users.php')));
+            
+        } catch (\Exception $e) {
+            wp_redirect(add_query_arg([
+                'confirm_status' => 'error',
+                'confirm_message' => urlencode($e->getMessage())
+            ], admin_url('users.php')));
+        }
+        
+        exit;
+    }
+
+    /**
+     * Display admin notices for resend verification
+     */
+    public function display_admin_notices(): void
+    {
+        // Resend verification notices
+        if (isset($_GET['resend_status'])) {
+            $this->display_resend_notice();
+        }
+        
+        // Confirm email notices
+        if (isset($_GET['confirm_status'])) {
+            $this->display_confirm_notice();
+        }
+    }
+    
+    /**
+     * Display resend verification notice
+     */
+    private function display_resend_notice(): void
+    {
+        $status = sanitize_text_field($_GET['resend_status']);
+        $email = isset($_GET['resend_email']) ? sanitize_email(urldecode($_GET['resend_email'])) : '';
+        $message = isset($_GET['resend_message']) ? sanitize_text_field(urldecode($_GET['resend_message'])) : '';
+        
+        switch ($status) {
+            case 'success':
+                $notice_class = 'notice-success';
+                $notice_message = sprintf(
+                    __('✅ Email de validation renvoyé avec succès à %s', 'cobra-ai'),
+                    '<strong>' . esc_html($email) . '</strong>'
+                );
+                break;
+            case 'already_verified':
+                $notice_class = 'notice-warning';
+                $notice_message = __('⚠️ Cet utilisateur a déjà validé son email.', 'cobra-ai');
+                break;
+            case 'user_not_found':
+                $notice_class = 'notice-error';
+                $notice_message = __('❌ Utilisateur non trouvé.', 'cobra-ai');
+                break;
+            case 'email_failed':
+                $notice_class = 'notice-error';
+                $notice_message = __('❌ Échec de l\'envoi de l\'email. Vérifiez vos paramètres SMTP.', 'cobra-ai');
+                break;
+            case 'error':
+                $notice_class = 'notice-error';
+                $notice_message = sprintf(__('❌ Erreur: %s', 'cobra-ai'), esc_html($message));
+                break;
+            default:
+                return;
+        }
+        
+        printf(
+            '<div class="notice %s is-dismissible"><p>%s</p></div>',
+            esc_attr($notice_class),
+            $notice_message
+        );
+    }
+    
+    /**
+     * Display confirm email notice
+     */
+    private function display_confirm_notice(): void
+    {
+        $status = sanitize_text_field($_GET['confirm_status']);
+        $email = isset($_GET['confirm_email']) ? sanitize_email(urldecode($_GET['confirm_email'])) : '';
+        $message = isset($_GET['confirm_message']) ? sanitize_text_field(urldecode($_GET['confirm_message'])) : '';
+        
+        switch ($status) {
+            case 'success':
+                $notice_class = 'notice-success';
+                $notice_message = sprintf(
+                    __('✅ Email confirmé manuellement avec succès pour %s', 'cobra-ai'),
+                    '<strong>' . esc_html($email) . '</strong>'
+                );
+                break;
+            case 'already_verified':
+                $notice_class = 'notice-warning';
+                $notice_message = __('⚠️ Cet utilisateur a déjà validé son email.', 'cobra-ai');
+                break;
+            case 'user_not_found':
+                $notice_class = 'notice-error';
+                $notice_message = __('❌ Utilisateur non trouvé.', 'cobra-ai');
+                break;
+            case 'error':
+                $notice_class = 'notice-error';
+                $notice_message = sprintf(__('❌ Erreur: %s', 'cobra-ai'), esc_html($message));
+                break;
+            default:
+                return;
+        }
+        
+        printf(
+            '<div class="notice %s is-dismissible"><p>%s</p></div>',
+            esc_attr($notice_class),
+            $notice_message
+        );
+    }
+
+    /**
+     * Enqueue admin scripts for users page
+     */
+    public function enqueue_users_admin_scripts($hook): void
+    {
+        if ($hook !== 'users.php') {
+            return;
+        }
+        
+        // Add inline styles for the resend link
+        wp_add_inline_style('common', '
+            .row-actions .resend_verification a {
+                color: #0073aa !important;
+            }
+            .row-actions .resend_verification a:hover {
+                color: #00a0d2 !important;
+            }
+        ');
     }
 
     /**
