@@ -222,11 +222,70 @@ class Feature extends FeatureBase
      */
     public function add_user_columns($columns): array
     {
-        $columns['verified'] = __('Email Verified', 'cobra-ai');
-        // created_at
-        $columns['created_at'] = __('Created At', 'cobra-ai');
-        // $columns['status'] = __('Status', 'cobra-ai');
+        $columns['verified']    = __('Email Verified', 'cobra-ai');
+        $columns['reg_source']  = __('Source', 'cobra-ai');
+        $columns['reg_auth']    = __('Auth', 'cobra-ai');
+        $columns['created_at']  = __('Created At', 'cobra-ai');
         return $columns;
+    }
+
+    /**
+     * Detect registration source and auth method from user meta.
+     * Returns ['source' => string, 'auth' => string, 'source_color' => string, 'auth_color' => string]
+     */
+    private function get_user_reg_info(int $user_id): array
+    {
+        $discovery  = get_user_meta($user_id, 'discovery_source', true);
+        $provider   = get_user_meta($user_id, 'provider', true);
+        $is_google  = get_user_meta($user_id, 'cobra_google_registered', true);
+
+        // Known app slugs → display labels
+        $app_labels = [
+            'permis_b'      => 'Permis B',
+            'permis_a'      => 'Permis A',
+            'permis_c'      => 'Permis C',
+            'permis_bateau' => 'Permis Bateau',
+        ];
+
+        // Is it a Google auth call? (suffix _google added by API)
+        $is_google_app = str_ends_with((string) $discovery, '_google');
+        $base_source   = $is_google_app ? substr((string) $discovery, 0, -7) : (string) $discovery;
+
+        // Source App
+        if (in_array($discovery, ['Web_Form', 'Web_Google'], true) || (!$discovery && !$provider)) {
+            $source       = 'Web';
+            $source_color = '#2e7d32';
+        } elseif (in_array($discovery, ['Mobile', 'Google_Mobile'], true) || ($provider === 'google' && !$discovery)) {
+            $source       = 'App Mobile v1';
+            $source_color = '#1976d2';
+        } elseif (in_array($discovery, ['Mobile_V2', 'Google_Mobile_V2'], true)) {
+            $source       = 'App Mobile v2';
+            $source_color = '#1565c0';
+        } elseif (isset($app_labels[$base_source])) {
+            $source       = $app_labels[$base_source];
+            $source_color = '#0277bd';
+        } else {
+            // Unknown app_source sent by a new app — show it as-is
+            $source       = $base_source ?: 'Inconnu';
+            $source_color = '#546e7a';
+        }
+
+        // Auth Method
+        if ($discovery === 'Web_Google' || $is_google === '1' || $is_google === 1) {
+            $auth       = 'Google (Web)';
+            $auth_color = '#e65100';
+        } elseif ($is_google_app || $provider === 'google' || in_array($discovery, ['Google_Mobile', 'Google_Mobile_V2'], true)) {
+            $auth       = 'Google (App)';
+            $auth_color = '#e65100';
+        } elseif (in_array($discovery, ['Mobile', 'Mobile_V2'], true) || $base_source) {
+            $auth       = 'API';
+            $auth_color = '#6a1b9a';
+        } else {
+            $auth       = 'Formulaire';
+            $auth_color = '#546e7a';
+        }
+
+        return compact('source', 'auth', 'source_color', 'auth_color');
     }
 
     /**
@@ -238,12 +297,20 @@ class Feature extends FeatureBase
             case 'verified':
                 return get_user_meta($user_id, '_email_verified', true) ? '✅' : '❌';
 
-                // case 'status':
-                //     $user = get_user_by('id', $user_id);
-                //     return !empty($user->roles) ? ucfirst($user->roles[0]) : 'None';
+            case 'reg_source':
+            case 'reg_auth':
+                $info  = $this->get_user_reg_info($user_id);
+                $label = $column_name === 'reg_source' ? $info['source'] : $info['auth'];
+                $color = $column_name === 'reg_source' ? $info['source_color'] : $info['auth_color'];
+                return sprintf(
+                    '<span style="display:inline-block;padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600;color:#fff;background:%s;">%s</span>',
+                    esc_attr($color),
+                    esc_html($label)
+                );
+
             case 'created_at':
                 $user = get_user_by('id', $user_id);
-                return !empty($user->user_registered) ?  $user->user_registered : 'None';
+                return !empty($user->user_registered) ? $user->user_registered : 'None';
 
             default:
                 return $value;
@@ -494,11 +561,16 @@ class Feature extends FeatureBase
      */
     public function display_admin_notices(): void
     {
+        $screen = get_current_screen();
+        if (!$screen || $screen->id !== 'users') {
+            return;
+        }
+
         // Resend verification notices
         if (isset($_GET['resend_status'])) {
             $this->display_resend_notice();
         }
-        
+
         // Confirm email notices
         if (isset($_GET['confirm_status'])) {
             $this->display_confirm_notice();
@@ -545,10 +617,10 @@ class Feature extends FeatureBase
         printf(
             '<div class="notice %s is-dismissible"><p>%s</p></div>',
             esc_attr($notice_class),
-            $notice_message
+            wp_kses($notice_message, ['strong' => []])
         );
     }
-    
+
     /**
      * Display confirm email notice
      */
@@ -585,7 +657,7 @@ class Feature extends FeatureBase
         printf(
             '<div class="notice %s is-dismissible"><p>%s</p></div>',
             esc_attr($notice_class),
-            $notice_message
+            wp_kses($notice_message, ['strong' => []])
         );
     }
 
@@ -966,8 +1038,16 @@ class Feature extends FeatureBase
                     break;
 
                 case 'emails':
+                    $email_settings = $new_settings['emails'] ?? [];
+                    // Sync layout/footer to shared option so all features share them
+                    if (isset($email_settings['global_template'])) {
+                        \CobraAI\SharedEmailLayout::save_layout(wp_kses_post($email_settings['global_template']));
+                    }
+                    if (isset($email_settings['email_footer'])) {
+                        \CobraAI\SharedEmailLayout::save_footer(wp_kses_post($email_settings['email_footer']));
+                    }
                     $settings_to_update['emails'] = wp_parse_args(
-                        $new_settings['emails'] ?? [],
+                        $email_settings,
                         $current_settings['emails'] ?? []
                     );
                     break;

@@ -1,0 +1,40 @@
+.cobra-em-wrap .nav-tab-wrapper {
+    border-bottom: 1px solid #c3c4c7;
+}
+
+.cobra-em-wrap .nav-tab {
+    font-size: 14px;
+    padding: 8px 16px;
+}
+
+.cobra-em-wrap .form-table th {
+    width: 200px;
+    padding: 12px 0;
+    font-weight: 600;
+}
+
+.cobra-em-wrap .form-table td {
+    padding: 10px 0;
+}
+
+.cobra-em-tab-content table.widefat {
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.cobra-em-tab-content table.widefat thead th {
+    font-weight: 600;
+    background: #f8f9fa;
+}
+
+.cobra-em-test-btn {
+    white-space: nowrap;
+}
+
+/* Modal overlay */
+#cobra-em-test-modal {
+    display: none;
+}
+#cobra-em-test-modal.active {
+    display: flex;
+}

@@ -325,6 +325,30 @@ class Admin
         }
 
         $data = $_POST['stripe_plan'];
+
+        // Validate and sanitize plan fields before any Stripe API call
+        $allowed_intervals = ['day', 'week', 'month', 'year'];
+        $price          = round(floatval($data['price'] ?? 0), 2);
+        $currency       = strtolower(sanitize_text_field($data['currency'] ?? ''));
+        $interval       = sanitize_text_field($data['billing_interval'] ?? '');
+        $interval_count = max(1, absint($data['interval_count'] ?? 1));
+
+        if ($price <= 0 || !in_array($interval, $allowed_intervals, true) || strlen($currency) !== 3) {
+            $this->feature->log('error', 'Invalid plan data — save aborted', [
+                'price'    => $price,
+                'currency' => $currency,
+                'interval' => $interval,
+                'plan_id'  => $post_id,
+            ]);
+            return;
+        }
+
+        // Overwrite raw POST values with sanitized ones
+        $data['price']            = $price;
+        $data['currency']         = $currency;
+        $data['billing_interval'] = $interval;
+        $data['interval_count']   = $interval_count;
+
         try {
             $stripe_product_id = get_post_meta($post_id, '_stripe_product_id', true);
             $stripe_price_id = get_post_meta($post_id, '_stripe_price_id', true);

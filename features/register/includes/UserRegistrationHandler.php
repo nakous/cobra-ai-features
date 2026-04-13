@@ -42,17 +42,23 @@ class UserRegistrationHandler
                 $user->set_role('subscriber');
                 update_user_meta($user_id, '_email_verified', true);
                 update_user_meta($user_id, '_registration_date', current_time('mysql'));
+                // Track registration source for wp-admin/users.php display
+                update_user_meta($user_id, 'discovery_source', 'Web_Google');
                 $this->log_action($user_id, 'register', 'completed');
+                // Notify other features (e.g. email-marketing onboarding)
+                do_action('cobra_register_user_confirmed', $user_id);
                 return;
             }else {
                 $user->set_role($settings['general']['default_role']);
 
                 // Generate verification token
                 $token = $this->generate_verification_token($user_id);
-    
+
                 // Save registration data
                 update_user_meta($user_id, '_email_verified', false);
                 update_user_meta($user_id, '_registration_date', current_time('mysql'));
+                // Track registration source for wp-admin/users.php display
+                update_user_meta($user_id, 'discovery_source', 'Web_Form');
     
                 // Log registration
                 $this->log_action($user_id, 'register', 'completed');
@@ -135,6 +141,9 @@ class UserRegistrationHandler
 
             // Send confirmation email
             $this->email_handler->send_confirmation_email($user_id);
+
+            // Notify other features (e.g. email-marketing onboarding)
+            do_action('cobra_register_user_confirmed', $user_id);
 
             // Redirect to login page with success message
             $redirect_url = add_query_arg(
