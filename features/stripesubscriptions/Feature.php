@@ -117,17 +117,9 @@ class Feature extends FeatureBase
                     ]
                 ]
             ];
-            if (class_exists('\CobraAI\Features\Stripe\Feature')) {
-                $this->stripe_feature = new \CobraAI\Features\Stripe\Feature();
-            } else {
-                throw new \Exception('Stripe feature class does not exist');
-            }
-
-            // add_action('init', [$this, 'register_post_type']);
-            // $this->stripe_feature = cobra_ai()->get_feature('stripe');
-            if (!$this->stripe_feature) {
-                throw new \Exception('Stripe feature is required but not active');
-            }
+            // stripe_feature is resolved lazily via get_stripe_feature() — the
+            // cobra_ai() registry may not be ready yet during setup() when the
+            // Admin bootstraps the feature list.
             // Initialize components
             require_once __DIR__ . '/includes/API.php';
             require_once __DIR__ . '/includes/Admin.php';
@@ -425,39 +417,40 @@ class Feature extends FeatureBase
     }
 
     /**
-     * Get Stripe feature instance
+     * Get Stripe feature instance (resolved lazily from the registry).
+     *
+     * The cobra_ai() global may not be ready during Feature::setup() when the
+     * Admin is still bootstrapping the feature list, so we read $GLOBALS
+     * directly and guard against a null registry instead of calling cobra_ai()
+     * (which has a strict CobraAI return type).
      */
     public function get_stripe_feature(): ?\CobraAI\Features\Stripe\Feature
     {
+        if ($this->stripe_feature === null) {
+            $registry = $GLOBALS['cobra_ai'] ?? null;
+            if ($registry instanceof \CobraAI\CobraAI) {
+                $feature = $registry->get_feature('stripe');
+                if ($feature instanceof \CobraAI\Features\Stripe\Feature) {
+                    $this->stripe_feature = $feature;
+                }
+            }
+        }
         return $this->stripe_feature;
     }
 
     /**
-     * Get Stripe public key with debugging
+     * Get Stripe publishable key for the current mode.
      */
     public function get_stripe_feature_public_key(): string
     {
         try {
             $stripe_feature = $this->get_stripe_feature();
-            if (!$stripe_feature) {
-                error_log('COBRA DEBUG: Stripe feature is null');
+            if (!$stripe_feature || !method_exists($stripe_feature, 'get_public_key')) {
                 return '';
             }
-            
-            error_log('COBRA DEBUG: Stripe feature class: ' . get_class($stripe_feature));
-            
-            if (!method_exists($stripe_feature, 'get_public_key')) {
-                error_log('COBRA DEBUG: get_public_key method does not exist');
-                $methods = get_class_methods($stripe_feature);
-                error_log('COBRA DEBUG: Available methods: ' . implode(', ', $methods));
-                return '';
-            }
-            
-            $public_key = $stripe_feature->get_public_key();
-            error_log('COBRA DEBUG: Retrieved public key: ' . ($public_key ?: 'empty'));
-            return $public_key;
+            return (string) $stripe_feature->get_public_key();
         } catch (\Exception $e) {
-            error_log('COBRA DEBUG: Exception getting public key: ' . $e->getMessage());
+            $this->log('error', 'Failed to get Stripe public key: ' . $e->getMessage());
             return '';
         }
     }
@@ -657,7 +650,7 @@ class Feature extends FeatureBase
     }
 
 
-    public function getVesrion()
+    public function get_version(): string
     {
         return $this->version;
     }

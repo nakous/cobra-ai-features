@@ -27,6 +27,7 @@ $this->display_settings_errors();
             <a href="#notifications" class="nav-tab"><?php _e('Notifications', 'cobra-ai'); ?></a>
             <a href="#expiration" class="nav-tab"><?php _e('Expiration', 'cobra-ai'); ?></a>
             <a href="#display" class="nav-tab"><?php _e('Display', 'cobra-ai'); ?></a>
+            <a href="#stripe-integration" class="nav-tab"><?php _e('Stripe', 'cobra-ai'); ?></a>
         </nav>
 
         <div class="tab-content">
@@ -222,8 +223,8 @@ $this->display_settings_errors();
                         <th scope="row"><?php _e('Show in Profile', 'cobra-ai'); ?></th>
                         <td>
                             <label>
-                                <input type="checkbox" 
-                                       name="settings[display][show_in_profile]" 
+                                <input type="checkbox"
+                                       name="settings[display][show_in_profile]"
                                        value="1"
                                        <?php checked($settings['display']['show_in_profile']); ?>>
                                 <?php _e('Show credit information in user profile', 'cobra-ai'); ?>
@@ -235,8 +236,8 @@ $this->display_settings_errors();
                         <th scope="row"><?php _e('Show in Admin List', 'cobra-ai'); ?></th>
                         <td>
                             <label>
-                                <input type="checkbox" 
-                                       name="settings[display][show_in_admin_list]" 
+                                <input type="checkbox"
+                                       name="settings[display][show_in_admin_list]"
                                        value="1"
                                        <?php checked($settings['display']['show_in_admin_list']); ?>>
                                 <?php _e('Show credit column in admin users list', 'cobra-ai'); ?>
@@ -247,10 +248,10 @@ $this->display_settings_errors();
                     <tr>
                         <th scope="row"><?php _e('History Items', 'cobra-ai'); ?></th>
                         <td>
-                            <input type="number" 
-                                   name="settings[display][history_per_page]" 
-                                   value="<?php echo esc_attr($settings['display']['history_per_page']); ?>" 
-                                   min="1" 
+                            <input type="number"
+                                   name="settings[display][history_per_page]"
+                                   value="<?php echo esc_attr($settings['display']['history_per_page']); ?>"
+                                   min="1"
                                    class="small-text">
                             <p class="description">
                                 <?php _e('Number of items to show per page in credit history', 'cobra-ai'); ?>
@@ -258,6 +259,49 @@ $this->display_settings_errors();
                         </td>
                     </tr>
                 </table>
+            </div>
+
+            <!-- Stripe Integration Settings -->
+            <div id="stripe-integration" class="tab-pane">
+                <?php
+                $stripe_payments_active = in_array('stripepayments', get_option('cobra_ai_enabled_features', []), true);
+                ?>
+                <table class="form-table">
+                    <tr>
+                        <th scope="row"><?php _e('Enable Stripe Credit Purchase', 'cobra-ai'); ?></th>
+                        <td>
+                            <label>
+                                <input type="checkbox"
+                                       name="settings[stripe_integration][enabled]"
+                                       value="1"
+                                       <?php checked(!empty($settings['stripe_integration']['enabled'])); ?>
+                                       <?php disabled(!$stripe_payments_active); ?>>
+                                <?php _e('Allow users to buy credits via Stripe one-time payment', 'cobra-ai'); ?>
+                            </label>
+                            <?php if (!$stripe_payments_active): ?>
+                                <p class="description" style="color:#d63638;">
+                                    <?php _e('The "Stripe Payments" feature must be enabled to use this integration.', 'cobra-ai'); ?>
+                                </p>
+                            <?php else: ?>
+                                <p class="description">
+                                    <?php _e('Enables the "Credits" product type in Stripe Payments. Create a "Credits" product to sell credit packs.', 'cobra-ai'); ?>
+                                </p>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                </table>
+
+                <?php if ($stripe_payments_active && !empty($settings['stripe_integration']['enabled'])): ?>
+                    <div class="card" style="max-width:600px;margin-top:10px;padding:12px;">
+                        <h4 style="margin-top:0;"><?php _e('How to configure', 'cobra-ai'); ?></h4>
+                        <ol>
+                            <li><?php _e('Go to <strong>Stripe Payments &gt; Products</strong>', 'cobra-ai'); ?></li>
+                            <li><?php _e('Create a new product with type <strong>"Credits"</strong>', 'cobra-ai'); ?></li>
+                            <li><?php _e('Set the price, number of credits, and credit type', 'cobra-ai'); ?></li>
+                            <li><?php _e('Publish the product — it will be available via the shortcode <code>[stripe_product id="..."]</code>', 'cobra-ai'); ?></li>
+                        </ol>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
 

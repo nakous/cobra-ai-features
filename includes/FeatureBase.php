@@ -589,7 +589,7 @@ abstract class FeatureBase
         $settings = get_option('cobra_ai_' . $this->get_feature_id() . '_options', []);
 
         if ($key === null) {
-            return wp_parse_args($settings, $this->get_feature_default_options());
+            return $this->deep_merge_defaults($this->get_feature_default_options(), is_array($settings) ? $settings : []);
         }
 
         // if key has '.' in it, explode it and get the all values
@@ -609,14 +609,48 @@ abstract class FeatureBase
     }
 
     /**
+     * Recursively merge user settings over defaults.
+     * Unlike wp_parse_args, this walks into nested associative arrays
+     * so missing sub-keys (e.g. an unchecked checkbox inside settings[display])
+     * still get their default values instead of disappearing.
+     */
+    protected function deep_merge_defaults(array $defaults, array $values): array
+    {
+        $result = $defaults;
+        foreach ($values as $key => $value) {
+            if (is_array($value) && isset($result[$key]) && is_array($result[$key]) && $this->is_assoc_array($result[$key])) {
+                $result[$key] = $this->deep_merge_defaults($result[$key], $value);
+            } else {
+                $result[$key] = $value;
+            }
+        }
+        return $result;
+    }
+
+    private function is_assoc_array(array $arr): bool
+    {
+        if ($arr === []) {
+            return true;
+        }
+        return array_keys($arr) !== range(0, count($arr) - 1);
+    }
+
+    /**
      * Update feature settings
      */
     public function update_settings(array $settings): bool
     {
         try {
 
-            // Merge with defaults
-            $settings = wp_parse_args($settings, $this->get_feature_default_options());
+            // Preserve settings from other tabs: merge incoming values on top of what is already stored,
+            // then fall back to defaults for anything still missing. Tab-based forms only submit
+            // the current tab, so we must not wipe unrelated sections.
+            $stored = get_option('cobra_ai_' . $this->get_feature_id() . '_options', []);
+            if (!is_array($stored)) {
+                $stored = [];
+            }
+            $merged_with_stored = $this->deep_merge_defaults($stored, $settings);
+            $settings = $this->deep_merge_defaults($this->get_feature_default_options(), $merged_with_stored);
             
             // Allow features to validate settings
             if (method_exists($this, 'validate_settings')) {

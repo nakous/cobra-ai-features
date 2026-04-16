@@ -138,6 +138,7 @@ final class CobraAI
             'Database.php',
             'Admin.php',
             'APIManager.php',
+            'SharedEmailLayout.php',
             'utilities/functions.php',
             'utilities/Validator.php'
         ];

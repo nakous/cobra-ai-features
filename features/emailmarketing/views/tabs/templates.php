@@ -4,13 +4,13 @@ defined('ABSPATH') || exit;
 
 $template_types = [
     'onboarding_j0'     => __('Onboarding J+0 — Bienvenue', 'cobra-ai'),
-    'onboarding_j2'     => __('Onboarding J+2 — Premier examen', 'cobra-ai'),
+    'onboarding_j2'     => __('Onboarding J+2 — Prise en main', 'cobra-ai'),
     'onboarding_j7'     => __('Onboarding J+7 — Bilan', 'cobra-ai'),
     're_engagement_7j'  => __('Re-engagement 7 jours', 'cobra-ai'),
     're_engagement_30j' => __('Re-engagement 30 jours', 'cobra-ai'),
     'weekly_report'     => __('Rapport hebdomadaire', 'cobra-ai'),
     'tips'              => __('Conseils personnalisés', 'cobra-ai'),
-    'milestone'         => __('Félicitations (milestones)', 'cobra-ai'),
+    'milestone'         => __('Félicitations (étapes clés)', 'cobra-ai'),
 ];
 
 $selected_type = sanitize_key($_GET['tpl'] ?? 'onboarding_j0');

@@ -579,3 +579,393 @@ msgstr "Mot de passe trop faible"
 
 msgid "Log in with your new password"
 msgstr "Connectez-vous avec votre nouveau mot de passe"
+
+# ======================================================
+# Stripe Payments — Feature.php
+# ======================================================
+
+msgid "Permission denied."
+msgstr "Permission refusée."
+
+msgid "Invalid page type."
+msgstr "Type de page invalide."
+
+msgid "Payment successful"
+msgstr "Paiement réussi"
+
+msgid "Payment cancelled"
+msgstr "Paiement annulé"
+
+msgid "Standard product"
+msgstr "Produit standard"
+
+# ======================================================
+# Stripe Payments — Admin.php (CPT + menus)
+# ======================================================
+
+msgid "Stripe Products"
+msgstr "Produits Stripe"
+
+msgid "Stripe Product"
+msgstr "Produit Stripe"
+
+msgid "Add New"
+msgstr "Ajouter"
+
+msgid "Add New Product"
+msgstr "Ajouter un produit"
+
+msgid "Edit Product"
+msgstr "Modifier le produit"
+
+msgid "New Product"
+msgstr "Nouveau produit"
+
+msgid "View Product"
+msgstr "Voir le produit"
+
+msgid "Search"
+msgstr "Rechercher"
+
+msgid "Stripe Payments"
+msgstr "Stripe Payments"
+
+msgid "Orders"
+msgstr "Commandes"
+
+msgid "Products"
+msgstr "Produits"
+
+msgid "Stripe Product Details"
+msgstr "Détails du produit Stripe"
+
+msgid "Price"
+msgstr "Prix"
+
+# ======================================================
+# Stripe Payments — Checkout.php
+# ======================================================
+
+msgid "You must be logged in."
+msgstr "Vous devez être connecté."
+
+msgid "Product not found."
+msgstr "Produit introuvable."
+
+msgid "Please log in to make a purchase."
+msgstr "Veuillez vous connecter pour acheter."
+
+msgid "Stripe is not configured."
+msgstr "Stripe n'est pas configuré."
+
+msgid "Product price is not set."
+msgstr "Le prix du produit n'est pas défini."
+
+# ======================================================
+# Stripe Payments — Emails.php
+# ======================================================
+
+msgid "Purchase confirmation — %s"
+msgstr "Confirmation de votre achat — %s"
+
+msgid "[%1$s] New order #%2$d — %3$s %4$s"
+msgstr "[%1$s] Nouvelle commande #%2$d — %3$s %4$s"
+
+msgid ""
+"<p>A new order has been paid.</p>\n"
+"<p><strong>Order:</strong> #%d<br>\n"
+"<strong>Customer:</strong> %s (%s)<br>\n"
+"<strong>Product:</strong> %s<br>\n"
+"<strong>Amount:</strong> %s %s</p>"
+msgstr ""
+"<p>Une nouvelle commande a été payée.</p>\n"
+"<p><strong>Commande :</strong> #%d<br>\n"
+"<strong>Client :</strong> %s (%s)<br>\n"
+"<strong>Produit :</strong> %s<br>\n"
+"<strong>Montant :</strong> %s %s</p>"
+
+msgid "Refund for your order #%1$d — %2$s"
+msgstr "Remboursement de votre commande #%1$d — %2$s"
+
+msgid ""
+"<div style=\"font-family:Arial,sans-serif;max-width:600px;margin:0 auto;\">\n"
+"<h2 style=\"color:#0c5460;\">Refund processed</h2>\n"
+"<p>Hello %1$s,</p>\n"
+"<p>Your order <strong>#%2$d</strong> for <strong>%3$s %4$s</strong> has been refunded.</p>\n"
+"<p>The amount will be credited to your payment method within a few business days.</p>\n"
+"<p>Best regards,<br>%5$s</p>\n"
+"</div>"
+msgstr ""
+"<div style=\"font-family:Arial,sans-serif;max-width:600px;margin:0 auto;\">\n"
+"<h2 style=\"color:#0c5460;\">Remboursement effectué</h2>\n"
+"<p>Bonjour %1$s,</p>\n"
+"<p>Votre commande <strong>#%2$d</strong> d'un montant de <strong>%3$s %4$s</strong> a été remboursée.</p>\n"
+"<p>Le montant sera crédité sur votre moyen de paiement sous quelques jours ouvrables.</p>\n"
+"<p>Cordialement,<br>%5$s</p>\n"
+"</div>"
+
+msgid "Payment confirmation"
+msgstr "Confirmation de paiement"
+
+msgid "Hello"
+msgstr "Bonjour"
+
+msgid "Thank you for your purchase! Your payment has been recorded."
+msgstr "Merci pour votre achat ! Votre paiement a bien été enregistré."
+
+msgid "Order"
+msgstr "Commande"
+
+msgid "Product"
+msgstr "Produit"
+
+msgid "Amount"
+msgstr "Montant"
+
+msgid "If you have any questions, contact us at"
+msgstr "Si vous avez des questions, contactez-nous à"
+
+# ======================================================
+# Stripe Payments — settings.php
+# ======================================================
+
+msgid "Stripe Payments Settings"
+msgstr "Paramètres Stripe Payments"
+
+msgid "One-time payments for products and services via Stripe Checkout. Recurring subscriptions are managed by the <strong>Stripe Subscriptions</strong> feature."
+msgstr "Encaissement de paiements uniques (produits / services) via Stripe Checkout. Les abonnements récurrents sont gérés par la feature <strong>Stripe Subscriptions</strong>."
+
+msgid "Success page"
+msgstr "Page de succès"
+
+msgid "Cancel page"
+msgstr "Page d'annulation"
+
+msgid "— None —"
+msgstr "— Aucune —"
+
+msgid "Edit page"
+msgstr "Modifier la page"
+
+msgid "Edit"
+msgstr "Modifier"
+
+msgid "View page"
+msgstr "Voir la page"
+
+msgid "Create page"
+msgstr "Créer la page"
+
+msgid "Return page after successful payment. Shortcode:"
+msgstr "Page de retour après paiement réussi. Shortcode :"
+
+msgid "Return page when the customer cancels. Shortcode:"
+msgstr "Page de retour si le client annule. Shortcode :"
+
+msgid "Default currency"
+msgstr "Devise par défaut"
+
+msgid "3-letter ISO code (USD, EUR, GBP...)."
+msgstr "Code ISO à 3 lettres (USD, EUR, GBP…)."
+
+msgid "Email notifications"
+msgstr "Notifications email"
+
+msgid "Send a confirmation email to the customer after payment"
+msgstr "Envoyer un email de confirmation au client après paiement"
+
+msgid "Registered product types"
+msgstr "Types de produits enregistrés"
+
+msgid "Other features can register their own product types via the filter"
+msgstr "Les autres features peuvent enregistrer leurs propres types de produits via le filtre"
+
+msgid "Available hooks"
+msgstr "Hooks disponibles"
+
+msgid "Creating..."
+msgstr "Création…"
+
+msgid "Page created"
+msgstr "Page créée"
+
+msgid "Error creating the page."
+msgstr "Erreur lors de la création."
+
+msgid "Network error."
+msgstr "Erreur réseau."
+
+# ======================================================
+# Stripe Payments — orders.php (admin)
+# ======================================================
+
+msgid "All"
+msgstr "Tous"
+
+msgid "Pending"
+msgstr "En attente"
+
+msgid "Paid"
+msgstr "Payé"
+
+msgid "Failed"
+msgstr "Échoué"
+
+msgid "Refunded"
+msgstr "Remboursé"
+
+msgid "Cancelled"
+msgstr "Annulé"
+
+msgid "Stripe Payments — Orders"
+msgstr "Stripe Payments — Commandes"
+
+msgid "Total orders"
+msgstr "Total commandes"
+
+msgid "Paid orders"
+msgstr "Commandes payées"
+
+msgid "Total revenue"
+msgstr "Revenu total"
+
+msgid "Revenue (30 days)"
+msgstr "Revenu (30 jours)"
+
+msgid "User"
+msgstr "Utilisateur"
+
+msgid "Status"
+msgstr "Statut"
+
+msgid "Stripe Session"
+msgstr "Session Stripe"
+
+msgid "No orders found."
+msgstr "Aucune commande."
+
+msgid "%d order"
+msgid_plural "%d orders"
+msgstr[0] "%d commande"
+msgstr[1] "%d commandes"
+
+# ======================================================
+# Stripe Payments — meta-box.php
+# ======================================================
+
+msgid "Currency"
+msgstr "Devise"
+
+msgid "Product type"
+msgstr "Type de produit"
+
+msgid "Third-party features can add their own types via the filter"
+msgstr "Les features tierces peuvent ajouter leurs propres types via le filtre"
+
+msgid "Stripe Price ID (optional)"
+msgstr "Stripe Price ID (optionnel)"
+
+msgid "Leave empty to use the price above (created on the fly in Checkout). Fill in to point to an existing Stripe Price."
+msgstr "Laissez vide pour utiliser le prix ci-dessus (créé à la volée dans Checkout). Renseignez pour pointer vers un Price existant dans Stripe."
+
+# ======================================================
+# Stripe Payments — public views
+# ======================================================
+
+msgid "Thank you for your purchase!"
+msgstr "Merci pour votre achat !"
+
+msgid "Your payment has been confirmed. A confirmation will be sent to you by email."
+msgstr "Votre paiement a été confirmé. Une confirmation vous sera envoyée par email."
+
+msgid "Back to home"
+msgstr "Retour à l'accueil"
+
+msgid "Payment processing"
+msgstr "Paiement en cours de traitement"
+
+msgid "Your payment is being confirmed. Please wait a moment and refresh the page."
+msgstr "Votre paiement est en cours de confirmation. Merci de patienter quelques instants et rafraîchissez la page."
+
+msgid "Refresh"
+msgstr "Rafraîchir"
+
+msgid "Your payment has been cancelled. No amount has been charged."
+msgstr "Votre paiement a été annulé. Aucun montant n'a été débité."
+
+msgid "Buy now"
+msgstr "Acheter"
+
+msgid "Log in to purchase"
+msgstr "Connectez-vous pour acheter"
+
+msgid "Processing..."
+msgstr "Traitement…"
+
+msgid "Error creating the checkout session."
+msgstr "Erreur lors de la création de la session."
+
+msgid "Network error. Please try again."
+msgstr "Erreur réseau. Réessayez."
+
+msgid "No products available."
+msgstr "Aucun produit disponible."
+
+# ======================================================
+# Credits — StripePaymentsBridge.php
+# ======================================================
+
+msgid "Credits"
+msgstr "Crédits"
+
+msgid "Credits configuration"
+msgstr "Configuration des crédits"
+
+msgid "Number of credits"
+msgstr "Nombre de crédits"
+
+msgid "Amount of credits delivered after payment."
+msgstr "Quantité de crédits livrés après paiement."
+
+msgid "Credit type"
+msgstr "Type de crédit"
+
+msgid "Expiration (days)"
+msgstr "Expiration (jours)"
+
+msgid "0 or empty = uses the default duration of the credit type."
+msgstr "0 ou vide = utilise la durée par défaut du type de crédit."
+
+msgid "Stripe purchase — Order #%d (%s)"
+msgstr "Achat Stripe — Commande #%d (%s)"
+
+# ======================================================
+# Credits — settings.php (Stripe tab)
+# ======================================================
+
+msgid "Enable Stripe Credit Purchase"
+msgstr "Activer l'achat de crédits via Stripe"
+
+msgid "Allow users to buy credits via Stripe one-time payment"
+msgstr "Permettre aux utilisateurs d'acheter des crédits via un paiement unique Stripe"
+
+msgid "The \"Stripe Payments\" feature must be enabled to use this integration."
+msgstr "La feature \"Stripe Payments\" doit être activée pour utiliser cette intégration."
+
+msgid "Enables the \"Credits\" product type in Stripe Payments. Create a \"Credits\" product to sell credit packs."
+msgstr "Active le type de produit \"Crédits\" dans Stripe Payments. Créez un produit de type \"Crédits\" pour vendre des packs de crédits."
+
+msgid "How to configure"
+msgstr "Comment configurer"
+
+msgid "Go to <strong>Stripe Payments &gt; Products</strong>"
+msgstr "Allez dans <strong>Stripe Payments &gt; Products</strong>"
+
+msgid "Create a new product with type <strong>\"Credits\"</strong>"
+msgstr "Créez un nouveau produit avec le type <strong>\"Crédits\"</strong>"
+
+msgid "Set the price, number of credits, and credit type"
+msgstr "Renseignez le prix, le nombre de crédits et le type de crédit"
+
+msgid "Publish the product — it will be available via the shortcode <code>[stripe_product id=\"...\"]</code>"
+msgstr "Publiez le produit — il sera disponible via le shortcode <code>[stripe_product id=\"...\"]</code>"

@@ -809,15 +809,40 @@ class Feature extends FeatureBase
             }
         }
 
-        // Validate redirects
+        // Validate redirects — accepted formats: empty, a published page ID, a valid URL, or a relative path starting with '/'
         if (isset($settings['redirects'])) {
             $settings['redirects'] = wp_parse_args($settings['redirects'], $defaults['redirects']);
 
-            // Ensure valid URLs
-            foreach ($settings['redirects'] as $key => $url) {
-                if ($url && !filter_var($url, FILTER_VALIDATE_URL)) {
-                    $settings['redirects'][$key] = $defaults['redirects'][$key];
+            foreach ($settings['redirects'] as $key => $value) {
+                if ($value === '' || $value === null) {
+                    continue;
                 }
+
+                // Numeric → treat as page ID, must exist and be published
+                if (is_numeric($value)) {
+                    $page_id = absint($value);
+                    if ($page_id > 0 && get_post_status($page_id) === 'publish') {
+                        $settings['redirects'][$key] = $page_id;
+                        continue;
+                    }
+                    $settings['redirects'][$key] = $defaults['redirects'][$key] ?? '';
+                    continue;
+                }
+
+                // Full URL
+                if (filter_var($value, FILTER_VALIDATE_URL)) {
+                    $settings['redirects'][$key] = esc_url_raw($value);
+                    continue;
+                }
+
+                // Relative path (e.g. /dashboard)
+                if (is_string($value) && strpos($value, '/') === 0) {
+                    $settings['redirects'][$key] = esc_url_raw($value);
+                    continue;
+                }
+
+                // Anything else → fall back to default
+                $settings['redirects'][$key] = $defaults['redirects'][$key] ?? '';
             }
         }
 

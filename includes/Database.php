@@ -56,20 +56,18 @@ class Database
     {
         global $wpdb;
         $this->wpdb = $wpdb;
-        
-        // Ne vérifier et installer les tables que si WordPress est complètement chargé
-        if (function_exists('did_action') && (did_action('init') || did_action('wp_loaded'))) {
+
+        // Toujours définir les tables core immédiatement si $wpdb est dispo,
+        // pour éviter que log() soit appelé avant que core_tables soit peuplé.
+        if ($wpdb) {
             $this->define_core_tables();
+        }
+
+        // Ne vérifier/installer les tables que si WordPress est complètement chargé
+        if (function_exists('did_action') && (did_action('init') || did_action('wp_loaded'))) {
             $this->check_version();
-        } else {
-            // Attendre que WordPress soit chargé si les fonctions sont disponibles
-            if (function_exists('add_action')) {
-                add_action('init', [$this, 'delayed_init'], 1);
-            } else {
-                // Si WordPress n'est pas disponible, initialiser quand même pour éviter l'erreur
-                $this->define_core_tables();
-                // Mais ne pas vérifier la version
-            }
+        } elseif (function_exists('add_action')) {
+            add_action('init', [$this, 'delayed_init'], 1);
         }
     }
     
@@ -356,7 +354,7 @@ class Database
             }
             
             // Use database logging if tables are installed
-            if ($this->tables_installed) {
+            if ($this->tables_installed && isset($this->core_tables['system_logs']['name'])) {
                 // Utiliser current_time si disponible, sinon date()
                 $current_time = function_exists('current_time') ? current_time('mysql') : date('Y-m-d H:i:s');
                 $context_json = function_exists('wp_json_encode') ? wp_json_encode($context) : json_encode($context);

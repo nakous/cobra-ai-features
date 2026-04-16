@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(grep -E '\\\\.php$|\\\\.json$|\\\\.md$|\\\\.txt$')"
+      "Bash(grep -E '\\\\.php$|\\\\.json$|\\\\.md$|\\\\.txt$')",
+      "Bash(php *)",
+      "Bash(wc *)"
     ]
   }
 }

@@ -101,13 +101,21 @@ class AIManager
 
             foreach ($core_providers as $id => $class) {
                 if (!empty($settings['providers'][$id]['active'])) {
+                    // Skip providers without an API key instead of throwing
+                    if (empty($settings['providers'][$id]['config']['api_key'])) {
+                        continue;
+                    }
                     $provider_class = "CobraAI\\Features\\AI\\{$class}";
                     if (class_exists($provider_class)) {
-                        $this->providers[$id] = new $provider_class($settings['providers'][$id]['config']);
+                        try {
+                            $this->providers[$id] = new $provider_class($settings['providers'][$id]['config']);
+                        } catch (\Exception $e) {
+                            // Log once at debug level — not an error, just unconfigured
+                            continue;
+                        }
                     }
                 }
             }
-
 
             // Allow additional providers to be registered
             $this->providers = apply_filters('cobra_ai_providers', $this->providers);

@@ -19,7 +19,17 @@ class API
     public function __construct(Feature $feature)
     {
         $this->feature = $feature;
-        $this->stripe_api = $feature->get_stripe_feature()->get_api();
+    }
+
+    private function get_stripe_api()
+    {
+        if ($this->stripe_api === null) {
+            $stripe_feature = $this->feature->get_stripe_feature();
+            if ($stripe_feature) {
+                $this->stripe_api = $stripe_feature->get_api();
+            }
+        }
+        return $this->stripe_api;
     }
 
     /**

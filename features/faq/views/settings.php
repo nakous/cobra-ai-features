@@ -70,11 +70,12 @@ $this->display_settings_errors();
                     </th>
                     <td>
                         <label>
-                            <input type="checkbox" 
-                                   id="show_categories" 
-                                   name="settings[display][show_categories]" 
-                                   value="1" 
-                                   <?php checked($settings['display']['show_categories']); ?>>
+                            <input type="hidden" name="settings[display][show_categories]" value="0">
+                            <input type="checkbox"
+                                   id="show_categories"
+                                   name="settings[display][show_categories]"
+                                   value="1"
+                                   <?php checked(!empty($settings['display']['show_categories'])); ?>>
                             <?php echo esc_html__('Display FAQ categories', 'cobra-ai'); ?>
                         </label>
                     </td>
@@ -166,11 +167,12 @@ $this->display_settings_errors();
                     </th>
                     <td>
                         <label>
-                            <input type="checkbox" 
-                                   id="show_meta" 
-                                   name="settings[display][show_meta]" 
-                                   value="1" 
-                                   <?php checked($settings['display']['show_meta'] ?? false); ?>>
+                            <input type="hidden" name="settings[display][show_meta]" value="0">
+                            <input type="checkbox"
+                                   id="show_meta"
+                                   name="settings[display][show_meta]"
+                                   value="1"
+                                   <?php checked(!empty($settings['display']['show_meta'])); ?>>
                             <?php echo esc_html__('Display FAQ meta information', 'cobra-ai'); ?>
                         </label>
                     </td>
@@ -182,11 +184,12 @@ $this->display_settings_errors();
                     </th>
                     <td>
                         <label>
-                            <input type="checkbox" 
-                                   id="show_views" 
-                                   name="settings[display][show_views]" 
-                                   value="1" 
-                                   <?php checked($settings['display']['show_views'] ?? false); ?>>
+                            <input type="hidden" name="settings[display][show_views]" value="0">
+                            <input type="checkbox"
+                                   id="show_views"
+                                   name="settings[display][show_views]"
+                                   value="1"
+                                   <?php checked(!empty($settings['display']['show_views'])); ?>>
                             <?php echo esc_html__('Display FAQ views count', 'cobra-ai'); ?>
                         </label>
                     </td>
@@ -198,11 +201,12 @@ $this->display_settings_errors();
                     </th>
                     <td>
                         <label>
-                            <input type="checkbox" 
-                                   id="show_last_updated" 
-                                   name="settings[display][show_last_updated]" 
-                                   value="1" 
-                                   <?php checked($settings['display']['show_last_updated'] ?? false); ?>>
+                            <input type="hidden" name="settings[display][show_last_updated]" value="0">
+                            <input type="checkbox"
+                                   id="show_last_updated"
+                                   name="settings[display][show_last_updated]"
+                                   value="1"
+                                   <?php checked(!empty($settings['display']['show_last_updated'])); ?>>
                             <?php echo esc_html__('Display last updated date', 'cobra-ai'); ?>
                         </label>
                     </td>
@@ -214,11 +218,12 @@ $this->display_settings_errors();
                     </th>
                     <td>
                         <label>
-                            <input type="checkbox" 
-                                   id="show_helpful" 
-                                   name="settings[display][show_helpful]" 
-                                   value="1" 
-                                   <?php checked($settings['display']['show_helpful'] ?? false); ?>>
+                            <input type="hidden" name="settings[display][show_helpful]" value="0">
+                            <input type="checkbox"
+                                   id="show_helpful"
+                                   name="settings[display][show_helpful]"
+                                   value="1"
+                                   <?php checked(!empty($settings['display']['show_helpful'])); ?>>
                             <?php echo esc_html__('Display helpful buttons', 'cobra-ai'); ?>
                         </label>
                     </td>
@@ -230,11 +235,12 @@ $this->display_settings_errors();
                     </th>
                     <td>
                         <label>
-                            <input type="checkbox" 
-                                   id="show_share" 
-                                   name="settings[display][show_share]" 
-                                   value="1" 
-                                   <?php checked($settings['display']['show_share'] ?? false); ?>>
+                            <input type="hidden" name="settings[display][show_share]" value="0">
+                            <input type="checkbox"
+                                   id="show_share"
+                                   name="settings[display][show_share]"
+                                   value="1"
+                                   <?php checked(!empty($settings['display']['show_share'])); ?>>
                             <?php echo esc_html__('Display share button', 'cobra-ai'); ?>
                         </label>
                     </td>
@@ -252,11 +258,12 @@ $this->display_settings_errors();
                     </th>
                     <td>
                         <label>
-                            <input type="checkbox" 
-                                   id="enable_search" 
-                                   name="settings[search][enable_search]" 
-                                   value="1" 
-                                   <?php checked($settings['search']['enable_search']); ?>>
+                            <input type="hidden" name="settings[search][enable_search]" value="0">
+                            <input type="checkbox"
+                                   id="enable_search"
+                                   name="settings[search][enable_search]"
+                                   value="1"
+                                   <?php checked(!empty($settings['search']['enable_search'])); ?>>
                             <?php echo esc_html__('Show search functionality', 'cobra-ai'); ?>
                         </label>
                     </td>
@@ -268,11 +275,12 @@ $this->display_settings_errors();
                     </th>
                     <td>
                         <label>
-                            <input type="checkbox" 
-                                   id="enable_autocomplete" 
-                                   name="settings[search][enable_autocomplete]" 
-                                   value="1" 
-                                   <?php checked($settings['search']['enable_autocomplete']); ?>>
+                            <input type="hidden" name="settings[search][enable_autocomplete]" value="0">
+                            <input type="checkbox"
+                                   id="enable_autocomplete"
+                                   name="settings[search][enable_autocomplete]"
+                                   value="1"
+                                   <?php checked(!empty($settings['search']['enable_autocomplete'])); ?>>
                             <?php echo esc_html__('Enable search autocomplete', 'cobra-ai'); ?>
                         </label>
                     </td>
@@ -301,11 +309,12 @@ $this->display_settings_errors();
                     </th>
                     <td>
                         <label>
-                            <input type="checkbox" 
-                                   id="show_category_filter" 
-                                   name="settings[search][show_category_filter]" 
-                                   value="1" 
-                                   <?php checked($settings['search']['show_category_filter']); ?>>
+                            <input type="hidden" name="settings[search][show_category_filter]" value="0">
+                            <input type="checkbox"
+                                   id="show_category_filter"
+                                   name="settings[search][show_category_filter]"
+                                   value="1"
+                                   <?php checked(!empty($settings['search']['show_category_filter'])); ?>>
                             <?php echo esc_html__('Show category filter in search', 'cobra-ai'); ?>
                         </label>
                     </td>
@@ -342,11 +351,12 @@ $this->display_settings_errors();
                     </th>
                     <td>
                         <label>
-                            <input type="checkbox" 
-                                   id="animation" 
-                                   name="settings[styling][animation]" 
-                                   value="1" 
-                                   <?php checked($settings['styling']['animation']); ?>>
+                            <input type="hidden" name="settings[styling][animation]" value="0">
+                            <input type="checkbox"
+                                   id="animation"
+                                   name="settings[styling][animation]"
+                                   value="1"
+                                   <?php checked(!empty($settings['styling']['animation'])); ?>>
                             <?php echo esc_html__('Enable animation effects', 'cobra-ai'); ?>
                         </label>
                     </td>
@@ -358,11 +368,12 @@ $this->display_settings_errors();
                     </th>
                     <td>
                         <label>
-                            <input type="checkbox" 
-                                   id="highlight_search" 
-                                   name="settings[styling][highlight_search]" 
-                                   value="1" 
-                                   <?php checked($settings['styling']['highlight_search']); ?>>
+                            <input type="hidden" name="settings[styling][highlight_search]" value="0">
+                            <input type="checkbox"
+                                   id="highlight_search"
+                                   name="settings[styling][highlight_search]"
+                                   value="1"
+                                   <?php checked(!empty($settings['styling']['highlight_search'])); ?>>
                             <?php echo esc_html__('Highlight search terms in results', 'cobra-ai'); ?>
                         </label>
                     </td>

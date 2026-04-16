@@ -47,8 +47,8 @@ class Admin
     {
         if (strpos($hook, $this->menu_slug) === false) return;
 
-        wp_enqueue_style('cobra-stripe-admin', $this->feature->get_url() . 'assets/css/admin.css', [], $this->feature->getVesrion());
-        wp_enqueue_script('cobra-stripe-admin', $this->feature->get_url() . 'assets/js/admin.js', ['jquery'], $this->feature->getVesrion(), true);
+        wp_enqueue_style('cobra-stripe-admin', $this->feature->get_url() . 'assets/css/admin.css', [], $this->feature->get_version());
+        wp_enqueue_script('cobra-stripe-admin', $this->feature->get_url() . 'assets/js/admin.js', ['jquery'], $this->feature->get_version(), true);
     }
 
     public function add_menu_items(): void

@@ -491,12 +491,12 @@ class Feature extends FeatureBase
             ],
             'emails' => [
                 'onboarding_j0'    => ['enabled' => true, 'subject' => 'Bienvenue sur {{site_name}} !'],
-                'onboarding_j2'    => ['enabled' => true, 'subject' => 'Prêt pour ton premier examen ?'],
+                'onboarding_j2'    => ['enabled' => true, 'subject' => 'Prêt à démarrer sur {{site_name}} ?'],
                 'onboarding_j7'    => ['enabled' => true, 'subject' => 'Bilan de ta 1ère semaine'],
                 're_engagement_7j' => ['enabled' => true, 'subject' => 'Tu nous manques !'],
                 're_engagement_30j'=> ['enabled' => true, 'subject' => 'Dernière chance de reprendre'],
                 'weekly_report'    => ['enabled' => true, 'subject' => 'Ta progression cette semaine 📊'],
-                'tips'             => ['enabled' => true, 'subject' => 'Conseil pour ton permis {{permit_type}}'],
+                'tips'             => ['enabled' => true, 'subject' => 'Un conseil pour bien avancer'],
                 'milestone'        => ['enabled' => true, 'subject' => '{{milestone_label}}'],
             ],
             'templates' => [

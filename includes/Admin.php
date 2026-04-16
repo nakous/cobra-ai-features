@@ -1159,14 +1159,19 @@ class Admin
     public function handle_clear_logs(): void
     {
         if (!current_user_can($this->capability)) {
-            wp_die(__('You do not have sufficient permissions.', 'cobra-ai'));
+            wp_send_json_error(['message' => __('You do not have sufficient permissions.', 'cobra-ai')]);
         }
 
-        check_ajax_referer('cobra_ai_admin_nonce', 'nonce');
+        check_ajax_referer('cobra-ai-admin', 'nonce');
 
-        // Clear debug log
+        // Truncate the plugin's DB logs table (the one shown in the Logs tab).
+        global $wpdb;
+        $logs_table = $wpdb->prefix . 'cobra_system_logs';
+        $wpdb->query("TRUNCATE TABLE {$logs_table}");
+
+        // Also clear the WordPress debug.log file if present.
         $log_file = WP_CONTENT_DIR . '/debug.log';
-        if (file_exists($log_file)) {
+        if (file_exists($log_file) && is_writable($log_file)) {
             file_put_contents($log_file, '');
         }
 

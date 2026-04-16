@@ -4,13 +4,24 @@ defined('ABSPATH') || exit;
 
 $email_labels = [
     'onboarding_j0'    => __('Onboarding J+0 — Bienvenue', 'cobra-ai'),
-    'onboarding_j2'    => __('Onboarding J+2 — Premier examen', 'cobra-ai'),
+    'onboarding_j2'    => __('Onboarding J+2 — Prise en main', 'cobra-ai'),
     'onboarding_j7'    => __('Onboarding J+7 — Bilan', 'cobra-ai'),
     're_engagement_7j' => __('Re-engagement 7 jours inactif', 'cobra-ai'),
     're_engagement_30j'=> __('Re-engagement 30 jours inactif', 'cobra-ai'),
     'weekly_report'    => __('Rapport hebdomadaire', 'cobra-ai'),
     'tips'             => __('Conseils personnalisés', 'cobra-ai'),
-    'milestone'        => __('Félicitations (milestones)', 'cobra-ai'),
+    'milestone'        => __('Félicitations (étapes clés)', 'cobra-ai'),
+];
+
+$email_triggers = [
+    'onboarding_j0'    => __('À la confirmation du compte (immédiat)', 'cobra-ai'),
+    'onboarding_j2'    => __('2 jours après la confirmation du compte', 'cobra-ai'),
+    'onboarding_j7'    => __('7 jours après la confirmation du compte', 'cobra-ai'),
+    're_engagement_7j' => __('Cron quotidien — utilisateur inactif depuis 7 jours', 'cobra-ai'),
+    're_engagement_30j'=> __('Cron quotidien — utilisateur inactif depuis 30 jours', 'cobra-ai'),
+    'weekly_report'    => __('Cron hebdomadaire (jour et heure configurables ci-dessous)', 'cobra-ai'),
+    'tips'             => __('Déclenchement manuel via hook (non planifié par défaut)', 'cobra-ai'),
+    'milestone'        => __('Sur action utilisateur qui franchit un palier (hook applicatif)', 'cobra-ai'),
 ];
 ?>
 
@@ -78,12 +89,12 @@ $email_labels = [
     <?php _e('Activez/désactivez chaque type d\'email indépendamment. Modifiez les sujets dans l\'onglet Templates.', 'cobra-ai'); ?>
 </p>
 
-<table class="wp-list-table widefat fixed striped" style="max-width:800px;">
+<table class="wp-list-table widefat fixed striped" style="max-width:1000px;">
     <thead>
         <tr>
             <th style="width:40px;"><?php _e('Actif', 'cobra-ai'); ?></th>
-            <th><?php _e('Type', 'cobra-ai'); ?></th>
-            <th><?php _e('Sujet', 'cobra-ai'); ?></th>
+            <th style="width:220px;"><?php _e('Type', 'cobra-ai'); ?></th>
+            <th><?php _e('Sujet & déclencheur', 'cobra-ai'); ?></th>
             <th style="width:130px;"><?php _e('Test', 'cobra-ai'); ?></th>
         </tr>
     </thead>
@@ -102,6 +113,10 @@ $email_labels = [
                     name="settings[emails][<?php echo esc_attr($type); ?>][subject]"
                     value="<?php echo esc_attr($settings['emails'][$type]['subject'] ?? ''); ?>"
                     class="regular-text" style="width:100%;">
+                <p class="description" style="margin:4px 0 0;">
+                    <span class="dashicons dashicons-clock" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;color:#666;"></span>
+                    <em><?php echo esc_html($email_triggers[$type] ?? ''); ?></em>
+                </p>
             </td>
             <td>
                 <button type="button" class="button button-small cobra-em-test-btn"
