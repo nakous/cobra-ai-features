@@ -272,17 +272,20 @@ final class CobraAI
         
         try {
             $class_info = $this->get_feature_class_info($feature_id);
-            
+
+            // Feature directory no longer exists on disk (e.g. removed but still in DB)
+            if (!is_dir($class_info['dir'])) {
+                return null;
+            }
+
             if (!file_exists($class_info['file'])) {
-                $exception = new \Exception("Feature file not found: {$class_info['file']} (feature_id: {$feature_id})");
-                $this->log_error("Feature file not found", $exception);
-                return null; // Retourner null au lieu de lever une exception
+                return null;
             }
             
             require_once $class_info['file'];
             
             if (!class_exists($class_info['class'])) {
-                throw new \Exception("Feature class not found: {$class_info['class']}");
+                return null;
             }
             
             $feature = new $class_info['class']();
