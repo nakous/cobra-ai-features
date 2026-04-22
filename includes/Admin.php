@@ -404,7 +404,7 @@ class Admin
                         $sanitized[$key] = [];
                     }
                 } else {
-                    $sanitized[$key] = sanitize_text_field($value);
+                    $sanitized[$key] = sanitize_text_field(wp_unslash($value));
                 }
             }
         }
@@ -422,7 +422,7 @@ class Admin
             return [];
         }
 
-        return array_map('sanitize_text_field', $array);
+        return array_map(fn($v) => sanitize_text_field(wp_unslash($v)), $array);
     }
     /**
      * Enqueue admin assets
@@ -719,14 +719,13 @@ class Admin
 
         $sanitized = [];
         foreach ($settings as $key => $value) {
-            //  if null or empty, skip
-            if (empty($value)) {
+            if ($value === null || $value === '') {
                 continue;
             }
             if (is_array($value)) {
                 $sanitized[$key] = $this->sanitize_settings($value);
             } else {
-                $sanitized[$key] = sanitize_text_field($value);
+                $sanitized[$key] = sanitize_text_field(wp_unslash($value));
             }
         }
 

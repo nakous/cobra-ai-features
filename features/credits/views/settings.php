@@ -127,8 +127,9 @@ $this->display_settings_errors();
                         <th scope="row"><?php _e('Enable Expiration Notices', 'cobra-ai'); ?></th>
                         <td>
                             <label>
-                                <input type="checkbox" 
-                                       name="settings[notifications][enable_expiration_notice]" 
+                                <input type="hidden" name="settings[notifications][enable_expiration_notice]" value="0">
+                                <input type="checkbox"
+                                       name="settings[notifications][enable_expiration_notice]"
                                        value="1"
                                        <?php checked($settings['notifications']['enable_expiration_notice']); ?>>
                                 <?php _e('Send notifications when credits are about to expire', 'cobra-ai'); ?>
@@ -205,8 +206,9 @@ $this->display_settings_errors();
                         <th scope="row"><?php _e('Auto Expire', 'cobra-ai'); ?></th>
                         <td>
                             <label>
-                                <input type="checkbox" 
-                                       name="settings[expiration][auto_expire]" 
+                                <input type="hidden" name="settings[expiration][auto_expire]" value="0">
+                                <input type="checkbox"
+                                       name="settings[expiration][auto_expire]"
                                        value="1"
                                        <?php checked($settings['expiration']['auto_expire']); ?>>
                                 <?php _e('Automatically expire credits after expiration date', 'cobra-ai'); ?>
@@ -223,6 +225,7 @@ $this->display_settings_errors();
                         <th scope="row"><?php _e('Show in Profile', 'cobra-ai'); ?></th>
                         <td>
                             <label>
+                                <input type="hidden" name="settings[display][show_in_profile]" value="0">
                                 <input type="checkbox"
                                        name="settings[display][show_in_profile]"
                                        value="1"
@@ -236,6 +239,7 @@ $this->display_settings_errors();
                         <th scope="row"><?php _e('Show in Admin List', 'cobra-ai'); ?></th>
                         <td>
                             <label>
+                                <input type="hidden" name="settings[display][show_in_admin_list]" value="0">
                                 <input type="checkbox"
                                        name="settings[display][show_in_admin_list]"
                                        value="1"
@@ -271,6 +275,7 @@ $this->display_settings_errors();
                         <th scope="row"><?php _e('Enable Stripe Credit Purchase', 'cobra-ai'); ?></th>
                         <td>
                             <label>
+                                <input type="hidden" name="settings[stripe_integration][enabled]" value="0">
                                 <input type="checkbox"
                                        name="settings[stripe_integration][enabled]"
                                        value="1"

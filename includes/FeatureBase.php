@@ -248,36 +248,12 @@ abstract class FeatureBase
     public function sanitize_settings(array $settings): array
     {
         try {
-            // Allow features to validate settings through their validate_settings method
+            // validate_settings operates on the full settings array — call it once at top level only
             if (method_exists($this, 'validate_settings')) {
                 $settings = $this->validate_settings($settings);
             }
 
-            // Basic sanitization for common setting types
-            foreach ($settings as $key => $value) {
-                if (empty($value)) {
-                    continue;
-                }
-
-                if (is_string($value)) {
-                    if ($this->is_html_allowed_field($key)) {
-                        // Allow HTML for specific fields
-                        $settings[$key] = wp_unslash($value);
-                    } elseif (is_email($value)) {
-                        // Sanitize email fields
-                        $settings[$key] = sanitize_email($value);
-                    } else {
-                        // Sanitize general text fields
-                        $settings[$key] = sanitize_text_field($value);
-                    }
-                } elseif (is_numeric($value)) {
-                    // Convert numeric strings to proper type
-                    $settings[$key] = strpos($value, '.') !== false ? (float)$value : (int)$value;
-                } elseif (is_array($value)) {
-                    // Recursively sanitize nested arrays
-                    $settings[$key] = $this->sanitize_settings($value);
-                }
-            }
+            $settings = $this->sanitize_settings_recursive($settings);
 
             // Allow features to perform additional sanitization
             $settings = apply_filters(
@@ -291,9 +267,33 @@ abstract class FeatureBase
                 'error' => $e->getMessage()
             ]);
 
-            // Return original settings if sanitization fails
             return $settings;
         }
+    }
+
+    private function sanitize_settings_recursive(array $settings): array
+    {
+        foreach ($settings as $key => $value) {
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            if (is_string($value)) {
+                if ($this->is_html_allowed_field($key)) {
+                    $settings[$key] = wp_unslash($value);
+                } elseif (is_email($value)) {
+                    $settings[$key] = sanitize_email(wp_unslash($value));
+                } else {
+                    $settings[$key] = sanitize_text_field(wp_unslash($value));
+                }
+            } elseif (is_numeric($value)) {
+                $settings[$key] = strpos($value, '.') !== false ? (float)$value : (int)$value;
+            } elseif (is_array($value)) {
+                $settings[$key] = $this->sanitize_settings_recursive($value);
+            }
+        }
+
+        return $settings;
     }
     /**
      * Register shortcodes - override in child class if needed

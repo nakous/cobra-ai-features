@@ -112,6 +112,7 @@ $create_nonce = wp_create_nonce('cobra_sp_create_page');
         <th><?php _e('Email notifications', 'cobra-ai'); ?></th>
         <td>
             <label>
+                <input type="hidden" name="settings[email_notifications]" value="0">
                 <input type="checkbox" name="settings[email_notifications]" value="1" <?php checked(!empty($settings['email_notifications'])); ?>>
                 <?php _e('Send a confirmation email to the customer after payment', 'cobra-ai'); ?>
             </label>

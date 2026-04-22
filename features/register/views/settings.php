@@ -51,6 +51,7 @@ $recaptcha_available = $this->is_recaptcha_available();
                     <th scope="row"><?php _e('Disable Admin Menu', 'cobra-ai'); ?></th>
                     <td>
                         <label>
+                            <input type="hidden" name="settings[general][disable_admin_menu]" value="0">
                             <input type="checkbox"
                                 name="settings[general][disable_admin_menu]"
                                 value="1"
@@ -63,6 +64,7 @@ $recaptcha_available = $this->is_recaptcha_available();
                     <th scope="row"><?php _e('Use reCAPTCHA', 'cobra-ai'); ?></th>
                     <td>
                         <label>
+                            <input type="hidden" name="settings[general][use_recaptcha]" value="0">
                             <input type="checkbox"
                                 name="settings[general][use_recaptcha]"
                                 value="1"
@@ -596,6 +598,7 @@ $recaptcha_available = $this->is_recaptcha_available();
                         <td>
                             <fieldset>
                                 <label>
+                                    <input type="hidden" name="settings[fields][<?php echo esc_attr($field); ?>][enabled]" value="0">
                                     <input type="checkbox"
                                         name="settings[fields][<?php echo esc_attr($field); ?>][enabled]"
                                         value="1"
@@ -605,6 +608,7 @@ $recaptcha_available = $this->is_recaptcha_available();
                                 </label>
                                 &nbsp;&nbsp;
                                 <label>
+                                    <input type="hidden" name="settings[fields][<?php echo esc_attr($field); ?>][required]" value="0">
                                     <input type="checkbox"
                                         name="settings[fields][<?php echo esc_attr($field); ?>][required]"
                                         value="1"

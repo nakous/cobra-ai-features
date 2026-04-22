@@ -1399,6 +1399,16 @@ class Feature extends FeatureBase
     }
 
 
+    protected function validate_settings(array $settings): array
+    {
+        if (isset($settings['subjects']) && is_string($settings['subjects'])) {
+            $settings['subjects'] = array_values(array_filter(
+                array_map('trim', explode("\n", $settings['subjects']))
+            ));
+        }
+        return $settings;
+    }
+
     protected function get_feature_default_options(): array
     {
         return [

@@ -84,6 +84,7 @@ $this->display_settings_errors();
                             <span class="dashicons <?php echo esc_attr($provider['icon']); ?>"></span>
                             <h3><?php echo esc_html($provider['name']); ?></h3>
                             <label class="toggle-switch">
+                                <input type="hidden" name="settings[providers][<?php echo esc_attr($provider_id); ?>][active]" value="0">
                                 <input type="checkbox"
                                     name="settings[providers][<?php echo esc_attr($provider_id); ?>][active]"
                                     value="1"
@@ -250,6 +251,7 @@ $this->display_settings_errors();
                         </th>
                         <td>
                             <label>
+                                <input type="hidden" name="settings[maintenance][active]" value="0">
                                 <input type="checkbox"
                                     name="settings[maintenance][active]"
                                     value="1"
@@ -330,6 +332,7 @@ $this->display_settings_errors();
                         </th>
                         <td>
                             <label>
+                                <input type="hidden" name="settings[display][show_in_profile]" value="0">
                                 <input type="checkbox"
                                     name="settings[display][show_in_profile]"
                                     value="1"
@@ -345,6 +348,7 @@ $this->display_settings_errors();
                         </th>
                         <td>
                             <label>
+                                <input type="hidden" name="settings[display][enable_rest_api]" value="0">
                                 <input type="checkbox"
                                     name="settings[display][enable_rest_api]"
                                     value="1"
