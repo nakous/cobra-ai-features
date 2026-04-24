@@ -1167,9 +1167,6 @@ class Feature extends FeatureBase
     protected function is_html_allowed_field(string $key): bool
     {
         $allowed_html_fields = ['global_template', 'verification', 'confirmation'];
-        // log this
-
-        error_log('is_html_allowed_field: ' . $key);
 
         return in_array($key, $allowed_html_fields, true);
     }
