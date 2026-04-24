@@ -29,10 +29,21 @@ class TemplateEngine
     {
         $settings = $this->feature->get_settings();
 
-        $layout  = $settings['templates']['layout']     ?? $this->feature->default_layout();
-        $footer  = $settings['templates']['footer']     ?? $this->feature->default_footer();
-        $content = $settings['templates'][$email_type]  ?? '';
-        $subject = $settings['emails'][$email_type]['subject'] ?? '';
+        $layout = $settings['templates']['layout'] ?? $this->feature->default_layout();
+        $footer = $settings['templates']['footer'] ?? $this->feature->default_footer();
+
+        // Try to load template from DB by slug
+        $tpl_repo = $this->feature->tpl_repo;
+        $db_tpl   = $tpl_repo ? $tpl_repo->get_by_slug($email_type) : null;
+
+        if ($db_tpl && $db_tpl['enabled']) {
+            $content = $db_tpl['body'];
+            $subject = $db_tpl['subject'];
+        } else {
+            // Fallback: legacy settings-based template (backward compat)
+            $content = $settings['templates'][$email_type]           ?? '';
+            $subject = $settings['emails'][$email_type]['subject']   ?? '';
+        }
 
         // Build all variables
         $global_vars = $this->get_global_vars($user_id, $email_type, $settings);

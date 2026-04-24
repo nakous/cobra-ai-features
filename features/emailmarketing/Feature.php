@@ -34,12 +34,17 @@ class Feature extends FeatureBase
     }
 
     // Handler instances — nullable until setup() is called
-    public ?EmailSender    $sender    = null;
-    public ?EmailQueue     $queue     = null;
-    public ?TemplateEngine $templates = null;
-    public ?CronManager    $cron      = null;
-    public ?BounceHandler  $bounce    = null;
-    public ?UserEmailPrefs $prefs     = null;
+    public ?EmailSender         $sender          = null;
+    public ?EmailQueue          $queue           = null;
+    public ?TemplateEngine      $templates       = null;
+    public ?CronManager         $cron            = null;
+    public ?BounceHandler       $bounce          = null;
+    public ?UserEmailPrefs      $prefs           = null;
+    public ?TemplateRepository  $tpl_repo        = null;
+    public ?TriggerRepository   $trig_repo       = null;
+    public ?TriggerEngine       $trigger_engine  = null;
+    public ?CampaignRepository  $campaign_repo   = null;
+    public ?CampaignDispatcher  $dispatcher      = null;
 
     // -------------------------------------------------------------------------
     // SETUP
@@ -50,12 +55,55 @@ class Feature extends FeatureBase
         global $wpdb;
 
         $this->tables = [
+            'email_templates' => [
+                'name'   => $wpdb->prefix . 'cobra_email_templates',
+                'schema' => [
+                    'id'         => 'BIGINT(20) NOT NULL AUTO_INCREMENT',
+                    'slug'       => "VARCHAR(80) NOT NULL DEFAULT ''",
+                    'label'      => "VARCHAR(255) NOT NULL DEFAULT ''",
+                    'subject'    => "VARCHAR(500) NOT NULL DEFAULT ''",
+                    'body'       => 'LONGTEXT NOT NULL',
+                    'is_system'  => 'TINYINT(1) NOT NULL DEFAULT 0',
+                    'enabled'    => 'TINYINT(1) NOT NULL DEFAULT 1',
+                    'created_at' => 'DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP',
+                    'PRIMARY KEY'  => '(id)',
+                    'UNIQUE KEY'   => ['slug_unique' => '(slug)'],
+                ],
+            ],
+            'email_triggers' => [
+                'name'   => $wpdb->prefix . 'cobra_email_triggers',
+                'schema' => [
+                    'id'                  => 'BIGINT(20) NOT NULL AUTO_INCREMENT',
+                    'label'               => "VARCHAR(255) NOT NULL DEFAULT ''",
+                    'template_id'         => 'BIGINT(20) NOT NULL DEFAULT 0',
+                    'trigger_type'        => "ENUM('hook','cron_delay','cron_schedule','manual') NOT NULL DEFAULT 'hook'",
+                    'hook_name'           => "VARCHAR(255) NOT NULL DEFAULT ''",
+                    'hook_user_arg_index' => 'TINYINT(3) UNSIGNED NOT NULL DEFAULT 0',
+                    'delay_days'          => 'INT(11) NOT NULL DEFAULT 0',
+                    'delay_ref_hook'      => "VARCHAR(255) NOT NULL DEFAULT ''",
+                    'cron_day'            => "VARCHAR(20) NOT NULL DEFAULT ''",
+                    'cron_hour'           => 'TINYINT(3) UNSIGNED NOT NULL DEFAULT 8',
+                    'cron_audience'       => "VARCHAR(50) NOT NULL DEFAULT 'all_active'",
+                    'send_mode'           => "ENUM('once_per_user','cooldown','always') NOT NULL DEFAULT 'once_per_user'",
+                    'cooldown_days'       => 'INT(11) NOT NULL DEFAULT 0',
+                    'conditions'          => 'LONGTEXT',
+                    'is_system'           => 'TINYINT(1) NOT NULL DEFAULT 0',
+                    'enabled'             => 'TINYINT(1) NOT NULL DEFAULT 1',
+                    'created_at'          => 'DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP',
+                    'PRIMARY KEY' => '(id)',
+                    'KEY'         => [
+                        'idx_template_id' => '(template_id)',
+                        'idx_trigger_type' => '(trigger_type)',
+                        'idx_enabled'      => '(enabled)',
+                    ],
+                ],
+            ],
             'email_log' => [
                 'name'   => $wpdb->prefix . 'cobra_email_log',
                 'schema' => [
                     'id'         => 'BIGINT(20) NOT NULL AUTO_INCREMENT',
                     'user_id'    => 'BIGINT(20) NOT NULL',
-                    'email_type' => "VARCHAR(50) NOT NULL DEFAULT ''",
+                    'email_type' => "VARCHAR(80) NOT NULL DEFAULT ''",
                     'email_to'   => "VARCHAR(255) NOT NULL DEFAULT ''",
                     'subject'    => "VARCHAR(500) NOT NULL DEFAULT ''",
                     'status'     => "ENUM('sent','failed','bounced','spam','skipped') NOT NULL DEFAULT 'sent'",
@@ -88,6 +136,30 @@ class Feature extends FeatureBase
                     ],
                 ],
             ],
+            'email_campaigns' => [
+                'name'   => $wpdb->prefix . 'cobra_email_campaigns',
+                'schema' => [
+                    'id'               => 'BIGINT(20) NOT NULL AUTO_INCREMENT',
+                    'name'             => "VARCHAR(255) NOT NULL DEFAULT ''",
+                    'subject'          => "VARCHAR(500) NOT NULL DEFAULT ''",
+                    'body'             => 'LONGTEXT NOT NULL',
+                    'template_id'      => 'BIGINT(20) NOT NULL DEFAULT 0',
+                    'ai_prompt'        => 'TEXT',
+                    'audience_type'    => "ENUM('all','role','meta') NOT NULL DEFAULT 'all'",
+                    'audience_filters' => 'LONGTEXT',
+                    'scheduled_at'     => 'DATETIME',
+                    'status'           => "ENUM('draft','scheduled','sending','sent','cancelled') NOT NULL DEFAULT 'draft'",
+                    'sent_count'       => 'INT(11) NOT NULL DEFAULT 0',
+                    'total_count'      => 'INT(11) NOT NULL DEFAULT 0',
+                    'created_at'       => 'DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP',
+                    'updated_at'       => 'DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+                    'PRIMARY KEY' => '(id)',
+                    'KEY' => [
+                        'idx_status'       => '(status)',
+                        'idx_scheduled_at' => '(scheduled_at)',
+                    ],
+                ],
+            ],
             'email_prefs' => [
                 'name'   => $wpdb->prefix . 'cobra_email_prefs',
                 'schema' => [
@@ -108,6 +180,12 @@ class Feature extends FeatureBase
             ],
         ];
 
+        require_once $this->path . 'includes/TemplateRepository.php';
+        require_once $this->path . 'includes/TriggerRepository.php';
+        require_once $this->path . 'includes/CampaignRepository.php';
+        require_once $this->path . 'includes/CampaignDispatcher.php';
+        require_once $this->path . 'includes/ConditionEvaluator.php';
+        require_once $this->path . 'includes/TriggerEngine.php';
         require_once $this->path . 'includes/UserEmailPrefs.php';
         require_once $this->path . 'includes/TemplateEngine.php';
         require_once $this->path . 'includes/EmailSender.php';
@@ -115,12 +193,17 @@ class Feature extends FeatureBase
         require_once $this->path . 'includes/CronManager.php';
         require_once $this->path . 'includes/BounceHandler.php';
 
-        $this->prefs     = new UserEmailPrefs($this);
-        $this->templates = new TemplateEngine($this);
-        $this->sender    = new EmailSender($this);
-        $this->queue     = new EmailQueue($this);
-        $this->cron      = new CronManager($this);
-        $this->bounce    = new BounceHandler($this);
+        $this->tpl_repo       = new TemplateRepository($this);
+        $this->trig_repo      = new TriggerRepository($this);
+        $this->campaign_repo  = new CampaignRepository($this);
+        $this->dispatcher     = new CampaignDispatcher($this);
+        $this->prefs          = new UserEmailPrefs($this);
+        $this->templates      = new TemplateEngine($this);
+        $this->sender         = new EmailSender($this);
+        $this->queue          = new EmailQueue($this);
+        $this->cron           = new CronManager($this);
+        $this->bounce         = new BounceHandler($this);
+        $this->trigger_engine = new TriggerEngine($this);
     }
 
     // -------------------------------------------------------------------------
@@ -139,11 +222,15 @@ class Feature extends FeatureBase
         // Schedule crons if not already scheduled
         $this->cron->register_crons();
 
-        // Onboarding: account confirmed by register feature
-        add_action('cobra_register_user_confirmed', [$this, 'on_user_confirmed']);
+        // Dynamic trigger engine — registers hook/cron_delay actions from DB
+        // Priority 5 ensures it runs after setup but before most plugin hooks
+        add_action('init', [$this->trigger_engine, 'register'], 5);
 
-        // Milestones: quiz completed by canvas_quiz
-        add_action('canvas_quiz_session_completed', [$this, 'on_quiz_completed'], 10, 2);
+        // Seed system data after (re-)activation — idempotent
+        add_action('cobra_ai_feature_activated_emailmarketing', [$this, 'migrate_system_data']);
+
+        // Also run migration on every load if tables exist but are empty (e.g. after manual table drop+reinstall)
+        add_action('init', [$this, 'maybe_migrate_system_data'], 1);
 
         // Bounce webhook
         add_action('init', [$this->bounce, 'handle_webhook_request']);
@@ -155,51 +242,27 @@ class Feature extends FeatureBase
         add_shortcode('cobra_emailmarketing_unsubscribe', [$this, 'render_unsubscribe_shortcode']);
 
         // AJAX
-        add_action('wp_ajax_cobra_emailmarketing_test',             [$this, 'ajax_test_email']);
-        add_action('wp_ajax_cobra_emailmarketing_reset_template',  [$this, 'ajax_reset_template']);
-        add_action('wp_ajax_cobra_emailmarketing_export_log',      [$this, 'ajax_export_log']);
-        add_action('wp_ajax_cobra_emailmarketing_unblock_user',    [$this, 'ajax_unblock_user']);
-        add_action('wp_ajax_cobra_emailmarketing_test_brevo',      [$this, 'ajax_test_brevo']);
-        add_action('wp_ajax_cobra_emailmarketing_preview',         [$this, 'ajax_preview']);
-        add_action('wp_ajax_cobra_emailmarketing_clear_failed_log', [$this, 'ajax_clear_failed_log']);
-        add_action('wp_ajax_cobra_emailmarketing_clear_all_log',    [$this, 'ajax_clear_all_log']);
-    }
+        add_action('wp_ajax_cobra_emailmarketing_test',              [$this, 'ajax_test_email']);
+        add_action('wp_ajax_cobra_emailmarketing_reset_template',    [$this, 'ajax_reset_template']);
+        add_action('wp_ajax_cobra_emailmarketing_export_log',        [$this, 'ajax_export_log']);
+        add_action('wp_ajax_cobra_emailmarketing_unblock_user',      [$this, 'ajax_unblock_user']);
+        add_action('wp_ajax_cobra_emailmarketing_test_brevo',        [$this, 'ajax_test_brevo']);
+        add_action('wp_ajax_cobra_emailmarketing_preview',           [$this, 'ajax_preview']);
+        add_action('wp_ajax_cobra_emailmarketing_clear_failed_log',  [$this, 'ajax_clear_failed_log']);
+        add_action('wp_ajax_cobra_emailmarketing_clear_all_log',     [$this, 'ajax_clear_all_log']);
+        add_action('wp_ajax_cobra_emailmarketing_delete_template',         [$this, 'ajax_delete_template']);
+        add_action('wp_ajax_cobra_emailmarketing_delete_trigger',            [$this, 'ajax_delete_trigger']);
+        add_action('wp_ajax_cobra_emailmarketing_delete_campaign',           [$this, 'ajax_delete_campaign']);
+        add_action('wp_ajax_cobra_emailmarketing_send_campaign_now',         [$this, 'ajax_send_campaign_now']);
+        add_action('wp_ajax_cobra_emailmarketing_generate_campaign_content', [$this, 'ajax_generate_campaign_content']);
 
-    // -------------------------------------------------------------------------
-    // EVENT LISTENERS
-    // -------------------------------------------------------------------------
+        // Admin POST (form submissions that redirect after save)
+        add_action('admin_post_cobra_ai_save_email_template',  [$this, 'handle_save_template']);
+        add_action('admin_post_cobra_ai_save_email_trigger',   [$this, 'handle_save_trigger']);
+        add_action('admin_post_cobra_ai_save_email_campaign',  [$this, 'handle_save_campaign']);
 
-    public function on_user_confirmed(int $user_id): void
-    {
-        if (!$this->is_globally_enabled()) {
-            return;
-        }
-
-        $settings = $this->get_settings();
-
-        if ($settings['emails']['onboarding_j0']['enabled'] ?? true) {
-            $this->queue->enqueue($user_id, 'onboarding_j0', time());
-        }
-
-        if ($settings['emails']['onboarding_j2']['enabled'] ?? true) {
-            $this->queue->enqueue($user_id, 'onboarding_j2', time() + (2 * DAY_IN_SECONDS));
-        }
-
-        if ($settings['emails']['onboarding_j7']['enabled'] ?? true) {
-            $this->queue->enqueue($user_id, 'onboarding_j7', time() + (7 * DAY_IN_SECONDS));
-        }
-    }
-
-    public function on_quiz_completed(int $user_id, array $stats): void
-    {
-        if (!$this->is_globally_enabled()) {
-            return;
-        }
-
-        $settings = $this->get_settings();
-        if ($settings['emails']['milestone']['enabled'] ?? true) {
-            $this->cron->check_milestones($user_id, $stats);
-        }
+        // Campaigns cron callback
+        add_action('cobra_emailmarketing_dispatch_campaigns', [$this->cron, 'dispatch_scheduled_campaigns']);
     }
 
     public function is_globally_enabled(): bool
@@ -448,6 +511,307 @@ class Feature extends FeatureBase
     }
 
     // -------------------------------------------------------------------------
+    // AJAX — Templates CRUD
+    // -------------------------------------------------------------------------
+
+    public function ajax_delete_template(): void
+    {
+        check_ajax_referer('cobra-ai-admin-emailmarketing', 'nonce');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('Permission refusée.', 'cobra-ai'));
+        }
+
+        $id = (int) ($_POST['template_id'] ?? 0);
+        if (!$id) {
+            wp_send_json_error(__('ID invalide.', 'cobra-ai'));
+        }
+
+        $ok = $this->tpl_repo->delete($id);
+        if ($ok) {
+            wp_send_json_success();
+        } else {
+            wp_send_json_error(__('Impossible de supprimer ce template (système ou introuvable).', 'cobra-ai'));
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // AJAX — Triggers CRUD
+    // -------------------------------------------------------------------------
+
+    public function ajax_delete_trigger(): void
+    {
+        check_ajax_referer('cobra-ai-admin-emailmarketing', 'nonce');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('Permission refusée.', 'cobra-ai'));
+        }
+
+        $id = (int) ($_POST['trigger_id'] ?? 0);
+        if (!$id) {
+            wp_send_json_error(__('ID invalide.', 'cobra-ai'));
+        }
+
+        $ok = $this->trig_repo->delete($id);
+        if ($ok) {
+            wp_send_json_success();
+        } else {
+            wp_send_json_error(__('Impossible de supprimer ce déclencheur (système ou introuvable).', 'cobra-ai'));
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // ADMIN POST — Template save (form submission + redirect)
+    // -------------------------------------------------------------------------
+
+    public function handle_save_template(): void
+    {
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Permission refusée.', 'cobra-ai'));
+        }
+        check_admin_referer('cobra_ai_save_email_template');
+
+        $page_slug   = 'cobra-ai-' . $this->get_feature_id();
+        $template_id = (int) ($_POST['template_id'] ?? 0);
+
+        $data = [
+            'slug'    => sanitize_key($_POST['tpl_slug']    ?? ''),
+            'label'   => sanitize_text_field($_POST['tpl_label']   ?? ''),
+            'subject' => sanitize_text_field($_POST['tpl_subject'] ?? ''),
+            'body'    => wp_kses_post(wp_unslash($_POST['tpl_body'] ?? '')),
+            'enabled' => isset($_POST['tpl_enabled']) ? 1 : 0,
+        ];
+
+        if ($template_id > 0) {
+            $data['id'] = $template_id;
+        }
+
+        $saved_id = $this->tpl_repo->save($data);
+
+        if ($saved_id) {
+            wp_safe_redirect(add_query_arg(
+                ['page' => $page_slug, 'tab' => 'templates', 'tpl_saved' => '1'],
+                admin_url('admin.php')
+            ));
+        } else {
+            wp_safe_redirect(add_query_arg(
+                ['page' => $page_slug, 'tab' => 'templates', 'error' => 'save_failed'],
+                admin_url('admin.php')
+            ));
+        }
+        exit;
+    }
+
+    // -------------------------------------------------------------------------
+    // ADMIN POST — Trigger save (form submission + redirect)
+    // -------------------------------------------------------------------------
+
+    public function handle_save_trigger(): void
+    {
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Permission refusée.', 'cobra-ai'));
+        }
+        check_admin_referer('cobra_ai_save_email_trigger');
+
+        $page_slug  = 'cobra-ai-' . $this->get_feature_id();
+        $trigger_id = (int) ($_POST['trigger_id'] ?? 0);
+
+        // Decode conditions from JSON
+        $conditions_raw = wp_unslash($_POST['trg_conditions'] ?? '{}');
+        $conditions     = json_decode($conditions_raw, true);
+        if (json_last_error() !== JSON_ERROR_NONE || empty($conditions['groups'])) {
+            $conditions = null;
+        }
+
+        $data = [
+            'label'               => sanitize_text_field($_POST['trg_label']               ?? ''),
+            'template_id'         => (int) ($_POST['trg_template_id']                      ?? 0),
+            'trigger_type'        => sanitize_key($_POST['trg_trigger_type']               ?? 'hook'),
+            'hook_name'           => sanitize_text_field($_POST['trg_hook_name']           ?? ''),
+            'hook_user_arg_index' => (int) ($_POST['trg_hook_user_arg_index']              ?? 0),
+            'delay_days'          => (int) ($_POST['trg_delay_days']                       ?? 0),
+            'delay_ref_hook'      => sanitize_text_field($_POST['trg_delay_ref_hook']      ?? ''),
+            'cron_day'            => sanitize_key($_POST['trg_cron_day']                   ?? ''),
+            'cron_hour'           => (int) ($_POST['trg_cron_hour']                        ?? 8),
+            'cron_audience'       => sanitize_key($_POST['trg_cron_audience']              ?? 'all_active'),
+            'send_mode'           => sanitize_key($_POST['trg_send_mode']                  ?? 'once_per_user'),
+            'cooldown_days'       => (int) ($_POST['trg_cooldown_days']                    ?? 0),
+            'conditions'          => $conditions,
+            'enabled'             => isset($_POST['trg_enabled']) ? 1 : 0,
+        ];
+
+        if ($trigger_id > 0) {
+            $data['id'] = $trigger_id;
+        }
+
+        $saved_id = $this->trig_repo->save($data);
+
+        if ($saved_id) {
+            wp_safe_redirect(add_query_arg(
+                ['page' => $page_slug, 'tab' => 'triggers', 'trg_saved' => '1'],
+                admin_url('admin.php')
+            ));
+        } else {
+            wp_safe_redirect(add_query_arg(
+                ['page' => $page_slug, 'tab' => 'triggers', 'error' => 'save_failed'],
+                admin_url('admin.php')
+            ));
+        }
+        exit;
+    }
+
+    // -------------------------------------------------------------------------
+    // AJAX — Campaigns CRUD
+    // -------------------------------------------------------------------------
+
+    public function ajax_delete_campaign(): void
+    {
+        check_ajax_referer('cobra-ai-admin-emailmarketing', 'nonce');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('Permission refusée.', 'cobra-ai'));
+        }
+
+        $id = (int) ($_POST['campaign_id'] ?? 0);
+        if (!$id) {
+            wp_send_json_error(__('ID invalide.', 'cobra-ai'));
+        }
+
+        $ok = $this->campaign_repo->delete($id);
+        if ($ok) {
+            wp_send_json_success();
+        } else {
+            wp_send_json_error(__('Impossible de supprimer cette campagne (envoi en cours ou déjà envoyée).', 'cobra-ai'));
+        }
+    }
+
+    public function ajax_send_campaign_now(): void
+    {
+        check_ajax_referer('cobra-ai-admin-emailmarketing', 'nonce');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('Permission refusée.', 'cobra-ai'));
+        }
+
+        $id = (int) ($_POST['campaign_id'] ?? 0);
+        if (!$id) {
+            wp_send_json_error(__('ID invalide.', 'cobra-ai'));
+        }
+
+        $ok = $this->dispatcher->dispatch($id);
+        if ($ok) {
+            wp_send_json_success(['message' => __('Emails mis en file d\'attente avec succès.', 'cobra-ai')]);
+        } else {
+            wp_send_json_error(__('Impossible d\'envoyer la campagne.', 'cobra-ai'));
+        }
+    }
+
+    public function ajax_generate_campaign_content(): void
+    {
+        check_ajax_referer('cobra-ai-admin-emailmarketing', 'nonce');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('Permission refusée.', 'cobra-ai'));
+        }
+
+        $prompt   = sanitize_textarea_field(wp_unslash($_POST['prompt'] ?? ''));
+        $post_ids = array_map('intval', (array) ($_POST['post_ids'] ?? []));
+
+        if (empty($prompt)) {
+            wp_send_json_error(['message' => __('Prompt vide.', 'cobra-ai')]);
+        }
+
+        $result = $this->dispatcher->generate_with_ai($prompt, $post_ids);
+
+        if ($result['success']) {
+            wp_send_json_success(['content' => $result['content']]);
+        } else {
+            wp_send_json_error(['message' => $result['message']]);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // ADMIN POST — Campaign save
+    // -------------------------------------------------------------------------
+
+    public function handle_save_campaign(): void
+    {
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Permission refusée.', 'cobra-ai'));
+        }
+        check_admin_referer('cobra_ai_save_email_campaign');
+
+        $page_slug   = 'cobra-ai-' . $this->get_feature_id();
+        $campaign_id = (int) ($_POST['campaign_id'] ?? 0);
+
+        // Build audience filters
+        $audience_type    = sanitize_key($_POST['cpg_audience_type'] ?? 'all');
+        $audience_filters = [];
+
+        if ($audience_type === 'role') {
+            $audience_filters['roles'] = array_map('sanitize_key', (array) ($_POST['cpg_roles'] ?? []));
+        } elseif ($audience_type === 'meta') {
+            $audience_filters['meta_key']     = sanitize_key($_POST['cpg_meta_key'] ?? '');
+            $audience_filters['meta_compare'] = sanitize_text_field($_POST['cpg_meta_compare'] ?? '=');
+            $audience_filters['meta_value']   = sanitize_text_field($_POST['cpg_meta_value'] ?? '');
+        }
+
+        $audience_filters['verified_only'] = !empty($_POST['cpg_verified_only']);
+
+        // Scheduled at
+        $send_when    = sanitize_key($_POST['cpg_send_when'] ?? 'now');
+        $scheduled_at = null;
+        if ($send_when === 'schedule' && !empty($_POST['cpg_scheduled_at'])) {
+            $scheduled_at = date('Y-m-d H:i:s', strtotime(sanitize_text_field($_POST['cpg_scheduled_at'])));
+        }
+
+        $status = sanitize_key($_POST['cpg_status'] ?? 'draft');
+
+        // If "now" + "scheduled/send" button → dispatch immediately after save
+        $dispatch_now = ($send_when === 'now' && $status === 'scheduled');
+        if ($dispatch_now) {
+            $status = 'draft'; // will be updated to sending/sent by dispatcher
+        }
+
+        $data = [
+            'name'             => sanitize_text_field($_POST['cpg_name'] ?? ''),
+            'subject'          => sanitize_text_field($_POST['cpg_subject'] ?? ''),
+            'body'             => wp_kses_post(wp_unslash($_POST['cpg_body'] ?? '')),
+            'template_id'      => (int) ($_POST['cpg_template_id'] ?? 0),
+            'ai_prompt'        => sanitize_textarea_field($_POST['cpg_ai_prompt'] ?? ''),
+            'audience_type'    => $audience_type,
+            'audience_filters' => $audience_filters,
+            'scheduled_at'     => $scheduled_at,
+            'status'           => $status,
+        ];
+
+        if ($campaign_id > 0) {
+            $data['id'] = $campaign_id;
+        }
+
+        $saved_id = $this->campaign_repo->save($data);
+
+        if (!$saved_id) {
+            wp_safe_redirect(add_query_arg(
+                ['page' => $page_slug, 'tab' => 'campaigns', 'error' => urlencode(__('Erreur lors de l\'enregistrement.', 'cobra-ai'))],
+                admin_url('admin.php')
+            ));
+            exit;
+        }
+
+        // Dispatch immediately if "Envoyer maintenant"
+        if ($dispatch_now) {
+            $this->dispatcher->dispatch($saved_id);
+            wp_safe_redirect(add_query_arg(
+                ['page' => $page_slug, 'tab' => 'campaigns', 'cpg_sent' => '1'],
+                admin_url('admin.php')
+            ));
+            exit;
+        }
+
+        wp_safe_redirect(add_query_arg(
+            ['page' => $page_slug, 'tab' => 'campaigns', 'cpg_saved' => '1'],
+            admin_url('admin.php')
+        ));
+        exit;
+    }
+
+    // -------------------------------------------------------------------------
     // ASSETS
     // -------------------------------------------------------------------------
 
@@ -457,6 +821,16 @@ class Feature extends FeatureBase
 
         // Add current_user_id to the already-enqueued JS data
         if (strpos((string) $hook, 'cobra-ai-emailmarketing') !== false) {
+            // Register Select2 if not already registered (WooCommerce does it, but it may not be active)
+            if (!wp_script_is('select2', 'registered')) {
+                wp_register_script('select2', 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js', ['jquery'], '4.1.0', true);
+            }
+            if (!wp_style_is('select2', 'registered')) {
+                wp_register_style('select2', 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css', [], '4.1.0');
+            }
+            wp_enqueue_style('select2');
+            wp_enqueue_script('select2');
+
             wp_localize_script('cobra-ai-emailmarketing-admin', 'cobraAIAdminEmailmarketing', [
                 'ajax_url'        => admin_url('admin-ajax.php'),
                 'nonce'           => wp_create_nonce('cobra-ai-admin-emailmarketing'),
@@ -475,9 +849,96 @@ class Feature extends FeatureBase
         return parent::deactivate();
     }
 
+    /**
+     * Called after tables are created (on activate / version upgrade).
+     * Seeds system templates and triggers into the new DB tables.
+     * Safe to call multiple times — idempotent.
+     */
+    public function migrate_system_data(): void
+    {
+        if ($this->tpl_repo === null || $this->trig_repo === null) {
+            return;
+        }
+
+        $this->tpl_repo->seed_system_templates();
+        $this->trig_repo->seed_system_triggers($this->tpl_repo);
+    }
+
+    /**
+     * Run migration on every load if the templates table exists but is empty.
+     * This handles the case where someone wiped the table manually.
+     */
+    public function maybe_migrate_system_data(): void
+    {
+        if ($this->tpl_repo === null) {
+            return;
+        }
+
+        global $wpdb;
+
+        // Always check the campaigns table regardless of the transient
+        // (it was added after the initial release and may not exist on existing installs)
+        $cpg_table = $this->get_table_name('email_campaigns');
+        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $cpg_table)) !== $cpg_table) {
+            $this->setup();
+            if (!empty($this->tables)) {
+                $db = \CobraAI\Database::get_instance();
+                $db->register_feature_tables($this->feature_id, $this->tables);
+                $db->install_feature_tables($this->feature_id);
+            }
+            // Reset transient so the rest of the checks run too
+            delete_transient('cobra_em_system_seeded');
+        }
+
+        // Use a transient to avoid a DB query on every request for the rest
+        if (get_transient('cobra_em_system_seeded')) {
+            return;
+        }
+
+        // Ensure templates table exists
+        $tpl_table    = $this->get_table_name('email_templates');
+        $table_exists = $wpdb->get_var(
+            $wpdb->prepare('SHOW TABLES LIKE %s', $tpl_table)
+        );
+
+        if (!$table_exists) {
+            $this->setup();
+            if (!empty($this->tables)) {
+                $db = \CobraAI\Database::get_instance();
+                $db->register_feature_tables($this->feature_id, $this->tables);
+                $db->install_feature_tables($this->feature_id);
+            }
+        }
+
+        $count = (int) $wpdb->get_var(
+            "SELECT COUNT(*) FROM {$tpl_table} WHERE is_system = 1"
+        );
+
+        if ($count < 8) {
+            $this->migrate_system_data();
+        }
+
+        set_transient('cobra_em_system_seeded', 1, DAY_IN_SECONDS);
+    }
+
     // -------------------------------------------------------------------------
     // SETTINGS
     // -------------------------------------------------------------------------
+
+    /**
+     * Public accessor for default email subjects and template bodies.
+     * Used by TemplateRepository::seed_system_templates().
+     *
+     * @return array{emails: array, templates: array}
+     */
+    public function get_default_email_data(): array
+    {
+        $defaults = $this->get_feature_default_options();
+        return [
+            'emails'    => $defaults['emails']    ?? [],
+            'templates' => $defaults['templates'] ?? [],
+        ];
+    }
 
     protected function get_feature_default_options(): array
     {

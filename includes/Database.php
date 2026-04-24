@@ -249,8 +249,9 @@ class Database
         $sql = "CREATE TABLE IF NOT EXISTS $table_name (\n";
 
         // Add fields
+        $reserved = ['KEY', 'PRIMARY KEY', 'UNIQUE KEY'];
         foreach ($schema as $field => $definition) {
-            if ($field !== 'KEY' && $field !== 'PRIMARY KEY') {
+            if (!in_array($field, $reserved, true)) {
                 $sql .= "  $field $definition,\n";
             }
         }
@@ -260,10 +261,17 @@ class Database
             $sql .= "  PRIMARY KEY " . $schema['PRIMARY KEY'] . ",\n";
         }
 
-        // Add keys
+        // Add regular keys
         if (isset($schema['KEY'])) {
             foreach ($schema['KEY'] as $key_name => $definition) {
                 $sql .= "  KEY $key_name $definition,\n";
+            }
+        }
+
+        // Add unique keys
+        if (isset($schema['UNIQUE KEY'])) {
+            foreach ($schema['UNIQUE KEY'] as $key_name => $definition) {
+                $sql .= "  UNIQUE KEY $key_name $definition,\n";
             }
         }
 

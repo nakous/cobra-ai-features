@@ -60,6 +60,55 @@ class EmailQueue
         return $result !== false;
     }
 
+    /**
+     * Enqueue an email from a dynamic trigger.
+     * Uses the template slug as email_type and stores trigger_id in payload metadata.
+     * Deduplication: one pending entry per (user_id + email_type + trigger_id).
+     *
+     * @param int    $user_id
+     * @param string $template_slug   Slug of the email template to render
+     * @param int    $scheduled_at    Unix timestamp for when to send
+     * @param int    $trigger_id      ID of the trigger that fired
+     * @param array  $hook_args       Raw hook arguments (stored for template rendering)
+     * @return bool
+     */
+    public function enqueue_trigger(int $user_id, string $template_slug, int $scheduled_at, int $trigger_id, array $hook_args = []): bool
+    {
+        global $wpdb;
+        $table = $this->feature->get_table_name('email_queue');
+
+        // Avoid duplicate pending entry for same user + template + trigger
+        $existing = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$table}
+                 WHERE user_id = %d AND email_type = %s AND status = 'pending'
+                   AND JSON_EXTRACT(payload, '$.trigger_id') = %d",
+                $user_id,
+                $template_slug,
+                $trigger_id
+            )
+        );
+
+        if ($existing > 0) {
+            return false;
+        }
+
+        $result = $wpdb->insert(
+            $table,
+            [
+                'user_id'      => $user_id,
+                'email_type'   => $template_slug,
+                'scheduled_at' => date('Y-m-d H:i:s', $scheduled_at),
+                'status'       => 'pending',
+                'payload'      => wp_json_encode(['trigger_id' => $trigger_id, 'hook_args' => $hook_args]),
+                'created_at'   => current_time('mysql'),
+            ],
+            ['%d', '%s', '%s', '%s', '%s', '%s']
+        );
+
+        return $result !== false;
+    }
+
     // -------------------------------------------------------------------------
     // PROCESS DUE EMAILS
     // -------------------------------------------------------------------------

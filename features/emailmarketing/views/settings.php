@@ -7,6 +7,8 @@ $page_slug   = 'cobra-ai-' . $this->get_feature_id();
 $tabs        = [
     'general'   => __('Général', 'cobra-ai'),
     'templates' => __('Templates', 'cobra-ai'),
+    'triggers'  => __('Déclencheurs', 'cobra-ai'),
+    'campaigns' => __('Campagnes', 'cobra-ai'),
     'log'       => __('Historique', 'cobra-ai'),
     'bounce'    => __('Bounce / Brevo', 'cobra-ai'),
 ];
@@ -49,10 +51,10 @@ $tabs        = [
 
     <div class="cobra-em-tab-content" style="background:#fff;border:1px solid #c3c4c7;border-top:none;padding:20px 24px;">
 
-        <?php if ($current_tab === 'log' || $current_tab === 'bounce'): ?>
+        <?php if (in_array($current_tab, ['log', 'bounce', 'templates', 'triggers', 'campaigns'], true)): ?>
             <?php include __DIR__ . '/tabs/' . $current_tab . '.php'; ?>
         <?php else: ?>
-        <!-- Settings form for general + templates tabs -->
+        <!-- Settings form — onglet Général uniquement (layout/footer inclus) -->
         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
             <?php wp_nonce_field('cobra_ai_feature_settings_' . $this->get_feature_id()); ?>
             <input type="hidden" name="action"     value="cobra_ai_save_feature_settings">

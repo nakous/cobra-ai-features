@@ -36,6 +36,11 @@ class CronManager
         if (!wp_next_scheduled('cobra_emailmarketing_weekly_report')) {
             wp_schedule_event($this->next_monday_8h(), 'weekly', 'cobra_emailmarketing_weekly_report');
         }
+
+        // Campaign dispatcher — hourly
+        if (!wp_next_scheduled('cobra_emailmarketing_dispatch_campaigns')) {
+            wp_schedule_event(time(), 'hourly', 'cobra_emailmarketing_dispatch_campaigns');
+        }
     }
 
     public function deregister_crons(): void
@@ -43,6 +48,7 @@ class CronManager
         wp_clear_scheduled_hook('cobra_emailmarketing_process_queue');
         wp_clear_scheduled_hook('cobra_emailmarketing_re_engagement');
         wp_clear_scheduled_hook('cobra_emailmarketing_weekly_report');
+        wp_clear_scheduled_hook('cobra_emailmarketing_dispatch_campaigns');
     }
 
     private function next_monday_8h(): int
@@ -56,6 +62,27 @@ class CronManager
     // -------------------------------------------------------------------------
     // CRON CALLBACKS
     // -------------------------------------------------------------------------
+
+    // -------------------------------------------------------------------------
+    // CAMPAIGN DISPATCHER
+    // -------------------------------------------------------------------------
+
+    public function dispatch_scheduled_campaigns(): void
+    {
+        if (!$this->feature->is_globally_enabled()) {
+            return;
+        }
+
+        if (!$this->feature->campaign_repo || !$this->feature->dispatcher) {
+            return;
+        }
+
+        $campaigns = $this->feature->campaign_repo->get_due_campaigns();
+
+        foreach ($campaigns as $campaign) {
+            $this->feature->dispatcher->dispatch((int) $campaign['id']);
+        }
+    }
 
     public function process_queue(): void
     {

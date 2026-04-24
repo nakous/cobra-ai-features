@@ -1,28 +1,6 @@
 <?php
 defined('ABSPATH') || exit;
 /** @var \CobraAI\Features\EmailMarketing\Feature $this */
-
-$email_labels = [
-    'onboarding_j0'    => __('Onboarding J+0 — Bienvenue', 'cobra-ai'),
-    'onboarding_j2'    => __('Onboarding J+2 — Prise en main', 'cobra-ai'),
-    'onboarding_j7'    => __('Onboarding J+7 — Bilan', 'cobra-ai'),
-    're_engagement_7j' => __('Re-engagement 7 jours inactif', 'cobra-ai'),
-    're_engagement_30j'=> __('Re-engagement 30 jours inactif', 'cobra-ai'),
-    'weekly_report'    => __('Rapport hebdomadaire', 'cobra-ai'),
-    'tips'             => __('Conseils personnalisés', 'cobra-ai'),
-    'milestone'        => __('Félicitations (étapes clés)', 'cobra-ai'),
-];
-
-$email_triggers = [
-    'onboarding_j0'    => __('À la confirmation du compte (immédiat)', 'cobra-ai'),
-    'onboarding_j2'    => __('2 jours après la confirmation du compte', 'cobra-ai'),
-    'onboarding_j7'    => __('7 jours après la confirmation du compte', 'cobra-ai'),
-    're_engagement_7j' => __('Cron quotidien — utilisateur inactif depuis 7 jours', 'cobra-ai'),
-    're_engagement_30j'=> __('Cron quotidien — utilisateur inactif depuis 30 jours', 'cobra-ai'),
-    'weekly_report'    => __('Cron hebdomadaire (jour et heure configurables ci-dessous)', 'cobra-ai'),
-    'tips'             => __('Déclenchement manuel via hook (non planifié par défaut)', 'cobra-ai'),
-    'milestone'        => __('Sur action utilisateur qui franchit un palier (hook applicatif)', 'cobra-ai'),
-];
 ?>
 
 <h2 style="margin-top:8px;"><?php _e('Paramètres généraux', 'cobra-ai'); ?></h2>
@@ -84,51 +62,6 @@ $email_triggers = [
     </tr>
 </table>
 
-<h2><?php _e('Activation par type d\'email', 'cobra-ai'); ?></h2>
-<p class="description" style="margin-bottom:16px;">
-    <?php _e('Activez/désactivez chaque type d\'email indépendamment. Modifiez les sujets dans l\'onglet Templates.', 'cobra-ai'); ?>
-</p>
-
-<table class="wp-list-table widefat fixed striped" style="max-width:1000px;">
-    <thead>
-        <tr>
-            <th style="width:40px;"><?php _e('Actif', 'cobra-ai'); ?></th>
-            <th style="width:220px;"><?php _e('Type', 'cobra-ai'); ?></th>
-            <th><?php _e('Sujet & déclencheur', 'cobra-ai'); ?></th>
-            <th style="width:130px;"><?php _e('Test', 'cobra-ai'); ?></th>
-        </tr>
-    </thead>
-    <tbody>
-        <?php foreach ($email_labels as $type => $label): ?>
-        <tr>
-            <td style="text-align:center;">
-                <input type="checkbox"
-                    name="settings[emails][<?php echo esc_attr($type); ?>][enabled]"
-                    value="1"
-                    <?php checked(!empty($settings['emails'][$type]['enabled'])); ?>>
-            </td>
-            <td><strong><?php echo esc_html($label); ?></strong></td>
-            <td>
-                <input type="text"
-                    name="settings[emails][<?php echo esc_attr($type); ?>][subject]"
-                    value="<?php echo esc_attr($settings['emails'][$type]['subject'] ?? ''); ?>"
-                    class="regular-text" style="width:100%;">
-                <p class="description" style="margin:4px 0 0;">
-                    <span class="dashicons dashicons-clock" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;color:#666;"></span>
-                    <em><?php echo esc_html($email_triggers[$type] ?? ''); ?></em>
-                </p>
-            </td>
-            <td>
-                <button type="button" class="button button-small cobra-em-test-btn"
-                    data-type="<?php echo esc_attr($type); ?>">
-                    <?php _e('Envoyer test', 'cobra-ai'); ?>
-                </button>
-            </td>
-        </tr>
-        <?php endforeach; ?>
-    </tbody>
-</table>
-
 <h2 style="margin-top:32px;"><?php _e('Planification cron', 'cobra-ai'); ?></h2>
 <table class="form-table">
     <tr>
@@ -160,19 +93,51 @@ $email_triggers = [
     </tr>
 </table>
 
-<!-- Modal test email -->
-<div id="cobra-em-test-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;align-items:center;justify-content:center;">
-    <div style="background:#fff;padding:28px;border-radius:8px;width:400px;max-width:90%;">
-        <h3 style="margin-top:0;"><?php _e('Envoyer un email de test', 'cobra-ai'); ?></h3>
-        <p>
-            <label><?php _e('Destinataire', 'cobra-ai'); ?></label><br>
-            <input type="email" id="cobra-em-test-to" value="<?php echo esc_attr(get_option('admin_email')); ?>" style="width:100%;margin-top:4px;">
-        </p>
-        <input type="hidden" id="cobra-em-test-type" value="">
-        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
-            <button type="button" class="button" id="cobra-em-test-cancel"><?php _e('Annuler', 'cobra-ai'); ?></button>
-            <button type="button" class="button button-primary" id="cobra-em-test-send"><?php _e('Envoyer', 'cobra-ai'); ?></button>
-        </div>
-        <p id="cobra-em-test-result" style="margin-top:12px;font-weight:bold;"></p>
-    </div>
-</div>
+<hr style="margin:32px 0;">
+
+<h2><?php _e('Mise en page des emails', 'cobra-ai'); ?></h2>
+<p class="description" style="margin-bottom:16px;">
+    <?php _e('Le layout entoure tous les emails. Utilisez la variable <code>{{content}}</code> pour insérer le corps, <code>{{footer}}</code> pour le pied de page.', 'cobra-ai'); ?>
+</p>
+
+<table class="form-table">
+    <tr>
+        <th scope="row"><label for="tpl_layout"><?php _e('Layout HTML global', 'cobra-ai'); ?></label></th>
+        <td>
+            <?php
+            wp_editor(
+                $settings['templates']['layout'] ?? '',
+                'tpl_layout',
+                [
+                    'textarea_name' => 'settings[templates][layout]',
+                    'media_buttons' => false,
+                    'textarea_rows' => 14,
+                    'teeny'         => false,
+                    'tinymce'       => ['toolbar1' => 'bold,italic,underline,forecolor,bullist,numlist,link,unlink,code,undo,redo'],
+                ]
+            );
+            ?>
+            <p class="description"><?php _e('Variables disponibles : <code>{{content}}</code> <code>{{footer}}</code> <code>{{site_name}}</code> <code>{{subject}}</code> etc.', 'cobra-ai'); ?></p>
+        </td>
+    </tr>
+    <tr>
+        <th scope="row"><label for="tpl_footer"><?php _e('Pied de page (footer)', 'cobra-ai'); ?></label></th>
+        <td>
+            <?php
+            wp_editor(
+                $settings['templates']['footer'] ?? '',
+                'tpl_footer',
+                [
+                    'textarea_name' => 'settings[templates][footer]',
+                    'media_buttons' => false,
+                    'textarea_rows' => 6,
+                    'teeny'         => true,
+                ]
+            );
+            ?>
+            <p class="description"><?php _e('Variables disponibles : <code>{{site_name}}</code> <code>{{unsubscribe_url}}</code> etc.', 'cobra-ai'); ?></p>
+        </td>
+    </tr>
+</table>
+
+
