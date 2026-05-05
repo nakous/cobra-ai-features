@@ -402,7 +402,7 @@ $this->display_settings_errors();
         <code>[cobra_faq category="general" limit="5" orderby="views" order="DESC"]</code>
     </div>
 </div>
-
+<!-- TODO : repetion CSS -->
 <style>
 .cobra-settings-section {
     background: #fff;
@@ -527,7 +527,7 @@ $this->display_settings_errors();
 }
 
 .cobra-faq-question h3 {
-    margin: 0;
+    margin: 0px !important;
     padding-right: 2rem;
     font-size: 1.1rem;
     color: #333;
