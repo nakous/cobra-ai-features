@@ -132,16 +132,18 @@ class Admin
 
 
 
+        $tab = isset($_POST['tab']) ? sanitize_key($_POST['tab']) : '';
+        $success_args = ['page' => 'cobra-ai-' . $feature_id, 'settings-updated' => 'true'];
+        $error_args   = ['page' => 'cobra-ai-' . $feature_id, 'error' => 'save-failed'];
+        if ($tab !== '') {
+            $success_args['tab'] = $tab;
+            $error_args['tab']   = $tab;
+        }
+
         if ($feature->update_settings($sanitized)) {
-            $redirect_url = add_query_arg([
-                'page' => 'cobra-ai-' . $feature_id . (isset($_POST['tab']) ? '&tab=' . $_POST['tab'] : ''),
-                'settings-updated' => 'true'
-            ], admin_url('admin.php'));
+            $redirect_url = add_query_arg($success_args, admin_url('admin.php'));
         } else {
-            $redirect_url = add_query_arg([
-                'page' => 'cobra-ai-' . $feature_id . (isset($_POST['tab']) ? '&tab=' . $_POST['tab'] : ''),
-                'error' => 'save-failed'
-            ], admin_url('admin.php'));
+            $redirect_url = add_query_arg($error_args, admin_url('admin.php'));
         }
 
         wp_redirect($redirect_url);

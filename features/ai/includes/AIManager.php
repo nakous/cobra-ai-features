@@ -128,13 +128,14 @@ class AIManager
     /**
      * Process AI request
      *
-     * @param string $provider Provider ID
-     * @param string $prompt User prompt
-     * @param array $options Additional options
+     * @param string       $provider     Provider ID
+     * @param string|array $prompt       User prompt (or audio input for 'audio' type)
+     * @param array        $options      Additional options
+     * @param string       $request_type Request type: 'text' | 'image' | 'audio' | 'tts'
      * @return array Response data
      * @throws \Exception
      */
-    public function process_request(string $provider, string|array  $prompt, array $options = []): array
+    public function process_request(string $provider, string|array $prompt, array $options = [], string $request_type = 'text'): array
     {
         try {
             // Check if provider exists and is active
@@ -163,13 +164,15 @@ class AIManager
 
             // Prepare tracking data
             $tracking_data = [
-                'user_id' => $user_id,
-                'prompt' => is_array($prompt) ? json_encode($prompt) : $prompt,
-                'ai_provider' => $provider,
-                'ip' => $this->get_client_ip(),
-                'meta_data' => [
-                    'options' => $options,
-                    'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? null
+                'user_id'       => $user_id,
+                'prompt'        => is_array($prompt) ? json_encode($prompt) : $prompt,
+                'ai_provider'   => $provider,
+                'response_type' => $request_type,
+                'ip'            => $this->get_client_ip(),
+                'meta_data'     => [
+                    'options'    => $options,
+                    'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? null,
+                    'type'       => $request_type,
                 ]
             ];
 
@@ -179,19 +182,34 @@ class AIManager
             // Fire before request action
             do_action('cobra_ai_before_request', $provider, $prompt, $user_id, $tracking_id);
 
-            // Process request through provider
+            // Route request to the correct provider method based on type
             $start_time = microtime(true);
-            $response = $provider_instance->process_request($prompt, $options);
+            switch ($request_type) {
+                case 'image':
+                    $text_prompt = is_array($prompt) ? ($prompt['user'] ?? json_encode($prompt)) : $prompt;
+                    $response = $provider_instance->generate_image($text_prompt, $options);
+                    break;
+                case 'audio':
+                    $response = $provider_instance->transcribe_audio($prompt, $options);
+                    break;
+                case 'tts':
+                    $text_prompt = is_array($prompt) ? ($prompt['user'] ?? json_encode($prompt)) : $prompt;
+                    $response = $provider_instance->synthesize_speech($text_prompt, $options);
+                    break;
+                default: // 'text'
+                    $response = $provider_instance->process_request($prompt, $options);
+            }
             $duration = microtime(true) - $start_time;
 
             // Update tracking with response
             $this->feature->tracking->update_tracking($tracking_id, [
-                'response' => $response['content'],
-                'consumed' => $response['tokens'] ?? 0,
-                'status' => 'completed',
-                'meta_data' => array_merge($tracking_data['meta_data'], [
-                    'duration' => $duration,
-                    'response_meta' => $response['meta'] ?? null
+                'response'      => $response['content'],
+                'consumed'      => $response['tokens'] ?? 0,
+                'status'        => 'completed',
+                'response_type' => $request_type,
+                'meta_data'     => array_merge($tracking_data['meta_data'], [
+                    'duration'      => $duration,
+                    'response_meta' => $response['meta'] ?? null,
                 ])
             ]);
 

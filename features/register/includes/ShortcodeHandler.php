@@ -21,10 +21,10 @@ class ShortcodeHandler
 
     public function short_add_action()
     {
-        add_action('plugins_loaded', [$this, 'init_session'], 1);
+        // Start session now — this method is called from init_hooks() which runs on the
+        // WordPress 'init' hook, so 'plugins_loaded' has already fired. Call directly.
+        $this->init_session();
         add_action('init', [$this, 'register_form_actions'], 10);
-        $this->session_started = true;
-        @session_start();
         // Handle form submission
         add_action('admin_post_nopriv_cobra_login_action', [$this, 'handle_login_submission']);
         add_action('admin_post_cobra_login_action', [$this, 'handle_login_submission']);

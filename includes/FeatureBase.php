@@ -47,23 +47,23 @@ abstract class FeatureBase
     private ?array $settings_cache = null;
     
     /**
-     * Feature status cache
+     * Feature status cache — keyed by feature_id to avoid cross-feature pollution
      */
-    private ?bool $active_status_cache = null;
+    private array $active_status_cache = [];
     
     /**
      * Check if feature is active (cached)
      */
     public function is_feature_active(string $feature_id): bool
     {
-        if ($this->active_status_cache !== null) {
-            return $this->active_status_cache;
+        if (array_key_exists($feature_id, $this->active_status_cache)) {
+            return $this->active_status_cache[$feature_id];
         }
         
         $active_features = get_option('cobra_ai_enabled_features', []);
-        $this->active_status_cache = in_array($feature_id, $active_features, true);
+        $this->active_status_cache[$feature_id] = in_array($feature_id, $active_features, true);
         
-        return $this->active_status_cache;
+        return $this->active_status_cache[$feature_id];
     }
     
     /**

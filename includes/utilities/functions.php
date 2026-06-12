@@ -58,13 +58,30 @@ function cobra_ai_get_settings(?string $key = null, $default = null)
     ];
 
     $settings = get_option('cobra_ai_settings', []);
-    $settings = array_merge_recursive($default_settings, $settings);
+    $settings = cobra_ai_deep_merge($default_settings, $settings);
 
     if ($key === null) {
         return $settings;
     }
 
     return cobra_ai_get_array_value($settings, $key, $default);
+}
+
+/**
+ * Recursively merge $settings into $defaults.
+ * Stored scalar values always win; missing keys fall back to defaults.
+ */
+function cobra_ai_deep_merge(array $defaults, array $settings): array
+{
+    foreach ($defaults as $key => $value) {
+        if (!array_key_exists($key, $settings)) {
+            $settings[$key] = $value;
+        } elseif (is_array($value) && is_array($settings[$key])) {
+            $settings[$key] = cobra_ai_deep_merge($value, $settings[$key]);
+        }
+        // Stored scalar wins — no change needed
+    }
+    return $settings;
 }
 
 /**

@@ -73,19 +73,23 @@ class UserRegistrationHandler
     }
     public function handle_resend_verification(): void
     {
+        check_ajax_referer('cobra-ai-register', 'nonce');
 
-        $user_id = $_POST['user_id'] ?? 0;
+        $user_id = absint($_POST['user_id'] ?? 0);
+
         // Validate user ID
-        if (!is_numeric($user_id) || $user_id <= 0) {
-            wp_send_json_error(__('Invalid user ID.', 'cobra-ai'));
+        if ($user_id <= 0) {
+            wp_send_json_error(['message' => __('Invalid user ID.', 'cobra-ai')]);
             return;
         }
+
+        // Non-admins may only resend for themselves
+        if (!current_user_can('manage_options') && get_current_user_id() !== $user_id) {
+            wp_send_json_error(['message' => __('Permission denied.', 'cobra-ai')]);
+            return;
+        }
+
         try {
-
-
-            // Get settings
-            $settings = $this->feature->get_settings();
-
             // Generate verification token
             $token = $this->generate_verification_token($user_id);
 
@@ -97,7 +101,7 @@ class UserRegistrationHandler
             ]);
         } catch (\Exception $e) {
             $this->log_action($user_id, 'resend_verification', 'failed', ['error' => $e->getMessage()]);
-            wp_send_json_error($e->getMessage());
+            wp_send_json_error(['message' => __('Failed to send verification email.', 'cobra-ai')]);
         }
     }
     /**

@@ -68,7 +68,7 @@ class Submissions_Table extends \WP_List_Table {
             case 'created_at':
                 return human_time_diff(strtotime($item[$column_name]), current_time('timestamp')) . ' ' . __('ago', 'cobra-ai');
             default:
-                return print_r($item, true);
+                return esc_html((string) ($item[$column_name] ?? ''));
         }
     }
     

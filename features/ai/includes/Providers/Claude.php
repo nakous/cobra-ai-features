@@ -35,7 +35,7 @@ class Claude extends AIProvider {
     /**
      * Process request
      */
-    public function process_request(string $prompt, array $options = []): array {
+    public function process_request(string|array $prompt, array $options = []): array {
         // Validate options
         $options = $this->validate_options($options);
 

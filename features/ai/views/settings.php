@@ -124,15 +124,24 @@ $this->display_settings_errors();
                                                     $models = [];
                                                     switch ($provider_id) {
                                                         case 'openai':
-                                                            $models = [
-                                                                'gpt-5-2025-08-07' => 'GPT-5',
-                                                                'gpt-5-mini-2025-08-07' => 'GPT-5 Mini',
-                                                                'gpt-4o-mini' => 'GPT-4o Mini',
-                                                                'gpt-4o' => 'GPT-4o',
-                                                                'gpt-4' => 'GPT-4',
-                                                                'gpt-4-turbo' => 'GPT-4 Turbo',
-                                                                'gpt-3.5-turbo' => 'GPT-3.5 Turbo'
-                                                            ];
+                                                            $_oi_for_models = $this->manager->get_provider('openai');
+                                                            if ($_oi_for_models) {
+                                                                $models = array_map(
+                                                                    fn($info) => $info['name'],
+                                                                    $_oi_for_models->get_supported_models()
+                                                                );
+                                                            } else {
+                                                                $models = [
+                                                                    'gpt-5.4'       => 'GPT-5.4',
+                                                                    'gpt-5.4-mini'  => 'GPT-5.4 Mini',
+                                                                    'gpt-5.4-nano'  => 'GPT-5.4 Nano',
+                                                                    'gpt-4o'        => 'GPT-4o',
+                                                                    'gpt-4o-mini'   => 'GPT-4o Mini',
+                                                                    'gpt-4-turbo'   => 'GPT-4 Turbo',
+                                                                    'gpt-4'         => 'GPT-4',
+                                                                    'gpt-3.5-turbo' => 'GPT-3.5 Turbo',
+                                                                ];
+                                                            }
                                                             break;
                                                         case 'claude':
                                                             $models = [
@@ -199,6 +208,192 @@ $this->display_settings_errors();
                                     <?php _e('Test Connection', 'cobra-ai'); ?>
                                 </button>
                             <?php endif; ?>
+
+                            <?php if ($provider_id === 'openai'):
+                                $oi_inst       = $this->manager->get_provider('openai');
+                                $oi_cfg        = $provider_settings['config'] ?? [];
+                                $img_models    = $oi_inst ? $oi_inst->get_image_models() : [];
+                                $aud_models    = $oi_inst ? $oi_inst->get_audio_models() : [];
+                                $tts_models    = $oi_inst ? $oi_inst->get_tts_models()   : [];
+                                $cur_img_model  = $oi_cfg['image_model'] ?? 'dall-e-3';
+                                $cur_tts_model  = $oi_cfg['tts_model']   ?? 'gpt-4o-mini-tts';
+                                $cur_img_sizes  = $img_models[$cur_img_model]['sizes']   ?? ['1024x1024'];
+                                $cur_tts_voices = $tts_models[$cur_tts_model]['voices']  ?? ['alloy','echo','fable','onyx','nova','shimmer'];
+                            ?>
+
+                            <!-- OpenAI: Image | Audio/STT | TTS sub-tabs -->
+                            <nav class="provider-sub-tabs">
+                                <a href="#openai-image" class="provider-sub-tab"><?php _e('Image Generation', 'cobra-ai'); ?></a>
+                                <a href="#openai-audio" class="provider-sub-tab"><?php _e('Audio / STT', 'cobra-ai'); ?></a>
+                                <a href="#openai-tts"   class="provider-sub-tab"><?php _e('Text-to-Speech', 'cobra-ai'); ?></a>
+                            </nav>
+
+                            <!-- Image Generation -->
+                            <div id="openai-image" class="provider-sub-pane" style="display:none;">
+                                <h4><?php _e('Image Generation Settings', 'cobra-ai'); ?></h4>
+                                <table class="form-table">
+                                    <tr>
+                                        <th scope="row"><?php _e('Image Model', 'cobra-ai'); ?></th>
+                                        <td>
+                                            <select name="settings[providers][openai][config][image_model]"
+                                                    id="openai_image_model" class="openai-image-model-select">
+                                                <?php foreach ($img_models as $mid => $minfo): ?>
+                                                    <option value="<?php echo esc_attr($mid); ?>"
+                                                        <?php selected($oi_cfg['image_model'] ?? 'dall-e-3', $mid); ?>>
+                                                        <?php echo esc_html($minfo['name']); ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row"><?php _e('Image Size', 'cobra-ai'); ?></th>
+                                        <td>
+                                            <select name="settings[providers][openai][config][image_size]" id="openai_image_size">
+                                                <?php foreach ($cur_img_sizes as $s): ?>
+                                                    <option value="<?php echo esc_attr($s); ?>"
+                                                        <?php selected($oi_cfg['image_size'] ?? '1024x1024', $s); ?>>
+                                                        <?php echo esc_html($s); ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <p class="description"><?php _e('Available sizes depend on the selected model.', 'cobra-ai'); ?></p>
+                                        </td>
+                                    </tr>
+                                    <tr class="dall-e-3-only"<?php echo ($cur_img_model !== 'dall-e-3') ? ' style="display:none;"' : ''; ?>>
+                                        <th scope="row"><?php _e('Quality', 'cobra-ai'); ?></th>
+                                        <td>
+                                            <select name="settings[providers][openai][config][image_quality]">
+                                                <option value="standard" <?php selected($oi_cfg['image_quality'] ?? 'standard', 'standard'); ?>><?php _e('Standard', 'cobra-ai'); ?></option>
+                                                <option value="hd"       <?php selected($oi_cfg['image_quality'] ?? 'standard', 'hd'); ?>><?php _e('HD', 'cobra-ai'); ?></option>
+                                            </select>
+                                            <p class="description"><?php _e('DALL-E 3 only.', 'cobra-ai'); ?></p>
+                                        </td>
+                                    </tr>
+                                    <tr class="dall-e-3-only"<?php echo ($cur_img_model !== 'dall-e-3') ? ' style="display:none;"' : ''; ?>>
+                                        <th scope="row"><?php _e('Style', 'cobra-ai'); ?></th>
+                                        <td>
+                                            <select name="settings[providers][openai][config][image_style]">
+                                                <option value="vivid"   <?php selected($oi_cfg['image_style'] ?? 'vivid', 'vivid'); ?>><?php _e('Vivid', 'cobra-ai'); ?></option>
+                                                <option value="natural" <?php selected($oi_cfg['image_style'] ?? 'vivid', 'natural'); ?>><?php _e('Natural', 'cobra-ai'); ?></option>
+                                            </select>
+                                            <p class="description"><?php _e('DALL-E 3 only.', 'cobra-ai'); ?></p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row"><?php _e('Response Format', 'cobra-ai'); ?></th>
+                                        <td>
+                                            <select name="settings[providers][openai][config][image_response_format]">
+                                                <option value="url"      <?php selected($oi_cfg['image_response_format'] ?? 'url', 'url'); ?>><?php _e('URL (recommended)', 'cobra-ai'); ?></option>
+                                                <option value="b64_json" <?php selected($oi_cfg['image_response_format'] ?? 'url', 'b64_json'); ?>><?php _e('Base64 JSON', 'cobra-ai'); ?></option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            <!-- Audio Transcription (STT) -->
+                            <div id="openai-audio" class="provider-sub-pane" style="display:none;">
+                                <h4><?php _e('Audio Transcription Settings', 'cobra-ai'); ?></h4>
+                                <table class="form-table">
+                                    <tr>
+                                        <th scope="row"><?php _e('Transcription Model', 'cobra-ai'); ?></th>
+                                        <td>
+                                            <select name="settings[providers][openai][config][audio_model]">
+                                                <?php foreach ($aud_models as $mid => $minfo): ?>
+                                                    <option value="<?php echo esc_attr($mid); ?>"
+                                                        <?php selected($oi_cfg['audio_model'] ?? 'gpt-4o-transcribe', $mid); ?>>
+                                                        <?php echo esc_html($minfo['name']); ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row"><?php _e('Language', 'cobra-ai'); ?></th>
+                                        <td>
+                                            <input type="text"
+                                                name="settings[providers][openai][config][audio_language]"
+                                                value="<?php echo esc_attr($oi_cfg['audio_language'] ?? ''); ?>"
+                                                class="small-text"
+                                                placeholder="fr, en, es...">
+                                            <p class="description"><?php _e('ISO 639-1 code. Leave blank for auto-detection.', 'cobra-ai'); ?></p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row"><?php _e('Response Format', 'cobra-ai'); ?></th>
+                                        <td>
+                                            <select name="settings[providers][openai][config][audio_response_format]">
+                                                <?php foreach (['json' => 'JSON', 'text' => 'Text', 'srt' => 'SRT', 'verbose_json' => 'Verbose JSON', 'vtt' => 'VTT'] as $fv => $fl): ?>
+                                                    <option value="<?php echo esc_attr($fv); ?>"
+                                                        <?php selected($oi_cfg['audio_response_format'] ?? 'json', $fv); ?>>
+                                                        <?php echo esc_html($fl); ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            <!-- Text-to-Speech (TTS) -->
+                            <div id="openai-tts" class="provider-sub-pane" style="display:none;">
+                                <h4><?php _e('Text-to-Speech Settings', 'cobra-ai'); ?></h4>
+                                <table class="form-table">
+                                    <tr>
+                                        <th scope="row"><?php _e('TTS Model', 'cobra-ai'); ?></th>
+                                        <td>
+                                            <select name="settings[providers][openai][config][tts_model]"
+                                                    id="openai_tts_model" class="openai-tts-model-select">
+                                                <?php foreach ($tts_models as $mid => $minfo): ?>
+                                                    <option value="<?php echo esc_attr($mid); ?>"
+                                                        <?php selected($oi_cfg['tts_model'] ?? 'gpt-4o-mini-tts', $mid); ?>>
+                                                        <?php echo esc_html($minfo['name']); ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row"><?php _e('Voice', 'cobra-ai'); ?></th>
+                                        <td>
+                                            <select name="settings[providers][openai][config][tts_voice]" id="openai_tts_voice">
+                                                <?php foreach ($cur_tts_voices as $v): ?>
+                                                    <option value="<?php echo esc_attr($v); ?>"
+                                                        <?php selected($oi_cfg['tts_voice'] ?? 'alloy', $v); ?>>
+                                                        <?php echo esc_html(ucfirst($v)); ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row"><?php _e('Speed', 'cobra-ai'); ?></th>
+                                        <td>
+                                            <input type="number"
+                                                name="settings[providers][openai][config][tts_speed]"
+                                                value="<?php echo esc_attr($oi_cfg['tts_speed'] ?? '1.0'); ?>"
+                                                class="small-text" step="0.25" min="0.25" max="4.0">
+                                            <p class="description"><?php _e('Range: 0.25 – 4.0', 'cobra-ai'); ?></p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row"><?php _e('Audio Format', 'cobra-ai'); ?></th>
+                                        <td>
+                                            <select name="settings[providers][openai][config][tts_format]">
+                                                <?php foreach (['mp3' => 'MP3', 'opus' => 'Opus', 'aac' => 'AAC', 'flac' => 'FLAC', 'wav' => 'WAV', 'pcm' => 'PCM'] as $fv => $fl): ?>
+                                                    <option value="<?php echo esc_attr($fv); ?>"
+                                                        <?php selected($oi_cfg['tts_format'] ?? 'mp3', $fv); ?>>
+                                                        <?php echo esc_html($fl); ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            <?php endif; // openai only ?>
                         </div>
                     </div>
                 <?php endforeach; ?>
@@ -474,6 +669,39 @@ $this->display_settings_errors();
         height: 16px;
         font-size: 16px;
     }
+
+    /* Provider sub-tabs */
+    .provider-sub-tabs {
+        margin-top: 16px;
+        border-bottom: 1px solid #ccd0d4;
+        margin-bottom: 4px;
+    }
+    .provider-sub-tab {
+        display: inline-block;
+        padding: 6px 14px;
+        margin-right: 4px;
+        border: 1px solid transparent;
+        border-bottom: none;
+        border-radius: 3px 3px 0 0;
+        text-decoration: none;
+        color: #646970;
+        font-size: 13px;
+        cursor: pointer;
+        position: relative;
+        bottom: -1px;
+    }
+    .provider-sub-tab:hover { color: #2271b1; }
+    .provider-sub-tab.active {
+        color: #1d2327;
+        background: #fff;
+        border-color: #ccd0d4;
+        border-bottom-color: #fff;
+    }
+    .provider-sub-pane h4 {
+        margin: 12px 0 8px;
+        font-size: 14px;
+        font-weight: 600;
+    }
 </style>
 
 <script>
@@ -580,6 +808,59 @@ $this->display_settings_errors();
                 toggleIcon($(this), true);
             }).blur(function() {
                 toggleIcon($(this), false);
+            });
+        });
+
+        // Provider sub-tab navigation
+        $(document).on('click', '.provider-sub-tab', function(e) {
+            e.preventDefault();
+            var card   = $(this).closest('.provider-card');
+            var target = $(this).attr('href').replace('#', '');
+            card.find('.provider-sub-tab').removeClass('active');
+            $(this).addClass('active');
+            card.find('.provider-sub-pane').hide();
+            $('#' + target).show();
+        });
+
+        // OpenAI: image model → update size options + toggle dall-e-3-only rows
+        var cobraAiImageSizes = <?php
+            $_oi_js = $this->manager->get_provider('openai');
+            $_img_sizes_js = [];
+            if ($_oi_js) {
+                foreach ($_oi_js->get_image_models() as $_m => $_md) {
+                    $_img_sizes_js[$_m] = $_md['sizes'] ?? [];
+                }
+            }
+            echo json_encode($_img_sizes_js);
+        ?>;
+        $(document).on('change', '.openai-image-model-select', function() {
+            var model   = $(this).val();
+            var card    = $(this).closest('.provider-card');
+            var sizeSel = card.find('select[name*="[image_size]"]');
+            var sizes   = cobraAiImageSizes[model] || ['1024x1024'];
+            sizeSel.empty();
+            $.each(sizes, function(i, s) { sizeSel.append($('<option>').val(s).text(s)); });
+            card.find('.dall-e-3-only').toggle(model === 'dall-e-3');
+        });
+
+        // OpenAI: TTS model → update voice options
+        var cobraAiTtsVoices = <?php
+            $_tts_voices_js = [];
+            if ($_oi_js) {
+                foreach ($_oi_js->get_tts_models() as $_m => $_md) {
+                    $_tts_voices_js[$_m] = $_md['voices'] ?? [];
+                }
+            }
+            echo json_encode($_tts_voices_js);
+        ?>;
+        $(document).on('change', '.openai-tts-model-select', function() {
+            var model    = $(this).val();
+            var card     = $(this).closest('.provider-card');
+            var voiceSel = card.find('select[name*="[tts_voice]"]');
+            var voices   = cobraAiTtsVoices[model] || ['alloy','echo','fable','onyx','nova','shimmer'];
+            voiceSel.empty();
+            $.each(voices, function(i, v) {
+                voiceSel.append($('<option>').val(v).text(v.charAt(0).toUpperCase() + v.slice(1)));
             });
         });
     });

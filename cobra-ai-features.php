@@ -9,7 +9,7 @@
  * Text Domain: cobra-ai
  * Domain Path: /languages
  * Requires at least: 5.8
- * Requires PHP: 7.4
+ * Requires PHP: 8.0
  */
 
 namespace CobraAI;
@@ -107,7 +107,7 @@ final class CobraAI
      */
     private function check_requirements(): bool
     {
-        if (version_compare(PHP_VERSION, '7.4', '<')) {
+        if (version_compare(PHP_VERSION, '8.0', '<')) {
             add_action('admin_notices', [$this, 'php_version_notice']);
             return false;
         }
@@ -394,7 +394,7 @@ final class CobraAI
     {
         $message = sprintf(
             __('Cobra AI Features requires PHP version %s or higher. You are running version %s.', 'cobra-ai'),
-            '7.4',
+            '8.0',
             PHP_VERSION
         );
         echo '<div class="notice notice-error"><p>' . esc_html($message) . '</p></div>';
