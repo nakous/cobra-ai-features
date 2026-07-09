@@ -463,6 +463,7 @@ class Feature extends FeatureBase
 
         $faqs = $this->get_faqs($args);
         $html = '';
+        $settings = $this->get_settings();
 
         foreach ($faqs as $faq) {
             ob_start();

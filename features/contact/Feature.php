@@ -372,8 +372,8 @@ class Feature extends FeatureBase
             'message' => $message,
             'status' => 'unread',
             'user_id' => is_user_logged_in() ? get_current_user_id() : null,
-            'user_ip' => $_SERVER['REMOTE_ADDR'],
-            'user_agent' => $_SERVER['HTTP_USER_AGENT'],
+            'user_ip' => filter_var($_SERVER['REMOTE_ADDR'] ?? '', FILTER_VALIDATE_IP) ?: '',
+            'user_agent' => sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? ''),
             'created_at' => current_time('mysql')
         ];
         
@@ -1335,8 +1335,8 @@ class Feature extends FeatureBase
                 'message' => $reply,
                 'status' => 'unread',
                 'user_id' => $user_id,
-                'user_ip' => $_SERVER['REMOTE_ADDR'] ?? '',
-                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
+                'user_ip' => filter_var($_SERVER['REMOTE_ADDR'] ?? '', FILTER_VALIDATE_IP) ?: '',
+                'user_agent' => sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? ''),
                 'created_at' => current_time('mysql')
             ],
             [
@@ -1398,6 +1398,16 @@ class Feature extends FeatureBase
         }
     }
 
+
+    protected function validate_settings(array $settings): array
+    {
+        if (isset($settings['subjects']) && is_string($settings['subjects'])) {
+            $settings['subjects'] = array_values(array_filter(
+                array_map('trim', explode("\n", $settings['subjects']))
+            ));
+        }
+        return $settings;
+    }
 
     protected function get_feature_default_options(): array
     {

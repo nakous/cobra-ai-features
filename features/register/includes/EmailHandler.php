@@ -213,22 +213,27 @@ class EmailHandler
     private function send_email(string $to, string $subject, string $template, array $variables = []): bool
     {
         try {
-            // Get settings
-            $settings = $this->feature->get_settings();
-
-            // Get global template
-            $global_template = $settings['emails']['global_template'] ?? '';
-
             // Replace variables in content template
             $content = $this->replace_variables($template, $variables);
 
-            // Replace variables in global template
-            $body = $this->replace_variables($global_template, [
+            // Use shared layout and footer
+            $layout = \CobraAI\SharedEmailLayout::get_layout();
+            $footer = \CobraAI\SharedEmailLayout::get_footer();
+
+            $footer_vars = [
+                'site_name'       => get_bloginfo('name'),
+                'site_url'        => home_url(),
+                'unsubscribe_url' => home_url(),
+            ];
+            $footer = $this->replace_variables($footer, $footer_vars);
+
+            $body = $this->replace_variables($layout, [
                 'site_name' => get_bloginfo('name'),
-                'site_url' => home_url(),
-                'header' => $subject,
-                'content' => $content,
-                'footer' => $this->get_email_footer()
+                'site_url'  => home_url(),
+                'subject'   => $subject,
+                'header'    => $subject,
+                'content'   => $content,
+                'footer'    => $footer,
             ]);
 
             // Set headers
@@ -265,11 +270,9 @@ class EmailHandler
     private function replace_variables(string $template, array $variables): string
     {
         foreach ($variables as $key => $value) {
-            $template = str_replace(
-                ['{' . $key . '}', '{{' . $key . '}}'],
-                $value,
-                $template
-            );
+            // Replace double braces FIRST to avoid partial match inside {{key}}
+            $template = str_replace('{{' . $key . '}}', $value, $template);
+            $template = str_replace('{' . $key . '}',   $value, $template);
         }
 
         return $template;

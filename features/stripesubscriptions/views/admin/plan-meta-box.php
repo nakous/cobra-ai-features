@@ -114,6 +114,72 @@ wp_nonce_field('stripe_plan_save', 'stripe_plan_nonce');
         </div>
     </div>
 
+    <!-- Discount / Promo Code -->
+    <div class="plan-section">
+        <h4><?php echo esc_html__('Code Promo / Discount', 'cobra-ai'); ?></h4>
+        <div class="form-field">
+            <label for="plan_discount_id">
+                <?php echo esc_html__('Sélectionner un discount', 'cobra-ai'); ?>
+            </label>
+            <?php 
+            $current_discount = get_post_meta($post->ID, '_discount_id', true);
+            $discounts = [];
+            
+            try {
+                $discounts = $this->feature->get_api()->get_discounts();
+            } catch (\Exception $e) {
+                echo '<div class="notice notice-error inline"><p>' . 
+                     esc_html__('Erreur lors de la récupération des discounts Stripe.', 'cobra-ai') . 
+                     '</p></div>';
+            }
+            ?>
+            
+            <select id="plan_discount_id" name="stripe_plan[discount_id]" class="regular-text">
+                <option value=""><?php echo esc_html__('Aucun discount', 'cobra-ai'); ?></option>
+                
+                <?php foreach ($discounts as $discount): ?>
+                    <option value="<?php echo esc_attr($discount['id']); ?>" 
+                            data-type="<?php echo esc_attr($discount['type']); ?>"
+                            data-percent="<?php echo esc_attr($discount['percent_off'] ?? ''); ?>"
+                            data-amount="<?php echo esc_attr($discount['amount_off'] ?? ''); ?>"
+                            <?php selected($current_discount, $discount['id']); ?>>
+                        <?php 
+                        echo esc_html($discount['code']);
+                        
+                        // Display discount value
+                        if ($discount['percent_off']) {
+                            echo ' (-' . esc_html($discount['percent_off']) . '%)';
+                        } elseif ($discount['amount_off']) {
+                            $amount = number_format($discount['amount_off'] / 100, 2);
+                            echo ' (-' . esc_html($amount) . ' ' . esc_html(strtoupper($discount['currency'])) . ')';
+                        }
+                        
+                        // Display duration
+                        if ($discount['duration'] === 'once') {
+                            echo ' [' . esc_html__('Une fois', 'cobra-ai') . ']';
+                        } elseif ($discount['duration'] === 'repeating') {
+                            echo ' [' . sprintf(esc_html__('%d mois', 'cobra-ai'), $discount['duration_months']) . ']';
+                        } elseif ($discount['duration'] === 'forever') {
+                            echo ' [' . esc_html__('Permanent', 'cobra-ai') . ']';
+                        }
+                        ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            
+            <p class="description">
+                <?php echo esc_html__('Le discount sera appliqué automatiquement lors du paiement Stripe. Créez des coupons dans votre tableau de bord Stripe.', 'cobra-ai'); ?>
+            </p>
+            
+            <?php if ($current_discount): ?>
+                <p class="discount-preview" style="margin-top: 10px; padding: 10px; background: #e7f7e7; border-left: 4px solid #46b450;">
+                    <strong>✅ <?php echo esc_html__('Discount actif', 'cobra-ai'); ?></strong><br>
+                    <span id="discount-preview-text"></span>
+                </p>
+            <?php endif; ?>
+        </div>
+    </div>
+
     <!-- Plan Features -->
     <div class="plan-section">
         <h4><?php echo esc_html__('Features', 'cobra-ai'); ?></h4>

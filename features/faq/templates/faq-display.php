@@ -70,3 +70,28 @@ $categories = get_terms([
         </div>
     <?php endif; ?>
 </div>
+
+<?php if (!empty($faqs)): ?>
+<script type="application/ld+json">
+<?php
+$schema_items = [];
+foreach ($faqs as $faq) {
+    $answer_text = wp_strip_all_tags(apply_filters('the_content', $faq->post_content));
+    $answer_text = preg_replace('/\s+/', ' ', trim($answer_text));
+    $schema_items[] = [
+        '@type'          => 'Question',
+        'name'           => $faq->post_title,
+        'acceptedAnswer' => [
+            '@type' => 'Answer',
+            'text'  => $answer_text,
+        ],
+    ];
+}
+echo wp_json_encode([
+    '@context'   => 'https://schema.org',
+    '@type'      => 'FAQPage',
+    'mainEntity' => $schema_items,
+], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+?>
+</script>
+<?php endif; ?>

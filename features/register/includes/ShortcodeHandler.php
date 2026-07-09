@@ -21,10 +21,10 @@ class ShortcodeHandler
 
     public function short_add_action()
     {
-        add_action('plugins_loaded', [$this, 'init_session'], 1);
+        // Start session now — this method is called from init_hooks() which runs on the
+        // WordPress 'init' hook, so 'plugins_loaded' has already fired. Call directly.
+        $this->init_session();
         add_action('init', [$this, 'register_form_actions'], 10);
-        $this->session_started = true;
-        @session_start();
         // Handle form submission
         add_action('admin_post_nopriv_cobra_login_action', [$this, 'handle_login_submission']);
         add_action('admin_post_cobra_login_action', [$this, 'handle_login_submission']);
@@ -1295,6 +1295,33 @@ class ShortcodeHandler
             return $data;
         }
         return [];
+    }
+    
+    /**
+     * Get translated field label
+     */
+    public function get_field_label($field): string
+    {
+        $labels = [
+            'username' => __('Username', 'cobra-ai'),
+            'email' => __('Email', 'cobra-ai'),
+            'password' => __('Password', 'cobra-ai'),
+            'confirm_password' => __('Confirm Password', 'cobra-ai'),
+            'first_name' => __('First Name', 'cobra-ai'),
+            'last_name' => __('Last Name', 'cobra-ai'),
+            'phone' => __('Phone', 'cobra-ai'),
+            'address' => __('Address', 'cobra-ai'),
+            'city' => __('City', 'cobra-ai'),
+            'state' => __('State', 'cobra-ai'),
+            'zip' => __('Zip', 'cobra-ai'),
+            'country' => __('Country', 'cobra-ai'),
+            'company' => __('Company', 'cobra-ai'),
+            'website' => __('Website', 'cobra-ai'),
+            'about' => __('About', 'cobra-ai'),
+            'avatar' => __('Avatar', 'cobra-ai'),
+        ];
+
+        return $labels[$field] ?? '';
     }
     /**
      * Redirect after successful login

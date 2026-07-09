@@ -17,7 +17,7 @@ class CreditAdmin
     /**
      * Admin menu hooks
      */
-    private $menu_slug = 'cobra-ai-credits';
+    private $menu_slug = 'cobra-ai-credits-manager';
     private $capability = 'manage_options';
     private $parent_slug = 'cobra-ai-dashboard';
     /**
@@ -75,7 +75,7 @@ class CreditAdmin
             __('Credits Management', 'cobra-ai'),    // Page title
             __('Credits', 'cobra-ai'),              // Menu title
             $this->capability,                      // Capability
-            $this->menu_slug . '-manager',                       // Menu slug
+            $this->menu_slug,                       // Menu slug
             [$this, 'render_credits_page']          // Callback function
         );
     }
@@ -226,7 +226,7 @@ class CreditAdmin
 
             // Redirect back with success message
             wp_redirect(add_query_arg(
-                ['page' => 'cobra-ai-credits', 'message' => 'credit_updated'],
+                ['page' => $this->menu_slug, 'message' => 'credit_updated'],
                 admin_url('admin.php')
             ));
             exit;
@@ -243,12 +243,12 @@ class CreditAdmin
             'user_id' => isset($_GET['user_id']) ? intval($_GET['user_id']) : 0,
             'user' => null,
             'credit_types' => $this->feature->get_credit_types(),
-            'users' => get_users(['fields' => ['ID', 'display_name', 'user_email']])
+            'users' => get_users(['fields' => ['ID', 'display_name', 'user_email']]),
+            'settings' => $this->feature->get_settings(),
         ];
 
         if ($data['user_id']) {
             $data['user'] = get_user_by('id', $data['user_id']);
-            $data['settings'] = $this->feature->get_settings();
         }
 
         $this->load_view('add-credit.php', $data);
@@ -357,7 +357,7 @@ class CreditAdmin
 
             // Redirect back to credits list with success message
             wp_redirect(add_query_arg(
-                ['page' => $this->menu_slug."-manager", 'message' => 'credit_added'],
+                ['page' => $this->menu_slug, 'message' => 'credit_added'],
                 admin_url('admin.php')
             ));
             exit;
@@ -442,7 +442,7 @@ class CreditAdmin
 
             // Redirect with success message
             wp_redirect(add_query_arg(
-                ['page' => 'cobra-ai-credits', 'message' => 'credit_deleted'],
+                ['page' => $this->menu_slug, 'message' => 'credit_deleted'],
                 admin_url('admin.php')
             ));
             exit;
@@ -535,15 +535,17 @@ class CreditAdmin
             return $redirect_to;
         }
 
-        // Store user IDs in session for the bulk credit form
-        if (!session_id()) {
-            session_start();
-        }
-        $_SESSION['cobra_ai_bulk_credit_users'] = array_map('intval', $user_ids);
+        // Store selected user IDs in a short-lived transient scoped to the
+        // current admin user (avoids PHP sessions in wp-admin).
+        set_transient(
+            'cobra_ai_bulk_credit_users_' . get_current_user_id(),
+            array_map('intval', $user_ids),
+            15 * MINUTE_IN_SECONDS
+        );
 
         // Redirect to bulk credit form
         return add_query_arg([
-            'page' => 'cobra-ai-credits',
+            'page' => $this->menu_slug,
             'action' => 'bulk_add'
         ], admin_url('admin.php'));
     }
@@ -553,11 +555,10 @@ class CreditAdmin
      */
     private function render_bulk_add_form(): void
     {
-        if (!session_id()) {
-            session_start();
+        $user_ids = get_transient('cobra_ai_bulk_credit_users_' . get_current_user_id());
+        if (!is_array($user_ids)) {
+            $user_ids = [];
         }
-
-        $user_ids = $_SESSION['cobra_ai_bulk_credit_users'] ?? [];
         if (empty($user_ids)) {
             wp_die(__('No users selected', 'cobra-ai'));
         }
@@ -605,9 +606,11 @@ class CreditAdmin
                 }
             }
 
-            // Redirect with results
+            // Clear the pending bulk selection, then redirect with results
+            delete_transient('cobra_ai_bulk_credit_users_' . get_current_user_id());
+
             wp_redirect(add_query_arg([
-                'page' => 'cobra-ai-credits',
+                'page' => $this->menu_slug,
                 'message' => 'bulk_credits_added',
                 'success_count' => $success_count,
                 'total_count' => count($user_ids)

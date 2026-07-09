@@ -414,7 +414,7 @@ class CreditCron {
         }
 
         wp_redirect(add_query_arg(
-            ['page' => 'cobra-ai-credits', 'cron_run' => $action],
+            ['page' => 'cobra-ai-credits-manager', 'cron_run' => $action],
             admin_url('admin.php')
         ));
         exit;

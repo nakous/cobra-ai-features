@@ -149,6 +149,12 @@ $database_info = [
                         <?php echo esc_html__('System Info', 'cobra-ai'); ?>
                     </a>
                 </li>
+                <li>
+                    <a href="#logs" class="nav-tab" data-tab="logs">
+                        <span class="dashicons dashicons-list-view"></span>
+                        <?php echo esc_html__('Logs', 'cobra-ai'); ?>
+                    </a>
+                </li>
             </ul>
         </div>
 
@@ -839,6 +845,112 @@ $database_info = [
                     </div>
                 </div>
             </div>
+
+            <!-- Logs Tab -->
+            <div id="logs" class="settings-tab">
+                <div class="settings-card">
+                    <h2>
+                        <span class="dashicons dashicons-list-view"></span>
+                        <?php echo esc_html__('System Logs', 'cobra-ai'); ?>
+                    </h2>
+
+                    <?php
+                    $log_level_filter = isset($_GET['log_level']) ? sanitize_text_field($_GET['log_level']) : '';
+                    $log_limit        = isset($_GET['log_limit']) ? max(10, min(500, (int) $_GET['log_limit'])) : 100;
+                    $logs             = \CobraAI\cobra_ai_db()->get_recent_logs($log_limit, $log_level_filter ?: null);
+                    $log_levels       = ['debug', 'info', 'warning', 'error'];
+                    ?>
+
+                    <form method="get" class="cobra-ai-logs-filter" style="margin-bottom:15px;">
+                        <input type="hidden" name="page" value="cobra-ai-settings">
+                        <input type="hidden" name="tab" value="logs">
+
+                        <label for="log_level"><?php echo esc_html__('Level:', 'cobra-ai'); ?></label>
+                        <select name="log_level" id="log_level">
+                            <option value=""><?php echo esc_html__('All levels', 'cobra-ai'); ?></option>
+                            <?php foreach ($log_levels as $lvl) : ?>
+                                <option value="<?php echo esc_attr($lvl); ?>" <?php selected($log_level_filter, $lvl); ?>>
+                                    <?php echo esc_html(ucfirst($lvl)); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+
+                        <label for="log_limit"><?php echo esc_html__('Show:', 'cobra-ai'); ?></label>
+                        <select name="log_limit" id="log_limit">
+                            <?php foreach ([50, 100, 200, 500] as $lim) : ?>
+                                <option value="<?php echo esc_attr($lim); ?>" <?php selected($log_limit, $lim); ?>>
+                                    <?php echo esc_html($lim); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+
+                        <button type="submit" class="button"><?php echo esc_html__('Filter', 'cobra-ai'); ?></button>
+
+                        <button type="button" class="button button-secondary" id="cobra-ai-clear-logs" style="float:right;">
+                            <span class="dashicons dashicons-trash" style="vertical-align:middle;"></span>
+                            <?php echo esc_html__('Clear All Logs', 'cobra-ai'); ?>
+                        </button>
+                    </form>
+
+                    <?php if (empty($logs)) : ?>
+                        <p class="description"><?php echo esc_html__('No logs to display.', 'cobra-ai'); ?></p>
+                    <?php else : ?>
+                        <table class="wp-list-table widefat fixed striped cobra-ai-logs-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:160px;"><?php echo esc_html__('Time', 'cobra-ai'); ?></th>
+                                    <th style="width:90px;"><?php echo esc_html__('Level', 'cobra-ai'); ?></th>
+                                    <th><?php echo esc_html__('Message', 'cobra-ai'); ?></th>
+                                    <th style="width:80px;"><?php echo esc_html__('Context', 'cobra-ai'); ?></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($logs as $log) : ?>
+                                    <tr>
+                                        <td>
+                                            <?php echo esc_html(
+                                                mysql2date(
+                                                    get_option('date_format') . ' ' . get_option('time_format'),
+                                                    $log->created_at
+                                                )
+                                            ); ?>
+                                        </td>
+                                        <td>
+                                            <span class="log-level log-level-<?php echo esc_attr($log->level); ?>">
+                                                <?php echo esc_html(ucfirst($log->level)); ?>
+                                            </span>
+                                        </td>
+                                        <td><?php echo esc_html($log->message); ?></td>
+                                        <td>
+                                            <?php if (!empty($log->context)) : ?>
+                                                <button type="button" class="button-link cobra-ai-log-context-toggle"
+                                                        data-target="cobra-ai-log-context-<?php echo (int) $log->id; ?>">
+                                                    <?php echo esc_html__('View', 'cobra-ai'); ?>
+                                                </button>
+                                            <?php else : ?>
+                                                &mdash;
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                    <?php if (!empty($log->context)) : ?>
+                                        <tr id="cobra-ai-log-context-<?php echo (int) $log->id; ?>" class="cobra-ai-log-context-row" style="display:none;">
+                                            <td colspan="4">
+                                                <pre style="margin:0;white-space:pre-wrap;word-break:break-word;"><?php
+                                                    echo esc_html(
+                                                        is_array($log->context) || is_object($log->context)
+                                                            ? wp_json_encode($log->context, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+                                                            : (string) $log->context
+                                                    );
+                                                ?></pre>
+                                            </td>
+                                        </tr>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    <?php endif; ?>
+                </div>
+            </div>
         </div>
 
         <!-- Submit Button -->
@@ -864,6 +976,41 @@ $database_info = [
 <script type="text/javascript">
 jQuery(document).ready(function($) {
     'use strict';
+
+    // Logs: toggle context row
+    $(document).on('click', '.cobra-ai-log-context-toggle', function(e) {
+        e.preventDefault();
+        var target = $(this).data('target');
+        $('#' + target).toggle();
+    });
+
+    // Logs: clear all
+    $('#cobra-ai-clear-logs').on('click', function() {
+        if (!confirm('<?php echo esc_js(__('Are you sure you want to delete all logs? This cannot be undone.', 'cobra-ai')); ?>')) {
+            return;
+        }
+        var $btn = $(this).prop('disabled', true);
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'cobra_ai_clear_logs',
+                nonce: '<?php echo wp_create_nonce('cobra-ai-admin'); ?>'
+            },
+            success: function(response) {
+                if (response && response.success) {
+                    window.location.reload();
+                } else {
+                    alert((response && response.data && response.data.message) || '<?php echo esc_js(__('Failed to clear logs', 'cobra-ai')); ?>');
+                    $btn.prop('disabled', false);
+                }
+            },
+            error: function() {
+                alert('<?php echo esc_js(__('Failed to clear logs', 'cobra-ai')); ?>');
+                $btn.prop('disabled', false);
+            }
+        });
+    });
 
     // Tab functionality
     $('.nav-tab').on('click', function(e) {

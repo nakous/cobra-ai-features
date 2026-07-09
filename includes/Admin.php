@@ -132,16 +132,18 @@ class Admin
 
 
 
+        $tab = isset($_POST['tab']) ? sanitize_key($_POST['tab']) : '';
+        $success_args = ['page' => 'cobra-ai-' . $feature_id, 'settings-updated' => 'true'];
+        $error_args   = ['page' => 'cobra-ai-' . $feature_id, 'error' => 'save-failed'];
+        if ($tab !== '') {
+            $success_args['tab'] = $tab;
+            $error_args['tab']   = $tab;
+        }
+
         if ($feature->update_settings($sanitized)) {
-            $redirect_url = add_query_arg([
-                'page' => 'cobra-ai-' . $feature_id . (isset($_POST['tab']) ? '&tab=' . $_POST['tab'] : ''),
-                'settings-updated' => 'true'
-            ], admin_url('admin.php'));
+            $redirect_url = add_query_arg($success_args, admin_url('admin.php'));
         } else {
-            $redirect_url = add_query_arg([
-                'page' => 'cobra-ai-' . $feature_id . (isset($_POST['tab']) ? '&tab=' . $_POST['tab'] : ''),
-                'error' => 'save-failed'
-            ], admin_url('admin.php'));
+            $redirect_url = add_query_arg($error_args, admin_url('admin.php'));
         }
 
         wp_redirect($redirect_url);
@@ -404,7 +406,7 @@ class Admin
                         $sanitized[$key] = [];
                     }
                 } else {
-                    $sanitized[$key] = sanitize_text_field($value);
+                    $sanitized[$key] = sanitize_text_field(wp_unslash($value));
                 }
             }
         }
@@ -422,7 +424,7 @@ class Admin
             return [];
         }
 
-        return array_map('sanitize_text_field', $array);
+        return array_map(fn($v) => sanitize_text_field(wp_unslash($v)), $array);
     }
     /**
      * Enqueue admin assets
@@ -719,14 +721,13 @@ class Admin
 
         $sanitized = [];
         foreach ($settings as $key => $value) {
-            //  if null or empty, skip
-            if (empty($value)) {
+            if ($value === null || $value === '') {
                 continue;
             }
             if (is_array($value)) {
                 $sanitized[$key] = $this->sanitize_settings($value);
             } else {
-                $sanitized[$key] = sanitize_text_field($value);
+                $sanitized[$key] = sanitize_text_field(wp_unslash($value));
             }
         }
 
@@ -1159,14 +1160,19 @@ class Admin
     public function handle_clear_logs(): void
     {
         if (!current_user_can($this->capability)) {
-            wp_die(__('You do not have sufficient permissions.', 'cobra-ai'));
+            wp_send_json_error(['message' => __('You do not have sufficient permissions.', 'cobra-ai')]);
         }
 
-        check_ajax_referer('cobra_ai_admin_nonce', 'nonce');
+        check_ajax_referer('cobra-ai-admin', 'nonce');
 
-        // Clear debug log
+        // Truncate the plugin's DB logs table (the one shown in the Logs tab).
+        global $wpdb;
+        $logs_table = $wpdb->prefix . 'cobra_system_logs';
+        $wpdb->query("TRUNCATE TABLE {$logs_table}");
+
+        // Also clear the WordPress debug.log file if present.
         $log_file = WP_CONTENT_DIR . '/debug.log';
-        if (file_exists($log_file)) {
+        if (file_exists($log_file) && is_writable($log_file)) {
             file_put_contents($log_file, '');
         }
 

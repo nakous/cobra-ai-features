@@ -9,7 +9,7 @@
  * Text Domain: cobra-ai
  * Domain Path: /languages
  * Requires at least: 5.8
- * Requires PHP: 7.4
+ * Requires PHP: 8.0
  */
 
 namespace CobraAI;
@@ -107,7 +107,7 @@ final class CobraAI
      */
     private function check_requirements(): bool
     {
-        if (version_compare(PHP_VERSION, '7.4', '<')) {
+        if (version_compare(PHP_VERSION, '8.0', '<')) {
             add_action('admin_notices', [$this, 'php_version_notice']);
             return false;
         }
@@ -138,6 +138,7 @@ final class CobraAI
             'Database.php',
             'Admin.php',
             'APIManager.php',
+            'SharedEmailLayout.php',
             'utilities/functions.php',
             'utilities/Validator.php'
         ];
@@ -166,12 +167,43 @@ final class CobraAI
     public function init_plugin(): void
     {
         try {
+            // Load translations
+            $this->load_translations();
             
-            load_plugin_textdomain('cobra-ai', false, dirname(plugin_basename(__FILE__)) . '/languages');
             do_action('cobra_ai_loaded');
         } catch (\Exception $e) {
             $this->log_error('Plugin initialization failed', $e);
         }
+    }
+    
+    /**
+     * Load plugin translations
+     */
+    private function load_translations(): void
+    {
+        // Force unload to clear cache
+        unload_textdomain('cobra-ai');
+        
+        // Get current locale
+        $locale = get_locale();
+        
+        // Apply filters for custom locale if needed
+        $locale = apply_filters('plugin_locale', $locale, 'cobra-ai');
+        
+        // Build paths to translation files
+        $mofile = COBRA_AI_PATH . 'languages/cobra-ai-' . $locale . '.mo';
+        $mofile_local = COBRA_AI_PATH . 'languages/' . $locale . '.mo';
+        
+        // Try to load translation file (with text domain prefix first)
+        if (file_exists($mofile)) {
+            load_textdomain('cobra-ai', $mofile);
+        } elseif (file_exists($mofile_local)) {
+            // Fallback to file without prefix
+            load_textdomain('cobra-ai', $mofile_local);
+        }
+        
+        // Also use WordPress standard function for global languages directory
+        load_plugin_textdomain('cobra-ai', false, dirname(plugin_basename(__FILE__)) . '/languages');
     }
 
     /**
@@ -240,17 +272,20 @@ final class CobraAI
         
         try {
             $class_info = $this->get_feature_class_info($feature_id);
-            
+
+            // Feature directory no longer exists on disk (e.g. removed but still in DB)
+            if (!is_dir($class_info['dir'])) {
+                return null;
+            }
+
             if (!file_exists($class_info['file'])) {
-                $exception = new \Exception("Feature file not found: {$class_info['file']} (feature_id: {$feature_id})");
-                $this->log_error("Feature file not found", $exception);
-                return null; // Retourner null au lieu de lever une exception
+                return null;
             }
             
             require_once $class_info['file'];
             
             if (!class_exists($class_info['class'])) {
-                throw new \Exception("Feature class not found: {$class_info['class']}");
+                return null;
             }
             
             $feature = new $class_info['class']();
@@ -359,7 +394,7 @@ final class CobraAI
     {
         $message = sprintf(
             __('Cobra AI Features requires PHP version %s or higher. You are running version %s.', 'cobra-ai'),
-            '7.4',
+            '8.0',
             PHP_VERSION
         );
         echo '<div class="notice notice-error"><p>' . esc_html($message) . '</p></div>';

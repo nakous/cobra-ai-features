@@ -51,6 +51,7 @@ $recaptcha_available = $this->is_recaptcha_available();
                     <th scope="row"><?php _e('Disable Admin Menu', 'cobra-ai'); ?></th>
                     <td>
                         <label>
+                            <input type="hidden" name="settings[general][disable_admin_menu]" value="0">
                             <input type="checkbox"
                                 name="settings[general][disable_admin_menu]"
                                 value="1"
@@ -63,6 +64,7 @@ $recaptcha_available = $this->is_recaptcha_available();
                     <th scope="row"><?php _e('Use reCAPTCHA', 'cobra-ai'); ?></th>
                     <td>
                         <label>
+                            <input type="hidden" name="settings[general][use_recaptcha]" value="0">
                             <input type="checkbox"
                                 name="settings[general][use_recaptcha]"
                                 value="1"
@@ -507,72 +509,62 @@ $recaptcha_available = $this->is_recaptcha_available();
                 }
             </style>
         <?php elseif ($current_tab === 'emails'): ?>
-            <!-- Email Settings -->
+            <?php
+            $shared_layout = \CobraAI\SharedEmailLayout::get_layout();
+            $shared_footer = \CobraAI\SharedEmailLayout::get_footer();
+            ?>
             <div class="email-templates">
-                <h3><?php _e('Global Email Template', 'cobra-ai'); ?></h3>
-                <?php
-                // wp_editor(
-                //     $settings['emails']['global_template'],
-                //     'global_template',
-                //     [
-                //         'textarea_name' => 'settings[emails][global_template]',
-                //         'textarea_rows' => 15,
-                //         'media_buttons' => false,
-                //         'tinymce' => [
-                //             'valid_elements' => '*[*]', // Allow all HTML elements and attributes
-                //             'extended_valid_elements' => '*[*]' // Allow extended elements
-                //         ],
-                //         'quicktags' => true // Enable HTML mode
-                //     ]
-                // );
-                ?>
-                <textarea name="settings[emails][global_template]" rows="15" cols="80"><?php echo esc_textarea($settings['emails']['global_template']); ?></textarea>
 
-                <p class="description">
-                    <?php _e('Available variables: {site_name}, {site_url}, {header}, {content}, {footer}', 'cobra-ai'); ?>
-                </p>
-
-                <h3><?php _e('Verification Email', 'cobra-ai'); ?></h3>
-                <?php
-                // wp_editor(
-                //     $settings['emails']['verification'],
-                //     'verification_email',
-                //     [
-                //         'textarea_name' => 'settings[emails][verification]',
-                //         'textarea_rows' => 15,
-                //         'media_buttons' => false
-                //     ]
-                // );
-                ?>
-                <textarea name="settings[emails][verification]" rows="15" cols="80"><?php echo esc_textarea($settings['emails']['verification']); ?></textarea>
-                <p class="description">
-                    <?php _e('Available variables: {user_name}, {verification_link}, {expiry_time}', 'cobra-ai'); ?>
-                </p>
-
-                <h3><?php _e('Confirmation Email', 'cobra-ai'); ?></h3>
-                <?php
-                // wp_editor(
-                //     $settings['emails']['confirmation'],
-                //     'confirmation_email',
-                //     [
-                //         'textarea_name' => 'settings[emails][confirmation]',
-                //         'textarea_rows' => 15,
-                //         'media_buttons' => false
-                //     ]
-                // );
-                ?>
-                <textarea name="settings[emails][confirmation]" rows="15" cols="80"><?php echo esc_textarea($settings['emails']['confirmation']); ?></textarea>
-                <p class="description">
-                    <?php _e('Available variables: {user_name}, {login_link}', 'cobra-ai'); ?>
-                </p>
-
-                <h3><?php _e('Email footer', 'cobra-ai'); ?></h3>
-                <div>
-                <?php
-                $footer = $this->email->get_email_footer();
-                echo $footer;
-                ?>
+                <!-- ---- SHARED LAYOUT + FOOTER ---- -->
+                <div style="background:#f0f6ff;border:1px solid #b8d4f9;border-radius:6px;padding:16px 20px;margin-bottom:24px;">
+                    <p style="margin:0 0 4px;font-size:13px;color:#1a5276;font-weight:600;">
+                        🔗 <?php _e('Modèle global partagé', 'cobra-ai'); ?>
+                    </p>
+                    <p style="margin:0;font-size:12px;color:#555;">
+                        <?php _e('Ce layout et ce pied de page sont utilisés par tous les emails du site (inscription ET email marketing). Modifier ici met à jour les deux.', 'cobra-ai'); ?>
+                    </p>
                 </div>
+
+                <div style="display:flex;gap:20px;margin-bottom:24px;">
+                    <div style="flex:1;min-width:0;">
+                        <h3 style="margin:0 0 6px;"><?php _e('Modèle global (layout)', 'cobra-ai'); ?></h3>
+                        <textarea name="settings[emails][global_template]" rows="14"
+                            style="width:100%;font-family:'Courier New',monospace;font-size:12px;line-height:1.6;box-sizing:border-box;"
+                        ><?php echo esc_textarea($shared_layout); ?></textarea>
+                        <p class="description">
+                            <?php _e('Variables : {{site_name}}, {{site_url}}, {{subject}}, {{content}}, {{footer}}', 'cobra-ai'); ?>
+                        </p>
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                        <h3 style="margin:0 0 6px;"><?php _e('Pied de page', 'cobra-ai'); ?></h3>
+                        <textarea name="settings[emails][email_footer]" rows="14"
+                            style="width:100%;font-family:'Courier New',monospace;font-size:12px;line-height:1.6;box-sizing:border-box;"
+                        ><?php echo esc_textarea($shared_footer); ?></textarea>
+                        <p class="description">
+                            <?php _e('Variables : {{site_name}}, {{site_url}}, {{unsubscribe_url}}', 'cobra-ai'); ?>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- ---- TEMPLATES SPÉCIFIQUES À L'INSCRIPTION ---- -->
+                <hr style="border:none;border-top:1px solid #ddd;margin:0 0 20px;">
+
+                <h3><?php _e('Email de vérification', 'cobra-ai'); ?></h3>
+                <textarea name="settings[emails][verification]" rows="12"
+                    style="width:100%;font-family:'Courier New',monospace;font-size:12px;line-height:1.6;box-sizing:border-box;"
+                ><?php echo esc_textarea($settings['emails']['verification']); ?></textarea>
+                <p class="description">
+                    <?php _e('Variables : {user_name}, {verification_link}, {expiry_time}', 'cobra-ai'); ?>
+                </p>
+
+                <h3><?php _e('Email de confirmation', 'cobra-ai'); ?></h3>
+                <textarea name="settings[emails][confirmation]" rows="12"
+                    style="width:100%;font-family:'Courier New',monospace;font-size:12px;line-height:1.6;box-sizing:border-box;"
+                ><?php echo esc_textarea($settings['emails']['confirmation']); ?></textarea>
+                <p class="description">
+                    <?php _e('Variables : {user_name}, {login_link}', 'cobra-ai'); ?>
+                </p>
+
             </div>
 
         <?php elseif ($current_tab === 'fields'): ?>
@@ -606,6 +598,7 @@ $recaptcha_available = $this->is_recaptcha_available();
                         <td>
                             <fieldset>
                                 <label>
+                                    <input type="hidden" name="settings[fields][<?php echo esc_attr($field); ?>][enabled]" value="0">
                                     <input type="checkbox"
                                         name="settings[fields][<?php echo esc_attr($field); ?>][enabled]"
                                         value="1"
@@ -615,6 +608,7 @@ $recaptcha_available = $this->is_recaptcha_available();
                                 </label>
                                 &nbsp;&nbsp;
                                 <label>
+                                    <input type="hidden" name="settings[fields][<?php echo esc_attr($field); ?>][required]" value="0">
                                     <input type="checkbox"
                                         name="settings[fields][<?php echo esc_attr($field); ?>][required]"
                                         value="1"
