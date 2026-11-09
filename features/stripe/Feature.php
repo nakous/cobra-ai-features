@@ -248,7 +248,6 @@ class Feature extends FeatureBase
      */
     protected function validate_settings(array $settings): array
     {
-        echo "<br>validate_settings stripe";
         $errors = [];
         $validation_option = 'cobra_ai_' . $this->get_feature_id() . '_validation_errors';
         try {

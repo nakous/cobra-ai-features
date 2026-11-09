@@ -276,7 +276,7 @@ jQuery(document).ready(function($) {
             data: {
                 action: 'cobra_resend_verification',
                 user_id: userId,
-                nonce: '<?php echo wp_create_nonce('cobra_resend_verification'); ?>'
+                nonce: '<?php echo wp_create_nonce('cobra-ai-register'); ?>'
             },
             success: function(response) {
                 if (response.success) {

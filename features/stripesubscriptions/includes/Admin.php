@@ -47,8 +47,8 @@ class Admin
     {
         if (strpos($hook, $this->menu_slug) === false) return;
 
-        wp_enqueue_style('cobra-stripe-admin', $this->feature->get_url() . 'assets/css/admin.css', [], $this->feature->getVesrion());
-        wp_enqueue_script('cobra-stripe-admin', $this->feature->get_url() . 'assets/js/admin.js', ['jquery'], $this->feature->getVesrion(), true);
+        wp_enqueue_style('cobra-stripe-admin', $this->feature->get_url() . 'assets/css/admin.css', [], $this->feature->get_version());
+        wp_enqueue_script('cobra-stripe-admin', $this->feature->get_url() . 'assets/js/admin.js', ['jquery'], $this->feature->get_version(), true);
     }
 
     public function add_menu_items(): void
@@ -325,6 +325,30 @@ class Admin
         }
 
         $data = $_POST['stripe_plan'];
+
+        // Validate and sanitize plan fields before any Stripe API call
+        $allowed_intervals = ['day', 'week', 'month', 'year'];
+        $price          = round(floatval($data['price'] ?? 0), 2);
+        $currency       = strtolower(sanitize_text_field($data['currency'] ?? ''));
+        $interval       = sanitize_text_field($data['billing_interval'] ?? '');
+        $interval_count = max(1, absint($data['interval_count'] ?? 1));
+
+        if ($price <= 0 || !in_array($interval, $allowed_intervals, true) || strlen($currency) !== 3) {
+            $this->feature->log('error', 'Invalid plan data — save aborted', [
+                'price'    => $price,
+                'currency' => $currency,
+                'interval' => $interval,
+                'plan_id'  => $post_id,
+            ]);
+            return;
+        }
+
+        // Overwrite raw POST values with sanitized ones
+        $data['price']            = $price;
+        $data['currency']         = $currency;
+        $data['billing_interval'] = $interval;
+        $data['interval_count']   = $interval_count;
+
         try {
             $stripe_product_id = get_post_meta($post_id, '_stripe_product_id', true);
             $stripe_price_id = get_post_meta($post_id, '_stripe_price_id', true);
@@ -383,6 +407,13 @@ class Admin
             update_post_meta($post_id, '_trial_days', $data['trial_days'] ?? 14);
             update_post_meta($post_id, '_public', !empty($data['public']));
             update_post_meta($post_id, '_features', $data['features'] ?? []);
+            
+            // Save discount ID
+            if (isset($data['discount_id'])) {
+                update_post_meta($post_id, '_discount_id', sanitize_text_field($data['discount_id']));
+            } else {
+                delete_post_meta($post_id, '_discount_id');
+            }
 
 
             // Handle featured image

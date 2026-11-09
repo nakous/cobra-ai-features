@@ -29,11 +29,14 @@ abstract class AIProvider
      * Provider capabilities
      */
     protected $capabilities = [
-        'text' => true,
-        'images' => false,
-        'chat' => false,
-        'functions' => false,
-        'stream' => false
+        'text'             => true,
+        'images'           => false,
+        'chat'             => false,
+        'functions'        => false,
+        'stream'           => false,
+        'image_generation' => false,
+        'audio'            => false,
+        'tts'              => false,
     ];
 
     /**
@@ -62,13 +65,13 @@ abstract class AIProvider
     abstract public function get_name(): string;
 
     /**
-     * Process request
-     * 
-     * @param string $prompt The user prompt
-     * @param array $options Request options
+     * Process text/chat request
+     *
+     * @param string|array $prompt The user prompt
+     * @param array        $options Request options
      * @return array Response data
      */
-    abstract public function process_request(string $prompt, array $options = []): array;
+    abstract public function process_request(string|array $prompt, array $options = []): array;
 
     /**
      * Get default configuration
@@ -326,6 +329,159 @@ abstract class AIProvider
     protected function set_config(string $key, $value): void
     {
         $this->config[$key] = $value;
+    }
+
+    /**
+     * Get supported request types for this provider
+     */
+    public function get_request_types(): array
+    {
+        $types = ['text'];
+        if ($this->has_capability('image_generation')) {
+            $types[] = 'image';
+        }
+        if ($this->has_capability('audio')) {
+            $types[] = 'audio';
+        }
+        if ($this->has_capability('tts')) {
+            $types[] = 'tts';
+        }
+        return $types;
+    }
+
+    /**
+     * Generate image — override in provider subclass if supported
+     *
+     * @param string $prompt Image description
+     * @param array  $options Generation options
+     * @return array Response with 'content' (image URL) and 'meta'
+     * @throws \BadMethodCallException
+     */
+    public function generate_image(string $prompt, array $options = []): array
+    {
+        throw new \BadMethodCallException(
+            sprintf(__('Provider %s does not support image generation', 'cobra-ai'), $this->get_name())
+        );
+    }
+
+    /**
+     * Transcribe audio — override in provider subclass if supported
+     *
+     * @param string|array $audio_input File path, URL, or $_FILES entry
+     * @param array        $options Transcription options
+     * @return array Response with 'content' (transcript text) and 'meta'
+     * @throws \BadMethodCallException
+     */
+    public function transcribe_audio(string|array $audio_input, array $options = []): array
+    {
+        throw new \BadMethodCallException(
+            sprintf(__('Provider %s does not support audio transcription', 'cobra-ai'), $this->get_name())
+        );
+    }
+
+    /**
+     * Synthesize speech (TTS) — override in provider subclass if supported
+     *
+     * @param string $text  Text to convert to speech
+     * @param array  $options TTS options
+     * @return array Response with 'content' (audio URL) and 'meta'
+     * @throws \BadMethodCallException
+     */
+    public function synthesize_speech(string $text, array $options = []): array
+    {
+        throw new \BadMethodCallException(
+            sprintf(__('Provider %s does not support text-to-speech', 'cobra-ai'), $this->get_name())
+        );
+    }
+
+    /**
+     * Get image generation models — override in subclass
+     */
+    public function get_image_models(): array
+    {
+        return [];
+    }
+
+    /**
+     * Get audio transcription models — override in subclass
+     */
+    public function get_audio_models(): array
+    {
+        return [];
+    }
+
+    /**
+     * Get TTS models — override in subclass
+     */
+    public function get_tts_models(): array
+    {
+        return [];
+    }
+
+    /**
+     * Make a multipart/form-data request (required for audio file uploads)
+     *
+     * @param string $url        API endpoint URL
+     * @param array  $fields     Non-file form fields
+     * @param string $file_path  Absolute path to the local file to upload
+     * @param string $file_field Form field name for the file (default: 'file')
+     * @return array Decoded JSON response
+     * @throws \Exception on cURL or API error
+     */
+    protected function make_multipart_request(
+        string $url,
+        array  $fields,
+        string $file_path,
+        string $file_field = 'file'
+    ): array {
+        if (!function_exists('curl_init')) {
+            throw new \Exception(__('cURL is required for audio file uploads', 'cobra-ai'));
+        }
+
+        $headers = $this->get_request_headers();
+        unset($headers['Content-Type']); // cURL sets this automatically for multipart
+
+        $curl_headers = [];
+        foreach ($headers as $key => $value) {
+            $curl_headers[] = "{$key}: {$value}";
+        }
+
+        $post_fields               = $fields;
+        $post_fields[$file_field]  = new \CURLFile($file_path);
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL            => $url,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $post_fields,
+            CURLOPT_HTTPHEADER     => $curl_headers,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 120,
+            CURLOPT_SSL_VERIFYPEER => true,
+        ]);
+
+        $body   = curl_exec($ch);
+        $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error  = curl_error($ch);
+        curl_close($ch);
+
+        if ($error) {
+            throw new \Exception('cURL error: ' . $error);
+        }
+
+        $data = json_decode($body, true);
+
+        if ($status !== 200) {
+            $error_message = $data['error']['message'] ?? __('Unknown error occurred', 'cobra-ai');
+            cobra_ai_db()->log('error', 'Multipart API request failed', [
+                'provider' => $this->get_id(),
+                'status'   => $status,
+                'error'    => $error_message,
+            ]);
+            throw new \Exception($error_message);
+        }
+
+        return $data;
     }
 
     /**

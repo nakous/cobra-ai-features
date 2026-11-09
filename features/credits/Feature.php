@@ -28,6 +28,7 @@ class Feature extends FeatureBase
     private $admin;
     public $manager;
     private $cron;
+    private ?StripePaymentsBridge $stripe_bridge = null;
 
     public function __construct()
     {
@@ -47,6 +48,7 @@ class Feature extends FeatureBase
                     'status' => "enum('pending','active','deleted','expired') NOT NULL DEFAULT 'pending'",
                     'start_date' => 'datetime NOT NULL',
                     'expiration_date' => 'datetime DEFAULT NULL',
+                    'meta' => 'longtext DEFAULT NULL',
                     'created_at' => 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
                     'updated_at' => 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
                     'PRIMARY KEY' => '(id)',
@@ -74,6 +76,7 @@ class Feature extends FeatureBase
         require_once $this->path . 'includes/CreditManager.php';
         require_once $this->path . 'includes/CreditType.php';
         require_once $this->path . 'includes/CreditCron.php';
+        require_once $this->path . 'includes/StripePaymentsBridge.php';
     }
 
     /**
@@ -84,20 +87,18 @@ class Feature extends FeatureBase
         parent::init_hooks();
 
         // Credit management hooks
-
-        add_action('cobra_ai_credit_added', [$this, 'handle_credit_added'], 10, 4);
+        add_action('cobra_ai_credit_added', [$this, 'handle_credit_added'], 10, 3);
         add_action('cobra_ai_credit_removed', [$this, 'handle_credit_removed'], 10, 2);
         add_action('cobra_ai_credit_updated', [$this, 'handle_credit_updated'], 10, 2);
         add_action('cobra_ai_credit_expired', [$this, 'handle_credit_expired'], 10, 1);
 
-        // User related hooks
-        // add_action('show_user_profile', [$this, 'add_user_profile_fields']);
-        // add_action('edit_user_profile', [$this, 'add_user_profile_fields']);
-        // add_action('personal_options_update', [$this, 'save_user_profile_fields']);
-        // add_action('edit_user_profile_update', [$this, 'save_user_profile_fields']);
+        // Manager and cron must be instantiated BEFORE the admin so that
+        // admin handlers can call $this->feature->manager->...
+        $this->manager = new CreditManager($this);
+        $this->cron = new CreditCron($this);
 
-        // Cron hooks
-        add_action('cobra_ai_daily_credit_check', [$this, 'process_expired_credits']);
+        // Make sure the schema is up to date on existing installs.
+        $this->maybe_upgrade_schema();
 
         // Admin hooks
         if (is_admin()) {
@@ -107,12 +108,235 @@ class Feature extends FeatureBase
             $this->admin = new CreditAdmin($this);
         }
 
-
-        $this->manager = new CreditManager($this);
-        $this->cron = new CreditCron($this);
+        // [cobra_account] profile tab integration (provided by the register feature)
+        add_action('cobra_register_profile_tab', [$this, 'cobra_credits_account_custom_tab']);
+        add_action('cobra_register_profile_tab_content', [$this, 'cobra_credits_account_custom_tab_content'], 10, 2);
 
         // Initialize CreditType
         CreditType::init();
+
+        // Stripe Payments bridge — only activate if stripepayments is active and setting enabled
+        $this->maybe_init_stripe_bridge();
+    }
+
+    /**
+     * Conditionally activate the StripePayments ↔ Credits bridge.
+     */
+    private function maybe_init_stripe_bridge(): void
+    {
+        $settings = $this->get_settings();
+        if (empty($settings['stripe_integration']['enabled'])) {
+            return;
+        }
+
+        $active_features = get_option('cobra_ai_enabled_features', []);
+        if (!in_array('stripepayments', $active_features, true)) {
+            return;
+        }
+
+        $this->stripe_bridge = new StripePaymentsBridge($this);
+        $this->stripe_bridge->register();
+    }
+
+    /**
+     * Render the "My credits" tab header inside [cobra_account].
+     */
+    public function cobra_credits_account_custom_tab(): void
+    {
+        if (!is_user_logged_in()) {
+            return;
+        }
+
+        $settings = $this->get_settings();
+        if (empty($settings['display']['show_in_profile'])) {
+            return;
+        }
+        ?>
+        <li>
+            <a href="#credits" data-tab="credits">
+                <?php esc_html_e('My credits', 'cobra-ai'); ?>
+            </a>
+        </li>
+        <?php
+    }
+
+    /**
+     * Render the "My credits" tab body inside [cobra_account].
+     */
+    public function cobra_credits_account_custom_tab_content(): void
+    {
+        if (!is_user_logged_in()) {
+            return;
+        }
+
+        $settings = $this->get_settings();
+        if (empty($settings['display']['show_in_profile'])) {
+            return;
+        }
+
+        $user_id       = get_current_user_id();
+        $symbol        = $settings['general']['credit_symbol'] ?? '';
+        $total         = $this->get_user_credit_total($user_id);
+        $credit_types  = $this->manager ? $this->manager->get_user_credit_types($user_id) : [];
+        $type_labels   = $this->get_credit_types();
+        $history_limit = (int) ($settings['display']['history_per_page'] ?? 10);
+        $history       = $this->get_user_credit_history($user_id, [
+            'limit'   => $history_limit,
+            'orderby' => 'created_at',
+            'order'   => 'DESC',
+        ]);
+        $next_exp = $this->manager ? $this->manager->get_next_expiration($user_id) : null;
+        ?>
+        <div class="cobra-tab-content cobra-credits-tab" id="credits-content">
+            <h3><?php esc_html_e('My credits', 'cobra-ai'); ?></h3>
+
+            <div class="cobra-credits-balance">
+                <span class="cobra-credits-balance__label"><?php esc_html_e('Available balance', 'cobra-ai'); ?></span>
+                <span class="cobra-credits-balance__value">
+                    <?php echo esc_html(number_format_i18n($total, 2)); ?>
+                    <?php echo esc_html($symbol); ?>
+                </span>
+            </div>
+
+            <?php if (!empty($credit_types)) : ?>
+                <h4><?php esc_html_e('Breakdown by type', 'cobra-ai'); ?></h4>
+                <table class="cobra-credits-breakdown widefat striped">
+                    <thead>
+                        <tr>
+                            <th><?php esc_html_e('Type', 'cobra-ai'); ?></th>
+                            <th><?php esc_html_e('Total', 'cobra-ai'); ?></th>
+                            <th><?php esc_html_e('Consumed', 'cobra-ai'); ?></th>
+                            <th><?php esc_html_e('Available', 'cobra-ai'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($credit_types as $type => $amounts) :
+                            $label = $type_labels[$type] ?? ucfirst($type);
+                        ?>
+                            <tr>
+                                <td><?php echo esc_html($label); ?></td>
+                                <td><?php echo esc_html(number_format_i18n($amounts['total'], 2)); ?></td>
+                                <td><?php echo esc_html(number_format_i18n($amounts['consumed'], 2)); ?></td>
+                                <td><strong><?php echo esc_html(number_format_i18n($amounts['available'], 2)); ?></strong></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+
+            <?php if ($next_exp) : ?>
+                <p class="cobra-credits-next-expiration">
+                    <?php
+                    printf(
+                        /* translators: %s: date of the next credit expiration */
+                        esc_html__('Next expiration: %s', 'cobra-ai'),
+                        esc_html(date_i18n(get_option('date_format'), strtotime($next_exp)))
+                    );
+                    ?>
+                </p>
+            <?php endif; ?>
+
+            <h4><?php esc_html_e('Recent activity', 'cobra-ai'); ?></h4>
+            <?php if (empty($history)) : ?>
+                <p><?php esc_html_e('No credit activity yet.', 'cobra-ai'); ?></p>
+            <?php else : ?>
+                <table class="cobra-credits-history widefat striped">
+                    <thead>
+                        <tr>
+                            <th><?php esc_html_e('Date', 'cobra-ai'); ?></th>
+                            <th><?php esc_html_e('Type', 'cobra-ai'); ?></th>
+                            <th><?php esc_html_e('Amount', 'cobra-ai'); ?></th>
+                            <th><?php esc_html_e('Used', 'cobra-ai'); ?></th>
+                            <th><?php esc_html_e('Status', 'cobra-ai'); ?></th>
+                            <th><?php esc_html_e('Expires', 'cobra-ai'); ?></th>
+                            <th><?php esc_html_e('Comment', 'cobra-ai'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($history as $row) :
+                            $label = $type_labels[$row->credit_type] ?? ucfirst($row->credit_type);
+                        ?>
+                            <tr>
+                                <td><?php echo esc_html(date_i18n(get_option('date_format'), strtotime($row->created_at))); ?></td>
+                                <td><?php echo esc_html($label); ?></td>
+                                <td><?php echo esc_html(number_format_i18n((float) $row->credit, 2)); ?></td>
+                                <td><?php echo esc_html(number_format_i18n((float) $row->consumed, 2)); ?></td>
+                                <td>
+                                    <span class="cobra-credits-status cobra-credits-status--<?php echo esc_attr($row->status); ?>">
+                                        <?php echo esc_html(ucfirst($row->status)); ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <?php
+                                    echo $row->expiration_date
+                                        ? esc_html(date_i18n(get_option('date_format'), strtotime($row->expiration_date)))
+                                        : '&mdash;';
+                                    ?>
+                                </td>
+                                <td><?php echo esc_html($row->comment); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
+        <?php
+    }
+
+    /**
+     * One-shot schema upgrade for installs that predate the `meta` column.
+     * Cheap to run — gated by an option so it only touches the DB once.
+     */
+    private function maybe_upgrade_schema(): void
+    {
+        $current = (string) get_option('cobra_ai_credits_db_version', '1.0.0');
+        if (version_compare($current, '1.1.0', '>=')) {
+            return;
+        }
+
+        global $wpdb;
+        $table = $this->get_table_name('credits');
+
+        $has_meta = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = 'meta'",
+            DB_NAME,
+            $table
+        ));
+
+        if ((int) $has_meta === 0) {
+            $wpdb->query("ALTER TABLE {$table} ADD COLUMN meta LONGTEXT DEFAULT NULL AFTER expiration_date");
+        }
+
+        update_option('cobra_ai_credits_db_version', '1.1.0');
+    }
+
+    /**
+     * Activate feature: install tables, set defaults, schedule cron.
+     */
+    public function activate(): bool
+    {
+        $ok = parent::activate();
+        if ($ok) {
+            // Make sure manager/cron exist even if init_hooks hasn't run yet
+            if (!$this->cron) {
+                require_once $this->path . 'includes/CreditCron.php';
+                $this->cron = new CreditCron($this);
+            }
+            $this->cron->schedule_tasks();
+        }
+        return $ok;
+    }
+
+    /**
+     * Deactivate feature: clear cron, then run base deactivation.
+     */
+    public function deactivate(): bool
+    {
+        if ($this->cron) {
+            $this->cron->clear_schedules();
+        }
+        return parent::deactivate();
     }
 
     /**
@@ -143,6 +367,9 @@ class Feature extends FeatureBase
                 'default_duration' => 30, // days
                 'grace_period' => 0, // days
                 'auto_expire' => true
+            ],
+            'stripe_integration' => [
+                'enabled' => false,
             ]
         ];
     }
@@ -154,29 +381,28 @@ class Feature extends FeatureBase
     {
         $errors = [];
 
-        // Validate credit types
-        if (empty($settings['general']['credit_types'])) {
-            $errors[] = __('At least one credit type must be selected', 'cobra-ai');
+        if (isset($settings['general'])) {
+            if (empty($settings['general']['credit_types'])) {
+                $errors[] = __('At least one credit type must be selected', 'cobra-ai');
+            }
+            if (isset($settings['general']['credit_unit'])
+                && !in_array($settings['general']['credit_unit'], ['points', 'currency'], true)) {
+                $errors[] = __('Invalid credit unit selected', 'cobra-ai');
+            }
         }
 
-        // Validate credit unit
-        if (!in_array($settings['general']['credit_unit'], ['points', 'currency'])) {
-            $errors[] = __('Invalid credit unit selected', 'cobra-ai');
+        if (isset($settings['expiration'])) {
+            if (isset($settings['expiration']['default_duration']) && $settings['expiration']['default_duration'] < 0) {
+                $errors[] = __('Default duration cannot be negative', 'cobra-ai');
+            }
+            if (isset($settings['expiration']['grace_period']) && $settings['expiration']['grace_period'] < 0) {
+                $errors[] = __('Grace period cannot be negative', 'cobra-ai');
+            }
         }
 
-        // Validate expiration settings
-        if ($settings['expiration']['default_duration'] < 0) {
-            $errors[] = __('Default duration cannot be negative', 'cobra-ai');
-        }
-
-        if ($settings['expiration']['grace_period'] < 0) {
-            $errors[] = __('Grace period cannot be negative', 'cobra-ai');
-        }
-
-        // Store validation errors if any
         if (!empty($errors)) {
             update_option('cobra_ai_' . $this->get_feature_id() . '_validation_errors', $errors);
-            return $this->get_settings(); // Return current settings
+            return $this->get_settings();
         }
 
         delete_option('cobra_ai_' . $this->get_feature_id() . '_validation_errors');
@@ -188,43 +414,20 @@ class Feature extends FeatureBase
      */
 
     /**
-     * Add credits to user
+     * Add credits to user. Thin wrapper around CreditManager::add_credit so that
+     * there is a single source of truth for inserts, validation, and balance updates.
+     *
+     * @return int|false Inserted credit ID, or false on failure.
      */
-    public function add_credit(int $user_id, float $amount, string $type, string $comment = '', ?string $expiration = null): bool
+    public function add_credit(int $user_id, float $amount, string $type, string $comment = '', ?string $expiration = null)
     {
-        try {
-            if (!$this->validate_credit_type($type)) {
-                throw new \Exception(__('Invalid credit type', 'cobra-ai'));
-            }
-
-            global $wpdb;
-            $table = $this->get_table_name('credits');
-
-            $data = [
-                'user_id' => $user_id,
-                'credit_type' => $type,
-                'type_id' => uniqid($type . '_'),
-                'comment' => $comment,
-                'credit' => $amount,
-                'status' => 'active',
-                'start_date' => current_time('mysql'),
-                'expiration_date' => $expiration
-            ];
-
-            $inserted = $wpdb->insert($table, $data);
-
-            if ($inserted) {
-                $credit_id = $wpdb->insert_id;
-                $this->update_user_credit_cache($user_id);
-                do_action('cobra_ai_credit_added', $user_id, $amount, $type, $credit_id);
-                return true;
-            }
-
-            return false;
-        } catch (\Exception $e) {
-            $this->log('error', 'Failed to add credit: ' . $e->getMessage());
+        if (!$this->manager) {
             return false;
         }
+        return $this->manager->add_credit($user_id, $amount, $type, [
+            'comment' => $comment,
+            'expiration_date' => $expiration,
+        ]);
     }
 
     /**
@@ -255,7 +458,7 @@ class Feature extends FeatureBase
             );
 
             if ($updated) {
-                $this->update_user_credit_cache($credit->user_id);
+                $this->update_user_balance((int)$credit->user_id);
                 do_action('cobra_ai_credit_removed', $credit_id, $credit);
                 return true;
             }
@@ -268,11 +471,12 @@ class Feature extends FeatureBase
     }
 
     /**
-     * Get user total credits
+     * Get user total available credits. Reads cached balance written by
+     * CreditManager::update_user_balance(); falls back to a live query if missing.
      */
     public function get_user_credit_total(int $user_id): float
     {
-        $cached = get_user_meta($user_id, '_cobra_ai_credit_total', true);
+        $cached = get_user_meta($user_id, '_cobra_ai_credit_balance', true);
 
         if ($cached !== '') {
             return (float)$cached;
@@ -281,15 +485,16 @@ class Feature extends FeatureBase
         global $wpdb;
         $table = $this->get_table_name('credits');
 
-        $total = $wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(credit - consumed) FROM $table 
-            WHERE user_id = %d AND status = 'active' 
-            AND (expiration_date IS NULL OR expiration_date > NOW())",
-            $user_id
+        $total = (float) $wpdb->get_var($wpdb->prepare(
+            "SELECT SUM(credit - consumed) FROM $table
+            WHERE user_id = %d AND status = 'active'
+            AND (expiration_date IS NULL OR expiration_date > %s)",
+            $user_id,
+            current_time('mysql')
         ));
 
-        update_user_meta($user_id, '_cobra_ai_credit_total', $total ?: 0);
-        return (float)$total ?: 0;
+        update_user_meta($user_id, '_cobra_ai_credit_balance', $total);
+        return $total;
     }
 
     /**
@@ -333,55 +538,22 @@ class Feature extends FeatureBase
     }
 
     /**
-     * Process expired credits
+     * Process expired credits. Delegates to the cron runner so we have one code path.
      */
     public function process_expired_credits(): void
     {
-        global $wpdb;
-        $table = $this->get_table_name('credits');
-
-        // Get expired credits
-        $expired = $wpdb->get_results(
-            "SELECT id, user_id FROM $table 
-            WHERE status = 'active' 
-            AND expiration_date IS NOT NULL 
-            AND expiration_date <= NOW()"
-        );
-
-        foreach ($expired as $credit) {
-            $wpdb->update(
-                $table,
-                ['status' => 'expired'],
-                ['id' => $credit->id],
-                ['%s'],
-                ['%d']
-            );
-
-            $this->update_user_credit_cache($credit->user_id);
-            do_action('cobra_ai_credit_expired', $credit->id);
+        if ($this->cron) {
+            $this->cron->run_expiration_check();
         }
     }
 
     /**
-     * Utility Methods
-     */
-
-    /**
-     * Validate credit type
+     * Validate credit type against the active list configured in settings.
      */
     protected function validate_credit_type(string $type): bool
     {
-        $valid_types = $this->get_settings('general')['credit_types'];
-        return in_array($type, $valid_types);
-    }
-
-    /**
-     * Update user credit cache
-     */
-    protected function update_user_credit_cache(int $user_id): void
-    {
-        delete_user_meta($user_id, '_cobra_ai_credit_total');
-        $this->get_user_credit_total($user_id); // Regenerate cache
+        $valid_types = $this->get_settings('general')['credit_types'] ?? [];
+        return in_array($type, $valid_types, true);
     }
 
     /**
@@ -440,7 +612,7 @@ class Feature extends FeatureBase
             $actions['add_credit'] = sprintf(
                 '<a href="%s">%s</a>',
                 esc_url(add_query_arg([
-                    'page' => 'cobra-ai-credits',
+                    'page' => 'cobra-ai-credits-manager',
                     'action' => 'add',
                     'user_id' => $user->ID
                 ], admin_url('admin.php'))),
@@ -452,12 +624,15 @@ class Feature extends FeatureBase
 
 
     /**
-     * Handle credit added event
+     * Handle credit added event. Matches the action signature emitted by
+     * CreditManager::add_credit(): ($credit_id, $data, $user_id).
      */
-    public function handle_credit_added($user_id, $amount, $type, $credit_id): void
+    public function handle_credit_added($credit_id, $data, $user_id): void
     {
         try {
-            // Log the credit addition
+            $amount = is_array($data) ? ($data['credit'] ?? 0) : 0;
+            $type   = is_array($data) ? ($data['credit_type'] ?? '') : '';
+
             cobra_ai_db()->log('info', sprintf(
                 'Credit added: %s %s to user #%d',
                 $amount,
@@ -470,10 +645,9 @@ class Feature extends FeatureBase
                 'type' => $type
             ]);
 
-            // Update user credit balance in meta
-            $this->update_user_balance($user_id);
+            // Balance is already updated by CreditManager; this is a safety refresh.
+            $this->update_user_balance((int)$user_id);
 
-            // Trigger notifications if needed
             do_action('cobra_ai_after_credit_added', $credit_id, $user_id, $amount, $type);
         } catch (\Exception $e) {
             cobra_ai_db()->log('error', 'Error handling credit addition: ' . $e->getMessage(), [
@@ -589,34 +763,31 @@ class Feature extends FeatureBase
     }
 
     /**
-     * Update user credit balance
+     * Update user credit balance. Public so CreditAdmin can refresh balances;
+     * delegates to CreditManager when available to keep a single code path.
      */
-    private function update_user_balance(int $user_id): void
+    public function update_user_balance(int $user_id): void
     {
         try {
+            if ($this->manager) {
+                $this->manager->update_user_balance($user_id);
+                return;
+            }
+
             global $wpdb;
             $table = $this->get_table_name('credits');
 
-            // Calculate total available credits
             $total = $wpdb->get_var($wpdb->prepare(
-                "SELECT SUM(credit - consumed) 
-                FROM $table 
-                WHERE user_id = %d 
+                "SELECT SUM(credit - consumed)
+                FROM $table
+                WHERE user_id = %d
                 AND status = 'active'
                 AND (expiration_date IS NULL OR expiration_date > %s)",
                 $user_id,
                 current_time('mysql')
             ));
 
-            // Update user meta
             update_user_meta($user_id, '_cobra_ai_credit_balance', (float)$total);
-
-            // Log balance update
-            cobra_ai_db()->log('debug', sprintf(
-                'Updated credit balance for user #%d: %s',
-                $user_id,
-                $total
-            ));
         } catch (\Exception $e) {
             cobra_ai_db()->log('error', 'Error updating user balance: ' . $e->getMessage(), [
                 'user_id' => $user_id

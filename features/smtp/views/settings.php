@@ -62,10 +62,11 @@ $updated = isset($_GET['settings-updated']) && $_GET['settings-updated'] === 'tr
                         <th scope="row"><?php echo esc_html__('Enable SMTP', 'cobra-ai'); ?></th>
                         <td>
                             <label for="email-service-enabled">
-                                <input type="checkbox" 
-                                    id="email-service-enabled" 
-                                    name="settings[enabled]" 
-                                    value="1" 
+                                <input type="hidden" name="settings[enabled]" value="0">
+                                <input type="checkbox"
+                                    id="email-service-enabled"
+                                    name="settings[enabled]"
+                                    value="1"
                                     <?php checked($settings['enabled']); ?>>
                                 <?php echo esc_html__('Enable custom email settings', 'cobra-ai'); ?>
                             </label>
@@ -110,10 +111,11 @@ $updated = isset($_GET['settings-updated']) && $_GET['settings-updated'] === 'tr
                         <th scope="row"><?php echo esc_html__('Enable SMTP', 'cobra-ai'); ?></th>
                         <td>
                             <label for="smtp-enabled">
-                                <input type="checkbox" 
-                                    id="smtp-enabled" 
-                                    name="settings[smtp][enabled]" 
-                                    value="1" 
+                                <input type="hidden" name="settings[smtp][enabled]" value="0">
+                                <input type="checkbox"
+                                    id="smtp-enabled"
+                                    name="settings[smtp][enabled]"
+                                    value="1"
                                     <?php checked(!empty($settings['smtp']['enabled'])); ?>>
                                 <?php echo esc_html__('Send emails using SMTP', 'cobra-ai'); ?>
                             </label>
@@ -168,10 +170,11 @@ $updated = isset($_GET['settings-updated']) && $_GET['settings-updated'] === 'tr
                         <th scope="row"><?php echo esc_html__('Authentication', 'cobra-ai'); ?></th>
                         <td>
                             <label for="smtp-auth">
-                                <input type="checkbox" 
-                                    id="smtp-auth" 
-                                    name="settings[smtp][auth]" 
-                                    value="1" 
+                                <input type="hidden" name="settings[smtp][auth]" value="0">
+                                <input type="checkbox"
+                                    id="smtp-auth"
+                                    name="settings[smtp][auth]"
+                                    value="1"
                                     <?php checked(!empty($settings['smtp']['auth'])); ?>>
                                 <?php echo esc_html__('Use SMTP authentication', 'cobra-ai'); ?>
                             </label>
@@ -213,10 +216,11 @@ $updated = isset($_GET['settings-updated']) && $_GET['settings-updated'] === 'tr
                         <th scope="row"><?php echo esc_html__('Enable POP before SMTP', 'cobra-ai'); ?></th>
                         <td>
                             <label for="pop-enabled">
-                                <input type="checkbox" 
-                                    id="pop-enabled" 
-                                    name="settings[pop][enabled]" 
-                                    value="1" 
+                                <input type="hidden" name="settings[pop][enabled]" value="0">
+                                <input type="checkbox"
+                                    id="pop-enabled"
+                                    name="settings[pop][enabled]"
+                                    value="1"
                                     <?php checked(!empty($settings['pop']['enabled'])); ?>>
                                 <?php echo esc_html__('Use POP before SMTP authentication', 'cobra-ai'); ?>
                             </label>

@@ -24,10 +24,10 @@ do_action('cobra_before_register_form');
             // Required Fields Section
             $required_fields = [
                 'username' => [
-                    'label' => __('Username', 'cobra-ai'),
+                    'label' => esc_html__('Username', 'cobra-ai'),
                     'type' => 'text',
                     'autocomplete' => 'username',
-                    'pattern' => '[a-zA-Z0-9_-]{3,}',
+                    'pattern' => '[a-zA-Z0-9_\\-]{3,}',
                     'title' => __('Username must be at least 3 characters and may only contain letters, numbers, underscores and hyphens', 'cobra-ai')
                 ],
                 'email' => [
@@ -105,9 +105,9 @@ do_action('cobra_before_register_form');
 
                 <div class="cobra-form-row">
                     <label for="<?php echo esc_attr($field_id); ?>">
-                        <?php echo esc_html(ucfirst(str_replace('_', ' ', $field_id))); ?>
+                        <?php echo esc_html($this->get_field_label($field_id) ?: ucfirst(str_replace('_', ' ', $field_id))); ?>
                         <?php if (!empty($field_config['required'])): ?>
-                            <span class="required">*</span>
+                            <span class="required">*</span> 
                         <?php endif; ?>
                     </label>
 

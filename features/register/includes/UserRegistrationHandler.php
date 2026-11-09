@@ -42,17 +42,23 @@ class UserRegistrationHandler
                 $user->set_role('subscriber');
                 update_user_meta($user_id, '_email_verified', true);
                 update_user_meta($user_id, '_registration_date', current_time('mysql'));
+                // Track registration source for wp-admin/users.php display
+                update_user_meta($user_id, 'discovery_source', 'Web_Google');
                 $this->log_action($user_id, 'register', 'completed');
+                // Notify other features (e.g. email-marketing onboarding)
+                do_action('cobra_register_user_confirmed', $user_id);
                 return;
             }else {
                 $user->set_role($settings['general']['default_role']);
 
                 // Generate verification token
                 $token = $this->generate_verification_token($user_id);
-    
+
                 // Save registration data
                 update_user_meta($user_id, '_email_verified', false);
                 update_user_meta($user_id, '_registration_date', current_time('mysql'));
+                // Track registration source for wp-admin/users.php display
+                update_user_meta($user_id, 'discovery_source', 'Web_Form');
     
                 // Log registration
                 $this->log_action($user_id, 'register', 'completed');
@@ -67,19 +73,23 @@ class UserRegistrationHandler
     }
     public function handle_resend_verification(): void
     {
+        check_ajax_referer('cobra-ai-register', 'nonce');
 
-        $user_id = $_POST['user_id'] ?? 0;
+        $user_id = absint($_POST['user_id'] ?? 0);
+
         // Validate user ID
-        if (!is_numeric($user_id) || $user_id <= 0) {
-            wp_send_json_error(__('Invalid user ID.', 'cobra-ai'));
+        if ($user_id <= 0) {
+            wp_send_json_error(['message' => __('Invalid user ID.', 'cobra-ai')]);
             return;
         }
+
+        // Non-admins may only resend for themselves
+        if (!current_user_can('manage_options') && get_current_user_id() !== $user_id) {
+            wp_send_json_error(['message' => __('Permission denied.', 'cobra-ai')]);
+            return;
+        }
+
         try {
-
-
-            // Get settings
-            $settings = $this->feature->get_settings();
-
             // Generate verification token
             $token = $this->generate_verification_token($user_id);
 
@@ -91,7 +101,7 @@ class UserRegistrationHandler
             ]);
         } catch (\Exception $e) {
             $this->log_action($user_id, 'resend_verification', 'failed', ['error' => $e->getMessage()]);
-            wp_send_json_error($e->getMessage());
+            wp_send_json_error(['message' => __('Failed to send verification email.', 'cobra-ai')]);
         }
     }
     /**
@@ -135,6 +145,9 @@ class UserRegistrationHandler
 
             // Send confirmation email
             $this->email_handler->send_confirmation_email($user_id);
+
+            // Notify other features (e.g. email-marketing onboarding)
+            do_action('cobra_register_user_confirmed', $user_id);
 
             // Redirect to login page with success message
             $redirect_url = add_query_arg(

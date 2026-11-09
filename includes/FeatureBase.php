@@ -47,23 +47,23 @@ abstract class FeatureBase
     private ?array $settings_cache = null;
     
     /**
-     * Feature status cache
+     * Feature status cache — keyed by feature_id to avoid cross-feature pollution
      */
-    private ?bool $active_status_cache = null;
+    private array $active_status_cache = [];
     
     /**
      * Check if feature is active (cached)
      */
     public function is_feature_active(string $feature_id): bool
     {
-        if ($this->active_status_cache !== null) {
-            return $this->active_status_cache;
+        if (array_key_exists($feature_id, $this->active_status_cache)) {
+            return $this->active_status_cache[$feature_id];
         }
         
         $active_features = get_option('cobra_ai_enabled_features', []);
-        $this->active_status_cache = in_array($feature_id, $active_features, true);
+        $this->active_status_cache[$feature_id] = in_array($feature_id, $active_features, true);
         
-        return $this->active_status_cache;
+        return $this->active_status_cache[$feature_id];
     }
     
     /**
@@ -248,36 +248,12 @@ abstract class FeatureBase
     public function sanitize_settings(array $settings): array
     {
         try {
-            // Allow features to validate settings through their validate_settings method
+            // validate_settings operates on the full settings array — call it once at top level only
             if (method_exists($this, 'validate_settings')) {
                 $settings = $this->validate_settings($settings);
             }
 
-            // Basic sanitization for common setting types
-            foreach ($settings as $key => $value) {
-                if (empty($value)) {
-                    continue;
-                }
-
-                if (is_string($value)) {
-                    if ($this->is_html_allowed_field($key)) {
-                        // Allow HTML for specific fields
-                        $settings[$key] = wp_unslash($value);
-                    } elseif (is_email($value)) {
-                        // Sanitize email fields
-                        $settings[$key] = sanitize_email($value);
-                    } else {
-                        // Sanitize general text fields
-                        $settings[$key] = sanitize_text_field($value);
-                    }
-                } elseif (is_numeric($value)) {
-                    // Convert numeric strings to proper type
-                    $settings[$key] = strpos($value, '.') !== false ? (float)$value : (int)$value;
-                } elseif (is_array($value)) {
-                    // Recursively sanitize nested arrays
-                    $settings[$key] = $this->sanitize_settings($value);
-                }
-            }
+            $settings = $this->sanitize_settings_recursive($settings);
 
             // Allow features to perform additional sanitization
             $settings = apply_filters(
@@ -291,9 +267,33 @@ abstract class FeatureBase
                 'error' => $e->getMessage()
             ]);
 
-            // Return original settings if sanitization fails
             return $settings;
         }
+    }
+
+    private function sanitize_settings_recursive(array $settings): array
+    {
+        foreach ($settings as $key => $value) {
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            if (is_string($value)) {
+                if ($this->is_html_allowed_field($key)) {
+                    $settings[$key] = wp_unslash($value);
+                } elseif (is_email($value)) {
+                    $settings[$key] = sanitize_email(wp_unslash($value));
+                } else {
+                    $settings[$key] = sanitize_text_field(wp_unslash($value));
+                }
+            } elseif (is_numeric($value)) {
+                $settings[$key] = strpos($value, '.') !== false ? (float)$value : (int)$value;
+            } elseif (is_array($value)) {
+                $settings[$key] = $this->sanitize_settings_recursive($value);
+            }
+        }
+
+        return $settings;
     }
     /**
      * Register shortcodes - override in child class if needed
@@ -589,7 +589,7 @@ abstract class FeatureBase
         $settings = get_option('cobra_ai_' . $this->get_feature_id() . '_options', []);
 
         if ($key === null) {
-            return wp_parse_args($settings, $this->get_feature_default_options());
+            return $this->deep_merge_defaults($this->get_feature_default_options(), is_array($settings) ? $settings : []);
         }
 
         // if key has '.' in it, explode it and get the all values
@@ -609,14 +609,48 @@ abstract class FeatureBase
     }
 
     /**
+     * Recursively merge user settings over defaults.
+     * Unlike wp_parse_args, this walks into nested associative arrays
+     * so missing sub-keys (e.g. an unchecked checkbox inside settings[display])
+     * still get their default values instead of disappearing.
+     */
+    protected function deep_merge_defaults(array $defaults, array $values): array
+    {
+        $result = $defaults;
+        foreach ($values as $key => $value) {
+            if (is_array($value) && isset($result[$key]) && is_array($result[$key]) && $this->is_assoc_array($result[$key])) {
+                $result[$key] = $this->deep_merge_defaults($result[$key], $value);
+            } else {
+                $result[$key] = $value;
+            }
+        }
+        return $result;
+    }
+
+    private function is_assoc_array(array $arr): bool
+    {
+        if ($arr === []) {
+            return true;
+        }
+        return array_keys($arr) !== range(0, count($arr) - 1);
+    }
+
+    /**
      * Update feature settings
      */
     public function update_settings(array $settings): bool
     {
         try {
 
-            // Merge with defaults
-            $settings = wp_parse_args($settings, $this->get_feature_default_options());
+            // Preserve settings from other tabs: merge incoming values on top of what is already stored,
+            // then fall back to defaults for anything still missing. Tab-based forms only submit
+            // the current tab, so we must not wipe unrelated sections.
+            $stored = get_option('cobra_ai_' . $this->get_feature_id() . '_options', []);
+            if (!is_array($stored)) {
+                $stored = [];
+            }
+            $merged_with_stored = $this->deep_merge_defaults($stored, $settings);
+            $settings = $this->deep_merge_defaults($this->get_feature_default_options(), $merged_with_stored);
             
             // Allow features to validate settings
             if (method_exists($this, 'validate_settings')) {

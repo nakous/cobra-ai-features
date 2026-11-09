@@ -53,24 +53,28 @@ $recaptcha_available = $recaptcha_feature && method_exists($recaptcha_feature, '
                                 <legend class="screen-reader-text"><?php echo esc_html__('Form Fields to Display', 'cobra-ai'); ?></legend>
                                 
                                 <label for="show_name">
+                                    <input type="hidden" name="settings[fields][show_name]" value="0">
                                     <input name="settings[fields][show_name]" type="checkbox" id="show_name" value="1" <?php checked($settings['fields']['show_name'] ?? true); ?>>
                                     <?php echo esc_html__('Name field', 'cobra-ai'); ?>
                                 </label>
                                 <br>
-                                
+
                                 <label for="show_email">
+                                    <input type="hidden" name="settings[fields][show_email]" value="0">
                                     <input name="settings[fields][show_email]" type="checkbox" id="show_email" value="1" <?php checked($settings['fields']['show_email'] ?? true); ?>>
                                     <?php echo esc_html__('Email field', 'cobra-ai'); ?>
                                 </label>
                                 <br>
-                                
+
                                 <label for="show_subject">
+                                    <input type="hidden" name="settings[fields][show_subject]" value="0">
                                     <input name="settings[fields][show_subject]" type="checkbox" id="show_subject" value="1" <?php checked($settings['fields']['show_subject'] ?? true); ?>>
                                     <?php echo esc_html__('Subject field', 'cobra-ai'); ?>
                                 </label>
                                 <br>
-                                
+
                                 <label for="show_message">
+                                    <input type="hidden" name="settings[fields][show_message]" value="0">
                                     <input name="settings[fields][show_message]" type="checkbox" id="show_message" value="1" <?php checked($settings['fields']['show_message'] ?? true); ?>>
                                     <?php echo esc_html__('Message field', 'cobra-ai'); ?>
                                 </label>
@@ -138,7 +142,8 @@ $recaptcha_available = $recaptcha_feature && method_exists($recaptcha_feature, '
                         <th scope="row"><?php echo esc_html__('Autofill for Logged-in Users', 'cobra-ai'); ?></th>
                         <td>
                             <label for="autofill_for_logged_in">
-                                <input name="settings[fields][autofill_for_logged_in]" type="checkbox" id="autofill_for_logged_in" 
+                                <input type="hidden" name="settings[fields][autofill_for_logged_in]" value="0">
+                                <input name="settings[fields][autofill_for_logged_in]" type="checkbox" id="autofill_for_logged_in"
                                     value="1" <?php checked($settings['fields']['autofill_for_logged_in'] ?? true); ?>>
                                 <?php echo esc_html__('Automatically fill name and email for logged-in users', 'cobra-ai'); ?>
                             </label>
@@ -155,7 +160,8 @@ $recaptcha_available = $recaptcha_feature && method_exists($recaptcha_feature, '
                         <th scope="row"><?php echo esc_html__('Enable reCAPTCHA', 'cobra-ai'); ?></th>
                         <td>
                             <label for="use_recaptcha">
-                                <input name="settings[general][use_recaptcha]" type="checkbox" id="use_recaptcha" 
+                                <input type="hidden" name="settings[general][use_recaptcha]" value="0">
+                                <input name="settings[general][use_recaptcha]" type="checkbox" id="use_recaptcha"
                                     value="1" <?php checked($settings['general']['use_recaptcha'] ?? false); ?>
                                     <?php disabled(!$recaptcha_available); ?>>
                                 <?php echo esc_html__('Protect form with Google reCAPTCHA', 'cobra-ai'); ?>
@@ -179,7 +185,8 @@ $recaptcha_available = $recaptcha_feature && method_exists($recaptcha_feature, '
                         <th scope="row"><?php echo esc_html__('Enable Notifications', 'cobra-ai'); ?></th>
                         <td>
                             <label for="notifications_enabled">
-                                <input name="settings[notifications][enabled]" type="checkbox" id="notifications_enabled" 
+                                <input type="hidden" name="settings[notifications][enabled]" value="0">
+                                <input name="settings[notifications][enabled]" type="checkbox" id="notifications_enabled"
                                     value="1" <?php checked($settings['notifications']['enabled'] ?? true); ?>>
                                 <?php echo esc_html__('Send email notifications for new submissions', 'cobra-ai'); ?>
                             </label>
@@ -294,7 +301,8 @@ $recaptcha_available = $recaptcha_feature && method_exists($recaptcha_feature, '
                         <th scope="row"><?php echo esc_html__('Include Default CSS', 'cobra-ai'); ?></th>
                         <td>
                             <label for="include_default_css">
-                                <input name="settings[styling][include_default_css]" type="checkbox" id="include_default_css" 
+                                <input type="hidden" name="settings[styling][include_default_css]" value="0">
+                                <input name="settings[styling][include_default_css]" type="checkbox" id="include_default_css"
                                     value="1" <?php checked($settings['styling']['include_default_css'] ?? true); ?>>
                                 <?php echo esc_html__('Include default CSS styles for the form', 'cobra-ai'); ?>
                             </label>

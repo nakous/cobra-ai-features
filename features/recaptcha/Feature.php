@@ -299,7 +299,7 @@ class Feature extends FeatureBase
      */
     public function validate_registration($errors, $sanitized_user_login, $user_email): \WP_Error
     {
-        if (!$this->is_ready() || !$this->get_settings('enabled_forms')['register']) {
+        if (!$this->is_ready() || empty($this->get_settings('enabled_forms')['register'])) {
             return $errors;
         }
 
@@ -351,7 +351,7 @@ class Feature extends FeatureBase
      */
     public function validate_lostpassword($errors)
     {
-        if (!$this->is_ready() || !$this->get_settings('enabled_forms')['lostpassword']) {
+        if (!$this->is_ready() || empty($this->get_settings('enabled_forms')['lostpassword'])) {
             return;
         }
 
@@ -380,7 +380,7 @@ class Feature extends FeatureBase
      */
     public function validate_comment($commentdata)
     {
-        if (!$this->is_ready() || !$this->get_settings('enabled_forms')['comments']) {
+        if (!$this->is_ready() || empty($this->get_settings('enabled_forms')['comments'])) {
             return $commentdata;
         }
 
@@ -413,7 +413,7 @@ class Feature extends FeatureBase
      */
     public function validate_protected_post($access)
     {
-        if (!$this->is_ready() || !$this->get_settings('enabled_forms')['protected_posts']) {
+        if (!$this->is_ready() || empty($this->get_settings('enabled_forms')['protected_posts'])) {
             return $access;
         }
 

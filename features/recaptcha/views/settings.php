@@ -182,48 +182,56 @@ $current_version = $settings['version'] ?? 'v2';
                     <td>
                         <fieldset>
                             <label>
+                                <input type="hidden" name="settings[enabled_forms][login]" value="0">
                                 <input type="checkbox" name="settings[enabled_forms][login]" value="1"
                                     <?php checked($settings['enabled_forms']['login'] ?? false); ?>>
                                 <?php echo esc_html__('Login Form', 'cobra-ai'); ?>
                             </label>
                             <br>
                             <label>
+                                <input type="hidden" name="settings[enabled_forms][register]" value="0">
                                 <input type="checkbox" name="settings[enabled_forms][register]" value="1"
                                     <?php checked($settings['enabled_forms']['register'] ?? false); ?>>
                                 <?php echo esc_html__('Registration Form', 'cobra-ai'); ?>
                             </label>
                             <br>
                             <label>
+                                <input type="hidden" name="settings[enabled_forms][lostpassword]" value="0">
                                 <input type="checkbox" name="settings[enabled_forms][lostpassword]" value="1"
                                     <?php checked($settings['enabled_forms']['lostpassword'] ?? false); ?>>
                                 <?php echo esc_html__('Lost Password Form', 'cobra-ai'); ?>
                             </label>
                             <br>
                             <label>
+                                <input type="hidden" name="settings[enabled_forms][comments]" value="0">
                                 <input type="checkbox" name="settings[enabled_forms][comments]" value="1"
                                     <?php checked($settings['enabled_forms']['comments'] ?? false); ?>>
                                 <?php echo esc_html__('Comments Form', 'cobra-ai'); ?>
                             </label>
                             <br>
                             <label>
+                                <input type="hidden" name="settings[enabled_forms][protected_posts]" value="0">
                                 <input type="checkbox" name="settings[enabled_forms][protected_posts]" value="1"
                                     <?php checked($settings['enabled_forms']['protected_posts'] ?? false); ?>>
                                 <?php echo esc_html__('Protected Posts Form', 'cobra-ai'); ?>
                             </label>
                             <br>
                             <label>
+                                <input type="hidden" name="settings[enabled_forms][contact_form]" value="0">
                                 <input type="checkbox" name="settings[enabled_forms][contact_form]" value="1"
                                     <?php checked($settings['enabled_forms']['contact_form'] ?? false); ?>>
                                 <?php echo esc_html__('Contact Form', 'cobra-ai'); ?>
                             </label>
                             <br>
                             <label>
+                                <input type="hidden" name="settings[enabled_forms][testimonials]" value="0">
                                 <input type="checkbox" name="settings[enabled_forms][testimonials]" value="1"
                                     <?php checked($settings['enabled_forms']['testimonials'] ?? false); ?>>
                                 <?php echo esc_html__('Testimonials Form', 'cobra-ai'); ?>
                             </label>
                             <br>
                             <label>
+                                <input type="hidden" name="settings[enabled_forms][custom_form]" value="0">
                                 <input type="checkbox" name="settings[enabled_forms][custom_form]" value="1"
                                     <?php checked($settings['enabled_forms']['custom_form'] ?? false); ?>>
                                 <?php echo esc_html__('Custom Form', 'cobra-ai'); ?>
@@ -256,6 +264,7 @@ $current_version = $settings['version'] ?? 'v2';
                     </th>
                     <td>
                         <label>
+                            <input type="hidden" name="settings[disable_submit]" value="0">
                             <input type="checkbox" id="disable_submit" name="settings[disable_submit]" value="1"
                                 <?php checked($settings['disable_submit'] ?? true); ?>>
                             <?php echo esc_html__('Disable submit button until reCAPTCHA is completed', 'cobra-ai'); ?>

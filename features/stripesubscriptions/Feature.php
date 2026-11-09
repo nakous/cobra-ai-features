@@ -117,17 +117,9 @@ class Feature extends FeatureBase
                     ]
                 ]
             ];
-            if (class_exists('\CobraAI\Features\Stripe\Feature')) {
-                $this->stripe_feature = new \CobraAI\Features\Stripe\Feature();
-            } else {
-                throw new \Exception('Stripe feature class does not exist');
-            }
-
-            // add_action('init', [$this, 'register_post_type']);
-            // $this->stripe_feature = cobra_ai()->get_feature('stripe');
-            if (!$this->stripe_feature) {
-                throw new \Exception('Stripe feature is required but not active');
-            }
+            // stripe_feature is resolved lazily via get_stripe_feature() — the
+            // cobra_ai() registry may not be ready yet during setup() when the
+            // Admin bootstraps the feature list.
             // Initialize components
             require_once __DIR__ . '/includes/API.php';
             require_once __DIR__ . '/includes/Admin.php';
@@ -425,39 +417,40 @@ class Feature extends FeatureBase
     }
 
     /**
-     * Get Stripe feature instance
+     * Get Stripe feature instance (resolved lazily from the registry).
+     *
+     * The cobra_ai() global may not be ready during Feature::setup() when the
+     * Admin is still bootstrapping the feature list, so we read $GLOBALS
+     * directly and guard against a null registry instead of calling cobra_ai()
+     * (which has a strict CobraAI return type).
      */
     public function get_stripe_feature(): ?\CobraAI\Features\Stripe\Feature
     {
+        if ($this->stripe_feature === null) {
+            $registry = $GLOBALS['cobra_ai'] ?? null;
+            if ($registry instanceof \CobraAI\CobraAI) {
+                $feature = $registry->get_feature('stripe');
+                if ($feature instanceof \CobraAI\Features\Stripe\Feature) {
+                    $this->stripe_feature = $feature;
+                }
+            }
+        }
         return $this->stripe_feature;
     }
 
     /**
-     * Get Stripe public key with debugging
+     * Get Stripe publishable key for the current mode.
      */
     public function get_stripe_feature_public_key(): string
     {
         try {
             $stripe_feature = $this->get_stripe_feature();
-            if (!$stripe_feature) {
-                error_log('COBRA DEBUG: Stripe feature is null');
+            if (!$stripe_feature || !method_exists($stripe_feature, 'get_public_key')) {
                 return '';
             }
-            
-            error_log('COBRA DEBUG: Stripe feature class: ' . get_class($stripe_feature));
-            
-            if (!method_exists($stripe_feature, 'get_public_key')) {
-                error_log('COBRA DEBUG: get_public_key method does not exist');
-                $methods = get_class_methods($stripe_feature);
-                error_log('COBRA DEBUG: Available methods: ' . implode(', ', $methods));
-                return '';
-            }
-            
-            $public_key = $stripe_feature->get_public_key();
-            error_log('COBRA DEBUG: Retrieved public key: ' . ($public_key ?: 'empty'));
-            return $public_key;
+            return (string) $stripe_feature->get_public_key();
         } catch (\Exception $e) {
-            error_log('COBRA DEBUG: Exception getting public key: ' . $e->getMessage());
+            $this->log('error', 'Failed to get Stripe public key: ' . $e->getMessage());
             return '';
         }
     }
@@ -657,7 +650,7 @@ class Feature extends FeatureBase
     }
 
 
-    public function getVesrion()
+    public function get_version(): string
     {
         return $this->version;
     }
@@ -688,14 +681,57 @@ class Feature extends FeatureBase
             $current_plan = $user_subscription && $user_subscription->plan_id === $post_id;
         }
 
+        // Get discount if available
+        $discount_id = get_post_meta($post_id, '_discount_id', true);
+        $discount = null;
+        $discounted_price = $price_amount;
+        
+        if (!empty($discount_id)) {
+            try {
+                $discount = $this->api->get_discount($discount_id);
+                if ($discount) {
+                    // Calculate discounted price
+                    if (!empty($discount['percent_off'])) {
+                        $discounted_price = $price_amount * (1 - ($discount['percent_off'] / 100));
+                    } elseif (!empty($discount['amount_off'])) {
+                        // Convert amount_off (in cents) to same unit as price
+                        $amount_off = $discount['amount_off'] / 100;
+                        $discounted_price = max(0, $price_amount - $amount_off);
+                    }
+                }
+            } catch (\Exception $e) {
+                error_log('Error retrieving discount: ' . $e->getMessage());
+            }
+        }
+
         // Start building custom content
         ob_start();
     ?>
         <div class="cobra-plan-single">
             <div class="plan-header">
                 <div class="plan-price-box">
-                    <span class="currency"><?php echo esc_html($this->format_currency_symbol($currency)); ?></span>
-                    <span class="amount"><?php echo esc_html(number_format($price_amount, 2)); ?></span>
+                    <?php if ($discount): ?>
+                        <div class="discount-badge">
+                            <?php if (!empty($discount['percent_off'])): ?>
+                                -<?php echo esc_html($discount['percent_off']); ?>%
+                            <?php else: ?>
+                                -<?php echo esc_html($this->format_currency_symbol($currency) . number_format($discount['amount_off'] / 100, 2)); ?>
+                            <?php endif; ?>
+                        </div>
+                        <div class="price-with-discount">
+                            <div class="original-price strikethrough">
+                                <span class="currency"><?php echo esc_html($this->format_currency_symbol($currency)); ?></span>
+                                <span class="amount"><?php echo esc_html(number_format($price_amount, 2)); ?></span>
+                            </div>
+                            <div class="discounted-price">
+                                <span class="currency"><?php echo esc_html($this->format_currency_symbol($currency)); ?></span>
+                                <span class="amount"><?php echo esc_html(number_format($discounted_price, 2)); ?></span>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <span class="currency"><?php echo esc_html($this->format_currency_symbol($currency)); ?></span>
+                        <span class="amount"><?php echo esc_html(number_format($price_amount, 2)); ?></span>
+                    <?php endif; ?>
                     <span class="interval">
                         <?php
                         if ($interval_count > 1) {
@@ -961,6 +997,33 @@ class Feature extends FeatureBase
             // Add trial period if enabled
             if ($trial_enabled && $trial_days > 0) {
                 $session_params['subscription_data']['trial_period_days'] = $trial_days;
+            }
+
+            // Apply discount if available
+            $discount_id = get_post_meta($plan_id, '_discount_id', true);
+            if (!empty($discount_id)) {
+                try {
+                    $discount = $this->api->get_discount($discount_id);
+                    if ($discount) {
+                        // Determine if this is a coupon or promotion code
+                        if ($discount['type'] === 'promotion_code') {
+                            // For promotion codes, use the promotion code ID directly
+                            $session_params['discounts'] = [[
+                                'promotion_code' => $discount_id
+                            ]];
+                        } else {
+                            // For coupons, use the coupon ID
+                            $session_params['discounts'] = [[
+                                'coupon' => $discount_id
+                            ]];
+                        }
+                    }
+                } catch (\Exception $e) {
+                    $this->log('error', 'Error applying discount to checkout session', [
+                        'discount_id' => $discount_id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
             }
 
             // Create the session

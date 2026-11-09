@@ -33,9 +33,6 @@ $system_status = [
     'upload_max_filesize' => ini_get('upload_max_filesize')
 ];
 
-// Get recent logs
-$recent_logs = cobra_ai_db()->get_recent_logs(5);
-
 // Get analytics data for the last 30 days
 $start_date = date('Y-m-d H:i:s', strtotime('-30 days'));
 $end_date = current_time('mysql');
@@ -182,45 +179,6 @@ $end_date = current_time('mysql');
                 </div>
             <?php endif; ?>
         </div>
-    </div>
-
-    <!-- Recent Activity -->
-    <div class="cobra-ai-card">
-        <h2><?php echo esc_html__('Recent Activity', 'cobra-ai'); ?></h2>
-        
-        <?php if (!empty($recent_logs)): ?>
-            <table class="wp-list-table widefat fixed striped">
-                <thead>
-                    <tr>
-                        <th><?php echo esc_html__('Time', 'cobra-ai'); ?></th>
-                        <th><?php echo esc_html__('Level', 'cobra-ai'); ?></th>
-                        <th><?php echo esc_html__('Message', 'cobra-ai'); ?></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($recent_logs as $log): ?>
-                        <tr>
-                            <td><?php echo esc_html(
-                                human_time_diff(
-                                    strtotime($log->created_at), 
-                                    current_time('timestamp')
-                                ) . ' ' . __('ago', 'cobra-ai')
-                            ); ?></td>
-                            <td>
-                                <span class="log-level log-level-<?php echo esc_attr($log->level); ?>">
-                                    <?php echo esc_html(ucfirst($log->level)); ?>
-                                </span>
-                            </td>
-                            <td><?php echo esc_html($log->message); ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        <?php else: ?>
-            <p class="description">
-                <?php echo esc_html__('No recent activity to display.', 'cobra-ai'); ?>
-            </p>
-        <?php endif; ?>
     </div>
 
     <!-- Quick Actions -->

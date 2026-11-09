@@ -1,2 +1,166 @@
-<!-- TODO: file documentation for feature credit -->
- <h1>Help feature credit</h1>
+<h1>Credits System</h1>
+
+<p>
+    The <strong>Credits System</strong> feature lets you grant, track and consume credits
+    (points or currency) for any registered WordPress user. Credits can be typed
+    (subscription, paid, free, coupon, gift, reward, discount, bonus), dated, and
+    expired automatically. Every operation is logged in the plugin&rsquo;s system log.
+</p>
+
+<h2>Key concepts</h2>
+<ul>
+    <li><strong>Credit record</strong> &mdash; one row in <code>{prefix}cobra_credits</code>
+        with <em>credit</em>, <em>consumed</em>, <em>status</em> and optional
+        <em>expiration_date</em>. Available amount = <code>credit - consumed</code>.</li>
+    <li><strong>Status</strong> &mdash; <code>pending</code>, <code>active</code>,
+        <code>expired</code> or <code>deleted</code>. Only <code>active</code> rows
+        contribute to the user balance.</li>
+    <li><strong>Credit type</strong> &mdash; logical category, consumed in the order
+        defined by <em>Settings &rarr; Type order</em>.</li>
+    <li><strong>Cached balance</strong> &mdash; stored in user meta
+        <code>_cobra_ai_credit_balance</code> and kept in sync by
+        <code>CreditManager::update_user_balance()</code>.</li>
+</ul>
+
+<h2>Admin pages</h2>
+<ul>
+    <li><strong>Cobra AI &rarr; Credits</strong> (<code>cobra-ai-credits-manager</code>)
+        &mdash; list, add, edit and delete credit records.</li>
+    <li><strong>Cobra AI &rarr; Credits Settings</strong>
+        (<code>cobra-ai-credits</code>) &mdash; configure types, display,
+        expiration and notifications.</li>
+    <li><strong>Users list</strong> &mdash; a <em>Credits</em> column shows the
+        balance with a per-type breakdown and an <em>Add Credit</em> row action.</li>
+    <li><strong>User profile</strong> &mdash; last credit movements and a
+        quick link to the management page.</li>
+</ul>
+
+<h2>Adding credits</h2>
+<ol>
+    <li>From <em>Users &rarr; All Users</em>, click <em>Add Credit</em> next to a user,
+        or go to <em>Cobra AI &rarr; Credits &rarr; Add New</em>.</li>
+    <li>Pick the type, amount, start and optional expiration date, and a comment.</li>
+    <li>The form is processed by <code>CreditAdmin::handle_add_credit()</code>, which
+        calls <code>Feature::add_credit()</code> &mdash; a thin wrapper around
+        <code>CreditManager::add_credit()</code>. The user balance and logs are
+        updated automatically.</li>
+</ol>
+
+<h2>Bulk operations</h2>
+<p>
+    In the users list, select several rows, pick <em>Add Credits</em> in the bulk
+    action dropdown and submit. The selection is stored in a 15-minute transient
+    (<code>cobra_ai_bulk_credit_users_&lt;user_id&gt;</code>) and then applied to
+    every selected user when you confirm the form.
+</p>
+
+<h2>Editing and deleting</h2>
+<ul>
+    <li>Edit updates the credit/consumed/status fields and refreshes the user balance
+        when any of them change.</li>
+    <li>Delete is a <em>soft delete</em> &mdash; the status is set to
+        <code>deleted</code> and the balance is recomputed. Historical rows are
+        preserved for audit.</li>
+</ul>
+
+<h2>Expiration &amp; cron</h2>
+<p>
+    A daily scheduled task runs <code>CreditCron::run_expiration_check()</code>,
+    which flips expired rows to <code>expired</code>, refreshes the affected
+    balances and fires <code>cobra_ai_credit_expired</code> for each record.
+    When <em>Enable expiration notice</em> is on, users receive an email.
+</p>
+<p>
+    Admins can trigger the job manually from the Credits page using the
+    <em>Run now</em> control &mdash; the call is nonce-protected via
+    <code>cobra_ai_run_cron_expiration_check</code>.
+</p>
+
+<h2>Settings overview</h2>
+<ul>
+    <li><strong>General</strong> &mdash; enabled credit types, unit (points / currency),
+        display name and symbol, and the consumption order.</li>
+    <li><strong>Display</strong> &mdash; show credits in profile, show in users list,
+        history rows per page.</li>
+    <li><strong>Expiration</strong> &mdash; default duration in days, grace period,
+        auto-expire toggle.</li>
+    <li><strong>Notifications</strong> &mdash; enable expiration notices, how many
+        days before expiry, and a custom email template.</li>
+</ul>
+
+<h2>Programmatic API</h2>
+<pre><code>$feature = cobra_ai()-&gt;get_feature('credits');
+
+// Add credits to a user
+$credit_id = $feature-&gt;add_credit(
+    $user_id,
+    100.0,
+    'paid',
+    'Order #1234',
+    '2026-12-31 23:59:59'
+);
+
+// Read balance
+$total = $feature-&gt;get_user_credit_total($user_id);
+
+// Per-type breakdown
+$types = $feature-&gt;get_user_credit_types($user_id);
+
+// History
+$rows = $feature-&gt;get_user_credit_history($user_id, ['limit' =&gt; 20]);
+
+// Consume (uses CreditManager directly)
+$feature-&gt;manager-&gt;consume_credit($user_id, 10.0, ['reason' =&gt; 'api_call']);
+</code></pre>
+
+<h2>Hooks</h2>
+
+<h3>Actions</h3>
+<ul>
+    <li><code>cobra_ai_credit_added ($credit_id, $data, $user_id)</code></li>
+    <li><code>cobra_ai_credit_consumed (...)</code> &mdash; fired by the manager on
+        consumption.</li>
+    <li><code>cobra_ai_credit_removed ($credit_id, $credit_row)</code></li>
+    <li><code>cobra_ai_credit_updated ($credit_id, $data)</code></li>
+    <li><code>cobra_ai_credit_expired ($credit_id)</code></li>
+    <li><code>cobra_ai_credit_status_updated ($credit_id, $new_status, $old_status)</code></li>
+    <li><code>cobra_ai_user_balance_updated ($user_id, $total)</code></li>
+    <li><code>cobra_ai_credits_transferred ($from_user_id, $to_user_id, $amount, $args)</code></li>
+    <li><code>cobra_ai_after_credit_added</code>, <code>cobra_ai_after_credit_removed</code>,
+        <code>cobra_ai_after_credit_updated</code>, <code>cobra_ai_after_credit_expired</code>
+        &mdash; late hooks for notifications / integrations.</li>
+</ul>
+
+<h3>Filters</h3>
+<ul>
+    <li><code>cobra_ai_credit_types</code> &mdash; extend the list of selectable
+        types.</li>
+</ul>
+
+<h2>Database</h2>
+<p>The feature uses a single table, <code>{prefix}cobra_credits</code>:</p>
+<ul>
+    <li><code>id</code>, <code>user_id</code>, <code>credit_type</code>,
+        <code>type_id</code></li>
+    <li><code>credit</code>, <code>consumed</code>, <code>status</code></li>
+    <li><code>start_date</code>, <code>expiration_date</code></li>
+    <li><code>comment</code>, <code>meta</code> (JSON-serialised extras)</li>
+    <li><code>created_at</code>, <code>updated_at</code></li>
+</ul>
+<p>
+    Indexes on <code>user_id</code>, <code>credit_type</code> and <code>status</code>
+    keep the balance and listing queries fast on large installs.
+</p>
+
+<h2>Troubleshooting</h2>
+<ul>
+    <li><strong>Balance looks stale</strong> &mdash; call
+        <code>$feature-&gt;update_user_balance($user_id)</code> or open the user&rsquo;s
+        profile; it forces a live recalculation.</li>
+    <li><strong>Credits not expiring</strong> &mdash; confirm WP-cron is running
+        and that <em>Auto-expire</em> is enabled in settings; you can also trigger
+        the job manually from the Credits page.</li>
+    <li><strong>Nothing happens on add</strong> &mdash; check
+        <em>Cobra AI &rarr; Dashboard &rarr; Logs</em>; every failure is logged via
+        <code>cobra_ai_db()-&gt;log('error', ...)</code>.</li>
+</ul>

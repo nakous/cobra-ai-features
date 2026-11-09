@@ -236,6 +236,7 @@ $webhook_status = $this->get_webhook()->get_status();
                     </th>
                     <td>
                         <label>
+                            <input type="hidden" name="settings[debug_mode]" value="0">
                             <input type="checkbox"
                                 id="debug_mode"
                                 name="settings[debug_mode]"

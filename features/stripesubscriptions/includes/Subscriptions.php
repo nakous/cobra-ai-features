@@ -76,7 +76,6 @@ class Subscriptions
         global $wpdb;
 
         try {
-            $this->table_name = $this->feature->get_table('stripe_subscriptions')['name'];
             // Get subscription data
             $subscription = $wpdb->get_row($wpdb->prepare(
                 "SELECT * FROM {$this->table_name} WHERE id = %d",
@@ -96,9 +95,6 @@ class Subscriptions
         global $wpdb;
 
         try {
-            // Get table name for subscriptions
-            $this->table_name = $this->feature->get_table('stripe_subscriptions')['name'];
-
             // Get subscription data
             $subscription = $wpdb->get_row($wpdb->prepare(
                 "SELECT * FROM {$this->table_name} WHERE subscription_id = %s",
@@ -122,7 +118,6 @@ class Subscriptions
         global $wpdb;
 
         // $table = $this->feature->get_table('stripe_subscriptions');
-        $this->table_name = $this->feature->get_table('stripe_subscriptions')['name'];
         return (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM {$this->table_name} 
              WHERE plan_id = %d AND status = %s",
@@ -137,7 +132,6 @@ class Subscriptions
     {
         global $wpdb;
 
-        $this->table_name = $this->feature->get_table('stripe_subscriptions')['name'];
         // Get all subscriptions for user
         return $wpdb->get_results($wpdb->prepare(
             "SELECT * FROM {$this->table_name} 
@@ -154,8 +148,6 @@ class Subscriptions
     {
         global $wpdb;
 
-
-        $this->table_name = $this->feature->get_table('stripe_subscriptions')['name'];
         // Get active subscription for user (including canceled subscriptions that are still active until period end)
         $subscription = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$this->table_name} 
@@ -178,8 +170,6 @@ class Subscriptions
     {
         global $wpdb;
 
-        // Get table name
-        $table = $this->table_name;
         // Check for active subscription
         $count = $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) 

@@ -61,6 +61,7 @@ $current_tab = $_GET['tab'] ?? 'general';
                             </label>
                         </th>
                         <td>
+                            <input type="hidden" name="settings[enabled]" value="0">
                             <input type="checkbox"
                                 id="enable_feature"
                                 name="settings[enabled]"
@@ -111,6 +112,7 @@ $current_tab = $_GET['tab'] ?? 'general';
                             </label>
                         </th>
                         <td>
+                            <input type="hidden" name="settings[enable_emails]" value="0">
                             <input type="checkbox"
                                 id="enable_emails"
                                 name="settings[enable_emails]"
@@ -287,6 +289,7 @@ $current_tab = $_GET['tab'] ?? 'general';
                             </label>
                         </th>
                         <td>
+                            <input type="hidden" name="settings[enable_trial]" value="0">
                             <input type="checkbox"
                                 id="enable_trial"
                                 name="settings[enable_trial]"

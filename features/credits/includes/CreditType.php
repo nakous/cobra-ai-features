@@ -281,7 +281,8 @@ class CreditType {
             'order' => 'asc', // asc = oldest first, desc = newest first
             'minimum_amount' => 0,
             'maximum_amount' => null,
-            'increment' => 1,
+            // 0 = no increment constraint; allows fractional amounts by default.
+            'increment' => 0,
             'allow_partial' => true,
             'require_approval' => false
         ];
@@ -310,10 +311,11 @@ class CreditType {
             return false;
         }
 
-        // Check increment
-        if ($rules['increment'] > 0) {
-            $remainder = fmod($amount, $rules['increment']);
-            if ($remainder !== 0.0) {
+        // Check increment — only enforce when explicitly configured (> 0).
+        // Use a small epsilon to avoid floating-point rounding false negatives.
+        if (!empty($rules['increment']) && $rules['increment'] > 0) {
+            $remainder = fmod($amount, (float) $rules['increment']);
+            if (abs($remainder) > 0.00001) {
                 return false;
             }
         }

@@ -37,10 +37,6 @@ class RecaptchaHandler {
         
         // Contact Form 7 integration
         add_filter('wpcf7_validate', [$this, 'verify_contact_form_7'], 99, 2);
-
-        // Custom forms integration
-        add_action('wp_ajax_verify_recaptcha', [$this, 'ajax_verify_recaptcha']);
-        add_action('wp_ajax_nopriv_verify_recaptcha', [$this, 'ajax_verify_recaptcha']);
     }
 
     /**
